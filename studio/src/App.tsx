@@ -1,30 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Search, MessageSquare, BookOpen, Settings, Zap, Upload } from 'lucide-react';
+import { LayoutDashboard, Search, MessageSquare, BookOpen, Settings, Zap, Upload, Paperclip } from 'lucide-react';
 import ImportPage from './components/ImportPage';
-
-// Simplified Dashboard Component
-const Dashboard = ({ stats }: { stats: any }) => (
-  <div className="grid grid-cols-3 gap-4">
-    <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-      <h3 className="text-gray-400 text-sm font-medium mb-1">Platforms</h3>
-      <p className="text-3xl font-bold text-white">{stats.platforms}</p>
-    </div>
-    <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-      <h3 className="text-gray-400 text-sm font-medium mb-1">Conversations</h3>
-      <p className="text-3xl font-bold text-white">{stats.conversations}</p>
-    </div>
-    <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-      <h3 className="text-gray-400 text-sm font-medium mb-1">Status</h3>
-      <p className={`text-3xl font-bold ${stats.status === 'Running' ? 'text-blue-500' : 'text-green-500'}`}>
-        {stats.status}
-      </p>
-    </div>
-  </div>
-);
+import ConversationsBrowser from './components/ConversationsBrowser';
+import Dashboard from './components/Dashboard';
+import SearchPage from './components/SearchPage';
+import ChatPage from './components/ChatPage';
+import AttachmentsBrowser from './components/AttachmentsBrowser';
+import EntitiesBrowser from './components/EntitiesBrowser';
+import KnowledgeObjectsBrowser from './components/KnowledgeObjectsBrowser';
+import PlatformsBrowser from './components/PlatformsBrowser';
 
 const App = () => {
-  const [view, setView] = useState<'dashboard' | 'import'>('dashboard');
-  const [stats, setStats] = useState({ platforms: 0, conversations: 0, status: 'Ready', last_compile: 'Never' });
+  const [view, setView] = useState<'dashboard' | 'import' | 'conversations' | 'search' | 'chat' | 'platforms' | 'knowledgeObjects' | 'entities' | 'attachments'>('dashboard');
+  const [stats, setStats] = useState({ platforms: 0, conversations: 0, status: 'Ready', last_compile: 'Never', knowledge_objects: 0 });
 
   const fetchStats = () => {
     fetch('/api/dashboard')
@@ -58,19 +46,46 @@ const App = () => {
               <LayoutDashboard size={20}/> Dashboard
             </li>
             <li 
-              onClick={() => setView('import')}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'import' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
+              onClick={() => setView('search')}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'search' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
             >
-              <Upload size={20}/> Import
-            </li>
-            <li className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-not-allowed text-gray-600">
               <Search size={20}/> Search
             </li>
-            <li className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-not-allowed text-gray-600">
-              <MessageSquare size={20}/> Chat
+            <li 
+              onClick={() => setView('chat')}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'chat' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
+            >
+              <Zap size={20}/> Oracle Chat
             </li>
-            <li className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-not-allowed text-gray-600">
-              <BookOpen size={20}/> Knowledge
+            <li 
+              onClick={() => setView('conversations')}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'conversations' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
+            >
+              <MessageSquare size={20}/> Conversations
+            </li>
+            <li 
+              onClick={() => setView('platforms')}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'platforms' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
+            >
+              <BookOpen size={20}/> Platforms
+            </li>
+            <li 
+              onClick={() => setView('knowledgeObjects')}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'knowledgeObjects' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
+            >
+              <BookOpen size={20}/> Knowledge Objects
+            </li>
+            <li 
+              onClick={() => setView('attachments')}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'attachments' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
+            >
+              <Paperclip size={20}/> Attachments
+            </li>
+            <li 
+              onClick={() => setView('entities')}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${view === 'entities' ? 'bg-gray-800 text-white font-medium' : 'hover:bg-gray-900 hover:text-white'}`}
+            >
+              <BookOpen size={20}/> Entities
             </li>
           </ul>
         </div>
@@ -88,9 +103,23 @@ const App = () => {
       <main className="flex-1 p-10 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
         <header className="mb-10 flex justify-between items-end">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">{view === 'dashboard' ? 'Dashboard' : 'Import'}</h2>
+            <h2 className="text-3xl font-bold tracking-tight">
+              {view === 'dashboard' ? 'Dashboard' : 
+               view === 'import' ? 'Import' : 
+               view === 'search' ? 'Search' : 
+               view === 'chat' ? 'Oracle Chat' :
+               view === 'attachments' ? 'Attachments' :
+               view === 'platforms' ? 'Platforms' :
+               'Conversations'}
+            </h2>
             <p className="text-gray-500 mt-1">
-              {view === 'dashboard' ? 'System overview and statistics.' : 'Bring new data into your knowledge platform.'}
+              {view === 'dashboard' ? 'System overview and statistics.' : 
+               view === 'import' ? 'Bring new data into your knowledge platform.' : 
+               view === 'search' ? 'Global search across all compiled knowledge.' :
+               view === 'chat' ? 'Ask questions grounded in your second brain.' :
+               view === 'attachments' ? 'Browse extracted files and media.' :
+               view === 'platforms' ? 'Active knowledge source platforms.' :
+               'Browse all indexed conversations.'}
             </p>
           </div>
           {view === 'dashboard' && (
@@ -101,7 +130,15 @@ const App = () => {
           )}
         </header>
 
-        {view === 'dashboard' ? <Dashboard stats={stats} /> : <ImportPage />}
+        {view === 'dashboard' ? <Dashboard stats={stats} /> : 
+         view === 'import' ? <ImportPage /> : 
+         view === 'search' ? <SearchPage /> :
+         view === 'chat' ? <ChatPage /> :
+         view === 'attachments' ? <AttachmentsBrowser /> :
+         view === 'entities' ? <EntitiesBrowser /> :
+         view === 'knowledgeObjects' ? <KnowledgeObjectsBrowser /> :
+         view === 'platforms' ? <PlatformsBrowser /> :
+         <ConversationsBrowser />}
       </main>
     </div>
   );

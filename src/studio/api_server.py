@@ -27,21 +27,90 @@ def get_dashboard_data():
     """Returns metadata for the dashboard."""
     controller.knowledge_service.load_workspace() # Refresh data
     platforms = controller.get_platforms()
+    
+    # Calculate knowledge objects
+    knowledge_objects = 0
+    for p in platforms:
+        plat_dir = controller.knowledge_service.platforms[p]["path"]
+        ko_dir = os.path.join(plat_dir, "knowledge_objects")
+        if os.path.exists(ko_dir):
+            knowledge_objects += len([f for f in os.listdir(ko_dir) if f.endswith(".md")])
+            
     stats = {
         "platforms": len(platforms),
         "conversations": sum(len(controller.get_conversations(p)) for p in platforms),
         "status": pipeline_service.get_pipeline_status()["status"],
-        "last_compile": controller.knowledge_service.root_manifest.get("compilation_run", {}).get("exported_at", "Never")
+        "last_compile": controller.knowledge_service.root_manifest.get("compilation_run", {}).get("exported_at", "Never"),
+        "knowledge_objects": knowledge_objects
     }
     return jsonify(stats)
 
 @app.route('/api/platforms', methods=['GET'])
-def get_platforms():
+def get_platforms_list():
+    controller.knowledge_service.load_workspace()
     return jsonify(controller.get_platforms())
 
-@app.route('/api/conversations/<platform>', methods=['GET'])
-def get_conversations(platform):
-    return jsonify(controller.get_conversations(platform))
+@app.route('/api/knowledge-objects', methods=['GET'])
+def get_knowledge_objects():
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    query = request.args.get('query', '').lower()
+    
+    all_objs = controller.knowledge_service.get_knowledge_objects()
+    if query:
+        all_objs = [o for o in all_objs if query in o["title"].lower()]
+        
+    paginated, total = paginate_results(all_objs, page, limit)
+    return jsonify({"data": paginated, "total": total, "page": page, "limit": limit})
+
+@app.route('/api/entities', methods=['GET'])
+def get_entities():
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    query = request.args.get('query', '').lower()
+    
+    all_ents = controller.knowledge_service.get_entities()
+    if query:
+        all_ents = [e for e in all_ents if query in e.get("value", "").lower()]
+        
+    paginated, total = paginate_results(all_ents, page, limit)
+    return jsonify({"data": paginated, "total": total, "page": page, "limit": limit})
+
+@app.route('/api/attachments', methods=['GET'])
+def get_attachments():
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    query = request.args.get('query', '').lower()
+    
+    all_atts = controller.knowledge_service.get_attachments()
+    if query:
+        all_atts = [a for a in all_atts if query in a.get("name", "").lower()]
+        
+    paginated, total = paginate_results(all_atts, page, limit)
+    return jsonify({"data": paginated, "total": total, "page": page, "limit": limit})
+
+def paginate_results(results, page, limit):
+    start = (page - 1) * limit
+    end = start + limit
+    return results[start:end], len(results)
+
+@app.route('/api/conversations', methods=['GET'])
+def get_conversations_paginated():
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    query = request.args.get('query', '').lower()
+    
+    # In a real app, this would be a more robust query
+    all_conversations = []
+    for p in controller.get_platforms():
+        all_conversations.extend(controller.get_conversations(p))
+    
+    if query:
+        all_conversations = [c for c in all_conversations if query in c.get("title", "").lower()]
+        
+    paginated, total = paginate_results(all_conversations, page, limit)
+    return jsonify({"data": paginated, "total": total, "page": page, "limit": limit})
+
 
 @app.route('/api/knowledge/<platform>/<title>', methods=['GET'])
 def get_knowledge_object(platform, title):
@@ -95,6 +164,23 @@ def run_compile():
 @app.route('/api/pipeline/status', methods=['GET'])
 def get_pipeline_status():
     return jsonify(pipeline_service.get_pipeline_status())
+
+@app.route('/api/search', methods=['GET'])
+def search_knowledge():
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify([])
+    results = controller.search(query)
+    return jsonify(results)
+
+@app.route('/api/chat', methods=['POST'])
+def chat_grounded():
+    data = request.json
+    query = data.get('query', '')
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+    response = controller.chat(query)
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

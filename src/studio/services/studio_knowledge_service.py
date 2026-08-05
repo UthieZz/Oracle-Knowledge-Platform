@@ -92,21 +92,78 @@ class StudioKnowledgeService:
                 return f.read()
         return None
 
+    def get_knowledge_objects(self) -> List[Dict[str, Any]]:
+        """Returns metadata for all knowledge objects across platforms."""
+        objects = []
+        for plat_name, plat_info in self.platforms.items():
+            ko_dir = os.path.join(plat_info["path"], "knowledge_objects")
+            if os.path.exists(ko_dir):
+                for filename in os.listdir(ko_dir):
+                    if filename.endswith(".md"):
+                        objects.append({
+                            "title": filename.replace(".md", ""),
+                            "platform": plat_name,
+                            "path": os.path.join(ko_dir, filename)
+                        })
+        return objects
+
+    def get_entities(self) -> List[Dict[str, Any]]:
+        """Reads entities from entities.json."""
+        entities_path = os.path.join(self.output_dir, "entities.json")
+        if os.path.exists(entities_path):
+            with open(entities_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return []
+
+    def get_attachments(self) -> List[Dict[str, Any]]:
+        """Returns metadata for all attachments extracted from conversation provenance."""
+        attachments = []
+        for p in self.get_platforms():
+            conversations = self.get_conversations(p)
+            for conv in conversations:
+                prov = conv.get("provenance", {})
+                if "attachments" in prov:
+                    for att in prov["attachments"]:
+                        attachments.append({
+                            "name": att.get("name"),
+                            "url": att.get("url"),
+                            "conversation_id": conv.get("id"),
+                            "conversation_title": conv.get("title"),
+                            "platform": p
+                        })
+        return attachments
+
     def search_knowledge(self, query: str) -> List[Dict[str, Any]]:
-        """Stub for semantic search. Currently returns matches from titles/summaries."""
-        # TODO: Implement semantic search integration
-        results = []
-        query_lower = query.lower()
-        
-        for plat_name in self.platforms:
-            convs = self.get_conversations(plat_name)
-            for conv in convs:
-                if query_lower in (conv.get("title") or "").lower():
-                    results.append({
-                        "type": "conversation",
-                        "id": conv["id"],
-                        "title": conv["title"],
-                        "platform": plat_name,
-                        "relevance": 1.0
-                    })
-        return results
+        """Searches across the knowledge index and returns matched conversations."""
+        index_path = os.path.join(self.output_dir, "knowledge_index.json")
+        if not os.path.exists(index_path):
+            return []
+            
+        try:
+            with open(index_path, "r", encoding="utf-8") as f:
+                index = json.load(f)
+                
+            query = query.lower()
+            matched_conv_ids = set()
+            
+            # Search in keywords and other categories
+            for category in index.values():
+                for term, conv_ids in category.items():
+                    if query in term.lower():
+                        matched_conv_ids.update(conv_ids)
+            
+            # Resolve conversation metadata
+            results = []
+            all_conversations = []
+            for p in self.get_platforms():
+                all_conversations.extend(self.get_conversations(p))
+                
+            for conv in all_conversations:
+                if conv.get("id") in matched_conv_ids:
+                    results.append(conv)
+                    
+            return results
+        except Exception as e:
+            print(f"Error searching knowledge: {e}")
+            return []
+

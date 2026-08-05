@@ -1,1 +1,6 @@
-# Add project dependencies here
+google-genai
+python-dotenv
+flask
+flask-cors
+werkzeug
+google-cloud-aiplatform

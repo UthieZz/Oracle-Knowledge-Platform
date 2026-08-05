@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from src.studio.services.studio_knowledge_service import StudioKnowledgeService
 from src.studio.services.search_service import SearchService
 from src.studio.services.voice_service import VoiceService
+from src.studio.services.chat_service import ChatService
 
 class StudioController:
     """Controller for the Studio module.
@@ -15,6 +16,7 @@ class StudioController:
         self.knowledge_service.load_workspace()
         
         self.search_service = SearchService(self.knowledge_service)
+        self.chat_service = ChatService(self.search_service)
         self.voice_service = VoiceService()
         
     def get_platforms(self) -> List[str]:
@@ -28,6 +30,9 @@ class StudioController:
         
     def search(self, query: str) -> List[Dict[str, Any]]:
         return self.search_service.search(query)
+        
+    def chat(self, query: str) -> Dict[str, Any]:
+        return self.chat_service.chat(query)
         
     def get_conversation_details(self, platform_name: str, conv_id: str) -> Optional[Dict[str, Any]]:
         return self.knowledge_service.get_conversation_details(platform_name, conv_id)
