@@ -9,16 +9,26 @@ import AttachmentsBrowser from './components/AttachmentsBrowser';
 import EntitiesBrowser from './components/EntitiesBrowser';
 import KnowledgeObjectsBrowser from './components/KnowledgeObjectsBrowser';
 import PlatformsBrowser from './components/PlatformsBrowser';
+import { FirestoreService } from './services/FirestoreService';
 
 const App = () => {
   const [view, setView] = useState<'dashboard' | 'import' | 'conversations' | 'search' | 'chat' | 'platforms' | 'knowledgeObjects' | 'entities' | 'attachments'>('dashboard');
   const [stats, setStats] = useState({ platforms: 0, conversations: 0, status: 'Ready', last_compile: 'Never', knowledge_objects: 0 });
 
-  const fetchStats = () => {
-    fetch('/api/dashboard')
-      .then(res => res.json())
-      .then(data => setStats(data))
-      .catch(err => console.error("Error fetching stats:", err));
+  const fetchStats = async () => {
+    try {
+      const data = await FirestoreService.getDashboardStats();
+
+      setStats({
+        platforms: data.platforms,
+        conversations: data.conversations,
+        status: 'Ready',
+        last_compile: data.updated_at ?? 'Never',
+        knowledge_objects: data.knowledge_objects ?? 0,
+      });
+    } catch (err) {
+      console.error("Error fetching Firestore dashboard stats:", err);
+    }
   };
 
   useEffect(() => {

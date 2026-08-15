@@ -1,0 +1,18 @@
+[
+  {
+    "header": "Gemini Apps",
+    "title": "Prompted What is React?",
+    "time": "2026-08-05T10:00:00.000Z",
+    "products": ["Gemini Apps"],
+    "safeHtmlItem": [{"html": "<p>React is a JavaScript library for building user interfaces.</p>"}],
+    "attachedFiles": []
+  },
+  {
+    "header": "Gemini Apps",
+    "title": "Prompted How to use Python?",
+    "time": "2026-08-05T10:35:00.000Z",
+    "products": ["Gemini Apps"],
+    "safeHtmlItem": [{"html": "<p>Python is a versatile programming language.</p>"}],
+    "attachedFiles": []
+  }
+]

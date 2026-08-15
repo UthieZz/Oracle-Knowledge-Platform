@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
+
+interface Conversation {
+  conversation_id: string;
+  title: string;
+  source: string;
+}
 const ConversationsBrowser = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<Conversation[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
