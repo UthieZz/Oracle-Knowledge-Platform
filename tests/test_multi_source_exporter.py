@@ -161,7 +161,7 @@ class TestMultiSourceExporter(unittest.TestCase):
         self.assertEqual(available[0]["name"], "Multi-Source Exporter")
 
         package = create_multi_source_package()
-        res = service.export_knowledge(package, {"output_dir": self.output_dir, "mode": "Both"})
+        res = service.export_knowledge(package, {"output_dir": self.output_dir, "mode": "Both", "exporter_name": "Multi-Source Exporter"})
         self.assertEqual(res["status"], "Success")
         self.assertTrue(os.path.exists(os.path.join(self.output_dir, "manifest.json")))
 

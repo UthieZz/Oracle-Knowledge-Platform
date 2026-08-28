@@ -1,0 +1,16 @@
+{
+  "id": "gemini-d24921e601ee45ee",
+  "title": "How to use Python?",
+  "source": "/home/uthmaan_moh/Oracle Knowledge Platform/uploads/test_data.json",
+  "created": "2026-08-05T10:35:00.000Z",
+  "updated": "2026-08-05T10:35:00.000Z",
+  "message_count": 2,
+  "provenance": {
+    "source_platform": "Gemini",
+    "source_file": "/home/uthmaan_moh/Oracle Knowledge Platform/uploads/test_data.json",
+    "schema_version": "gemini-myactivity-v1",
+    "imported_at": "2026-08-15T22:42:12.417244+00:00",
+    "record_count": 1,
+    "attachment_count": 0
+  }
+}

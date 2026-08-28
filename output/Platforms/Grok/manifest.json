@@ -1,0 +1,14 @@
+{
+  "package_type": "platform_package",
+  "platform_name": "Grok",
+  "exported_at": "2026-08-16T13:57:40.692108+00:00",
+  "summary": {
+    "conversations": 1,
+    "messages": 2,
+    "entities": 0,
+    "attachments": 0
+  },
+  "source_files": [
+    "grok_conv_1.json"
+  ]
+}

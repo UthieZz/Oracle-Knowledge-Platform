@@ -1,10 +1,11 @@
 import glob
 import os
 import json
-from typing import List, Any
+from typing import List, Any, Optional
 
 from src.models.conversation import Conversation
 from src.models.message import Message
+from src.models.knowledge_object import KnowledgeObject
 from src.core.interfaces import Importer
 from src.models.knowledge_package import KnowledgePackage
 
@@ -41,8 +42,11 @@ class ChatGPTImporter(Importer):
         self.input_dir = input_dir
         self.total_messages = 0
 
-    def import_data(self, package: KnowledgePackage) -> KnowledgePackage:
-        files = self.discover_files()
+    def import_data(self, package: KnowledgePackage, file_path: Optional[str] = None) -> KnowledgePackage:
+        if file_path:
+            files = [file_path]
+        else:
+            files = self.discover_files()
         
         for f in files:
             if not os.path.isfile(f):
@@ -61,13 +65,25 @@ class ChatGPTImporter(Importer):
                     for raw_conv in raw_conversations:
                         conv_obj = self._parse_raw_conversation(raw_conv, f)
                         package.add_conversation(conv_obj)
+                        package.add_knowledge_object(KnowledgeObject(
+                            id=conv_obj.id,
+                            title=conv_obj.title,
+                            content="\n\n".join([f"{msg.role}: {msg.content}" for msg in conv_obj.messages]),
+                            source_platform=conv_obj.provenance.get("source_platform", "ChatGPT"),
+                            source_file=conv_obj.source,
+                            created_at=conv_obj.created,
+                            updated_at=conv_obj.updated,
+                            provenance=conv_obj.provenance,
+                            evidence=[]
+                        ))
                         self.total_messages += len(conv_obj.messages)
                         
             except (json.JSONDecodeError, OSError) as e:
                 print(f"Warning: Failed to read or parse '{f}': {e}")
                 
-        print(f"Total conversations (ChatGPT): {len(package.conversations)}")
-        print(f"Total messages (ChatGPT): {self.total_messages}")
+        # Only print if we processed files (avoid noise if called per file)
+        if files:
+            print(f"Imported {len(files)} files (ChatGPT)")
         return package
 
     def discover_files(self):
@@ -129,5 +145,6 @@ class ChatGPTImporter(Importer):
             source=source_file,
             created=created,
             updated=updated,
-            messages=messages
+            messages=messages,
+            provenance={"source_platform": "ChatGPT"}
         )

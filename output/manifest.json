@@ -1,0 +1,19 @@
+{
+  "compilation_run": {
+    "exported_at": "2026-08-16T13:57:40.675436+00:00",
+    "export_mode": "Both",
+    "total_conversations": 1,
+    "total_messages": 2,
+    "total_entities": 0,
+    "total_attachments": 0,
+    "total_platforms": 1
+  },
+  "platforms": {
+    "Grok": {
+      "conversations": 1,
+      "messages": 2,
+      "entities": 0,
+      "attachments": 0
+    }
+  }
+}

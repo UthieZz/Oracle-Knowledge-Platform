@@ -1,11 +1,15 @@
 import sys
+import os
 import subprocess
 import argparse
 
 def run_compiler():
     # Placeholder for compiler logic, preserving architecture
     print("Running Compiler...")
-    subprocess.run(["python3", "main.py"])
+    # Set PYTHONPATH to include the project root
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.getcwd()
+    subprocess.run(["python3", "scripts/compile_data.py"], env=env)
 
 def run_studio():
     print("Starting Oracle Studio Backend...")

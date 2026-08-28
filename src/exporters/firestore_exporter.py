@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from google.cloud import firestore
 
 from src.core.interfaces import Exporter
+from src.models.conversation import Conversation
 from src.models.knowledge_package import KnowledgePackage
 
 
@@ -46,6 +47,19 @@ class FirestoreExporter(Exporter):
     def supported_outputs(self) -> List[str]:
         return ["firestore"]
 
+    def _process_batches(self, operations: List[Dict[str, Any]], collection_name: str) -> None:
+        """Helper to process operations in batches of 500."""
+        batch_size = 500
+        total_batches = (len(operations) + batch_size - 1) // batch_size
+        for i in range(0, len(operations), batch_size):
+            batch = self.db.batch()
+            chunk = operations[i:i + batch_size]
+            for op in chunk:
+                doc_ref = self.db.collection(collection_name).document(op["id"])
+                batch.set(doc_ref, op["data"])
+            batch.commit()
+            print(f"Batch {i//batch_size + 1}/{total_batches} committed for {collection_name}")
+
     def export(self, package: KnowledgePackage) -> KnowledgePackage:
         """Publish the current KnowledgePackage to Firestore."""
 
@@ -64,6 +78,7 @@ class FirestoreExporter(Exporter):
                 "entities": len(package.entities),
                 "attachments": len(package.attachment_knowledge),
                 "platforms": len(platform_map),
+                "knowledge_objects": len(package.conversations),
             }
         )
 
@@ -75,6 +90,32 @@ class FirestoreExporter(Exporter):
 
         return package
 
+    def _write_messages_batched(self, conversation: Conversation, timestamp: str) -> None:
+        """Batch export all messages of a conversation."""
+        messages_ref = self.db.collection("conversations").document(str(conversation.id)).collection("messages")
+        
+        batch_size = 500
+        messages = conversation.messages
+        total_batches = (len(messages) + batch_size - 1) // batch_size
+        
+        for i in range(0, len(messages), batch_size):
+            batch = self.db.batch()
+            chunk = messages[i:i + batch_size]
+            for index, message in enumerate(chunk, start=i):
+                message_id = getattr(message, "id", None) or f"msg_{index}"
+                doc_ref = messages_ref.document(str(message_id))
+                batch.set(doc_ref, {
+                    "id": str(message_id),
+                    "role": self._safe_value(message.role),
+                    "content": self._safe_value(message.content),
+                    "timestamp": self._safe_value(message.timestamp),
+                    "index": index,
+                    "metadata": self._safe_value(getattr(message, "metadata", {})),
+                    "published_at": timestamp
+                })
+            batch.commit()
+            print(f"Batch {i//batch_size + 1}/{total_batches} committed for messages in conv {conversation.id}")
+
     def _group_platforms(
         self, package: KnowledgePackage
     ) -> Dict[str, List[Any]]:
@@ -82,12 +123,10 @@ class FirestoreExporter(Exporter):
 
         for conversation in package.conversations:
             provenance = getattr(conversation, "provenance", {}) or {}
-            platform = (
-                provenance.get("source_platform")
-                or self._derive_platform(
-                    getattr(conversation, "source", "")
-                )
-            )
+            platform = provenance.get("source_platform")
+            if not platform:
+                # Force derivation but log a warning if it fails
+                platform = self._derive_platform(getattr(conversation, "source", ""))
 
             platforms.setdefault(platform, []).append(conversation)
 
@@ -110,7 +149,8 @@ class FirestoreExporter(Exporter):
         if "copilot" in source:
             return "Copilot"
 
-        return "Unknown"
+        return "Unmapped"
+
 
     def _write_platforms(
         self,
@@ -118,8 +158,7 @@ class FirestoreExporter(Exporter):
         platform_map: Dict[str, List[Any]],
         timestamp: str,
     ) -> None:
-        platforms_ref = self.db.collection("platforms")
-
+        operations = []
         for platform, conversations in platform_map.items():
             conversation_ids = {
                 getattr(conv, "id", None)
@@ -140,8 +179,9 @@ class FirestoreExporter(Exporter):
                 in conversation_ids
             ]
 
-            platforms_ref.document(platform).set(
-                {
+            operations.append({
+                "id": platform,
+                "data": {
                     "name": platform,
                     "conversation_count": len(conversations),
                     "message_count": sum(
@@ -152,75 +192,81 @@ class FirestoreExporter(Exporter):
                     "attachment_count": len(attachments),
                     "updated_at": timestamp,
                 }
-            )
+            })
+        self._process_batches(operations, "platforms")
 
     def _write_conversations(
         self,
         package: KnowledgePackage,
         timestamp: str,
     ) -> None:
-        conversations_ref = self.db.collection("conversations")
-
+        operations = []
         for conversation in package.conversations:
-            data = {
-                "id": conversation.id,
-                "title": conversation.title,
-                "source": conversation.source,
-                "created": conversation.created,
-                "updated": conversation.updated,
-                "message_count": len(
-                    getattr(conversation, "messages", [])
-                ),
-                "provenance": self._safe_value(
-                    getattr(conversation, "provenance", {})
-                ),
-                "published_at": timestamp,
-            }
-
-            conversations_ref.document(str(conversation.id)).set(data)
+            provenance = getattr(conversation, "provenance", {})
+            if "source_platform" not in provenance:
+                provenance["source_platform"] = self._derive_platform(getattr(conversation, "source", ""))
+            
+            operations.append({
+                "id": str(conversation.id),
+                "data": {
+                    "id": conversation.id,
+                    "title": conversation.title,
+                    "source": conversation.source,
+                    "created": conversation.created,
+                    "updated": conversation.updated,
+                    "message_count": len(
+                        getattr(conversation, "messages", [])
+                    ),
+                    "provenance": self._safe_value(provenance),
+                    "published_at": timestamp,
+                }
+            })
+            self._write_messages_batched(conversation, timestamp)
+            
+        self._process_batches(operations, "conversations")
 
     def _write_knowledge_objects(
         self,
         package: KnowledgePackage,
         timestamp: str,
     ) -> None:
-        objects_ref = self.db.collection("knowledgeObjects")
-
-        for conversation in package.conversations:
-            object_id = str(conversation.id)
-
-            objects_ref.document(object_id).set(
-                {
+        operations = []
+        for ko in package.knowledge_objects:
+            object_id = str(ko.id)
+            # Use source_platform from KnowledgeObject, fallback to derivation if needed
+            platform = ko.source_platform
+            if platform == "Other" or not platform:
+                platform = self._derive_platform(ko.source_file)
+            
+            operations.append({
+                "id": object_id,
+                "data": {
                     "id": object_id,
                     "type": "conversation",
-                    "title": conversation.title,
+                    "title": ko.title,
+                    "content": ko.content,
                     "conversation_id": object_id,
-                    "source": conversation.source,
-                    "message_count": len(
-                        getattr(conversation, "messages", [])
-                    ),
+                    "source_platform": platform,
+                    "source_file": ko.source_file,
+                    "provenance": self._safe_value(ko.provenance),
+                    "created_at": ko.created_at,
+                    "updated_at": ko.updated_at,
                     "published_at": timestamp,
                 }
-            )
+            })
+        self._process_batches(operations, "knowledgeObjects")
 
     def _write_entities(
         self,
         package: KnowledgePackage,
         timestamp: str,
     ) -> None:
-        entities_ref = self.db.collection("entities")
-
+        operations = []
         for index, entity in enumerate(package.entities):
-            entity_id = getattr(entity, "id", None)
-
-            if not entity_id:
-                entity_id = (
-                    f"{getattr(entity, 'conversation_id', 'unknown')}"
-                    f"_{index}"
-                )
-
-            entities_ref.document(str(entity_id)).set(
-                {
+            entity_id = getattr(entity, "id", None) or f"{getattr(entity, 'conversation_id', 'unknown')}_{index}"
+            operations.append({
+                "id": str(entity_id),
+                "data": {
                     "id": str(entity_id),
                     "value": self._safe_value(
                         getattr(entity, "value", None)
@@ -233,15 +279,15 @@ class FirestoreExporter(Exporter):
                     ),
                     "published_at": timestamp,
                 }
-            )
+            })
+        self._process_batches(operations, "entities")
 
     def _write_attachments(
         self,
         package: KnowledgePackage,
         timestamp: str,
     ) -> None:
-        attachments_ref = self.db.collection("attachments")
-
+        operations = []
         for index, attachment in enumerate(
             package.attachment_knowledge
         ):
@@ -251,8 +297,9 @@ class FirestoreExporter(Exporter):
                 or f"attachment_{index}"
             )
 
-            attachments_ref.document(str(attachment_id)).set(
-                {
+            operations.append({
+                "id": str(attachment_id),
+                "data": {
                     "id": str(attachment_id),
                     "conversation_id": self._safe_value(
                         getattr(attachment, "conversation_id", None)
@@ -268,7 +315,8 @@ class FirestoreExporter(Exporter):
                     ),
                     "published_at": timestamp,
                 }
-            )
+            })
+        self._process_batches(operations, "attachments")
 
     @staticmethod
     def _safe_value(value: Any) -> Any:

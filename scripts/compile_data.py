@@ -21,7 +21,10 @@ def compile_data():
     print(f"Found {len(files)} files to import.")
     for f in files:
         print(f"Importing {f}...")
-        import_service.run_gemini_import(f)
+        try:
+            import_service.run_import_dispatcher(f)
+        except Exception as e:
+            print(f"Failed to import {f}: {e}")
     
     package = import_service.get_package()
     if not package:

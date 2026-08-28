@@ -27,14 +27,20 @@ def get_dashboard_data():
     """Returns metadata for the dashboard."""
     controller.knowledge_service.load_workspace() # Refresh data
     platforms = controller.get_platforms()
+    print(f"DEBUG: Platforms found: {platforms}")
     
     # Calculate knowledge objects
     knowledge_objects = 0
     for p in platforms:
         plat_dir = controller.knowledge_service.platforms[p]["path"]
         ko_dir = os.path.join(plat_dir, "knowledge_objects")
+        print(f"DEBUG: Checking {ko_dir}")
         if os.path.exists(ko_dir):
-            knowledge_objects += len([f for f in os.listdir(ko_dir) if f.endswith(".md")])
+            files = [f for f in os.listdir(ko_dir) if f.endswith(".md")]
+            print(f"DEBUG: Found files: {files}")
+            knowledge_objects += len(files)
+        else:
+            print(f"DEBUG: Dir does not exist: {ko_dir}")
             
     stats = {
         "platforms": len(platforms),
@@ -145,11 +151,20 @@ def run_compile():
     queued_files = import_service.get_imported_files()
     for f in queued_files:
         path = f["path"]
-        # Simplified logic: detect platform and run importer
-        # In this prototype, we'll assume Gemini for JSON files containing 'My Activity'
-        # and ChatGPT for others for demonstration purposes.
-        if path.endswith(".json"):
+        # Detect platform and run importer
+        filename = os.path.basename(path).lower()
+        if "grok" in filename:
+            import_service.run_grok_import(path)
+        elif "gemini" in filename:
             import_service.run_gemini_import(path)
+        else:
+            # Assume ChatGPT
+            from src.importers.chatgpt_importer import ChatGPTImporter
+            # We don't have a run_chatgpt_import in ImportService, let's manually run it
+            # This is a bit of a hack based on existing code structure
+            importer = ChatGPTImporter(input_dir=os.path.dirname(path))
+            package = import_service.get_package() or KnowledgePackage()
+            importer.import_data(package)
             
     # 3. Export/Compile
     package = import_service.get_package()

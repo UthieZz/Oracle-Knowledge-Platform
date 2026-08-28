@@ -1,0 +1,11 @@
+{
+  "id": "grok_conv_1",
+  "title": "Test Grok Conversation",
+  "source": "/home/uthmaan_moh/Oracle Knowledge Platform/uploads/grok-test.json",
+  "created": "2026-08-16T10:00:00Z",
+  "updated": "2026-08-16T10:05:00Z",
+  "message_count": 2,
+  "provenance": {
+    "source_platform": "Grok"
+  }
+}

@@ -54,6 +54,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from src.core.interfaces import Importer
 from src.models.conversation import Conversation
 from src.models.knowledge_package import KnowledgePackage
+from src.models.knowledge_object import KnowledgeObject
 from src.models.message import Message
 
 _LOG = logging.getLogger(__name__)
@@ -663,6 +664,17 @@ class GeminiImporter(Importer):
         )
         for conv in conversations:
             package.add_conversation(conv)
+            package.add_knowledge_object(KnowledgeObject(
+                id=conv.id,
+                title=conv.title,
+                content="\n\n".join([f"{msg.role}: {msg.content}" for msg in conv.messages]),
+                source_platform=conv.provenance.get("source_platform", "Gemini"),
+                source_file=conv.source,
+                created_at=conv.created,
+                updated_at=conv.updated,
+                provenance=conv.provenance,
+                evidence=[]
+            ))
 
         self._files_processed += 1
         self._progress(

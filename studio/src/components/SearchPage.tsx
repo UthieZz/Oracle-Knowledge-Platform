@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MessageSquare, FileText, ArrowRight } from 'lucide-react';
+import { Search, MessageSquare, FileText, ArrowRight, Zap } from 'lucide-react';
+import { FirestoreService } from '../services/FirestoreService';
 
 const SearchPage = () => {
   const [query, setQuery] = useState('');
@@ -21,8 +22,7 @@ const SearchPage = () => {
   const performSearch = async () => {
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-      const data = await res.json();
+      const data = await FirestoreService.search(query);
       setResults(data);
     } catch (err) {
       console.error("Search error:", err);
@@ -71,17 +71,19 @@ const SearchPage = () => {
           >
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <MessageSquare className="text-blue-500" size={16} />
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{result.source_platform || 'Conversation'}</span>
+                {result.type === 'knowledge' ? <Zap className="text-blue-500" size={16} /> : <MessageSquare className="text-green-500" size={16} />}
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{result.source_platform || result.platform || 'General'}</span>
               </div>
               <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">{result.title}</h3>
-              <p className="text-gray-400 text-sm line-clamp-2 mt-2">{result.first_user_message || 'No preview available'}</p>
+              <p className="text-gray-400 text-sm line-clamp-2 mt-2">{result.content || result.first_user_message || 'No preview available'}</p>
               <div className="flex gap-4 mt-3">
-                <span className="text-xs text-gray-600 flex items-center gap-1">
-                   <FileText size={12} /> {result.message_count || 0} messages
-                </span>
+                {result.type === 'conversation' && (
+                  <span className="text-xs text-gray-600 flex items-center gap-1">
+                     <FileText size={12} /> {result.message_count || 0} messages
+                  </span>
+                )}
                 <span className="text-xs text-gray-600">
-                   {result.created_date || result.created || 'Unknown date'}
+                   {result.created_at || result.created_date || 'Known knowledge'}
                 </span>
               </div>
             </div>

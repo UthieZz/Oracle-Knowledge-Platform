@@ -43,40 +43,20 @@ class MainController:
     # Import operations
     # ------------------------------------------------------------------
 
-    def import_gemini_file(
+    def import_grok_file(
         self,
         file_path: str,
-        grouping_window_minutes: int = 30,
         progress_callback: Optional[Callable[[float, str], None]] = None,
     ) -> Dict[str, Any]:
-        """Import a Gemini MyActivity JSON file via the ImportService.
-
-        Parameters
-        ----------
-        file_path:
-            Absolute path to the JSON file selected by the user.
-        grouping_window_minutes:
-            Conversation grouping threshold forwarded to the importer.
-        progress_callback:
-            Optional ``Callable[[float, str], None]`` for live progress
-            updates (e.g. connected to a Qt progress bar signal).
-
-        Returns
-        -------
-        Dict[str, Any]
-            Summary dict with keys ``status``, ``conversations``, ``messages``,
-            ``schema_version``, ``errors``, and ``warnings``.
-        """
-        # Register the file in the import queue so the UI list refreshes
+        """Import a Grok JSON file via the ImportService."""
         import os
         abs_path = os.path.abspath(file_path)
         existing_paths = [f["path"] for f in self.import_service.get_imported_files()]
         if abs_path not in existing_paths:
             self.import_service.add_import_files([abs_path])
 
-        return self.import_service.run_gemini_import(
+        return self.import_service.run_grok_import(
             file_path=abs_path,
-            grouping_window_minutes=grouping_window_minutes,
             progress_callback=progress_callback,
         )
 

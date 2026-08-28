@@ -1,0 +1,15 @@
+{
+  "package_type": "platform_package",
+  "platform_name": "Gemini",
+  "exported_at": "2026-08-15T22:42:12.457759+00:00",
+  "summary": {
+    "conversations": 2,
+    "messages": 4,
+    "entities": 5,
+    "attachments": 0
+  },
+  "source_files": [
+    "gemini-2a8a28087c56719b.json",
+    "gemini-d24921e601ee45ee.json"
+  ]
+}

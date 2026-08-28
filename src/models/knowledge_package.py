@@ -1,9 +1,11 @@
 from typing import List, Dict, Any, Optional
+from src.models.knowledge_object import KnowledgeObject
 
 class KnowledgePackage:
     def __init__(self):
         # Internal fields, access through helper methods
         self._conversations: List[Any] = []
+        self._knowledge_objects: List[KnowledgeObject] = []
         self._entities: List[Any] = []
         self._relationships: List[Any] = []
         self._topics: List[Any] = []
@@ -18,6 +20,8 @@ class KnowledgePackage:
     # Getters that return references to the collections for read access
     @property
     def conversations(self): return self._conversations
+    @property
+    def knowledge_objects(self): return self._knowledge_objects
     @property
     def entities(self): return self._entities
     @property
@@ -44,6 +48,9 @@ class KnowledgePackage:
     # Mutator helper methods
     def add_conversation(self, conversation: Any) -> None:
         self._conversations.append(conversation)
+
+    def add_knowledge_object(self, ko: KnowledgeObject) -> None:
+        self._knowledge_objects.append(ko)
 
     def add_entity(self, entity: Any) -> None:
         self._entities.append(entity)

@@ -1,12 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, ExternalLink, Loader2 } from 'lucide-react';
-
-interface Citation {
-  id: string;
-  title: string;
-  platform: string;
-  source_index: number;
-}
+import { ChatService, Citation } from '../services/ChatService';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -35,12 +29,7 @@ const ChatPage = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: input }),
-      });
-      const data = await res.json();
+      const data = await ChatService.ask(input);
       
       const assistantMsg: ChatMessage = { 
         role: 'assistant', 
