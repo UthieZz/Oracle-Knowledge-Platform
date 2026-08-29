@@ -1,42 +1,79 @@
 import unittest
 import os
 import json
+import tempfile
+
 from src.services.import_dispatcher import detect_source_type, SourceType
 
+
 class TestImportDispatcher(unittest.TestCase):
+    def _write(self, name: str, payload) -> str:
+        path = os.path.join(self._tmpdir, name)
+        with open(path, "w", encoding="utf-8") as f:
+            if isinstance(payload, str):
+                f.write(payload)
+            else:
+                json.dump(payload, f)
+        return path
 
-    def test_grok_detection(self):
-        # Create dummy Grok file
-        with open('temp_grok.json', 'w') as f:
-            json.dump({"conversations": []}, f)
-        self.assertEqual(detect_source_type('temp_grok.json'), SourceType.GROK)
-        os.remove('temp_grok.json')
+    def setUp(self):
+        self._tmpdir = tempfile.mkdtemp()
 
-    def test_chatgpt_detection(self):
-        # Create dummy ChatGPT file
-        with open('temp_chatgpt.json', 'w') as f:
-            json.dump([{"conversation_id": "123"}], f)
-        self.assertEqual(detect_source_type('temp_chatgpt.json'), SourceType.CHATGPT)
-        os.remove('temp_chatgpt.json')
+    def tearDown(self):
+        for root, _, files in os.walk(self._tmpdir, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            os.rmdir(root)
 
-    def test_gemini_detection(self):
-        # Create dummy Gemini file
-        with open('temp_gemini.json', 'w') as f:
-            json.dump([{"header": "Gemini Apps"}], f)
-        self.assertEqual(detect_source_type('temp_gemini.json'), SourceType.GEMINI)
-        os.remove('temp_gemini.json')
+    def test_filename_grok_wins(self):
+        path = self._write(
+            "prod-grok-backend.json",
+            {"conversations": [{"id": "1", "messages": []}]},
+        )
+        self.assertEqual(detect_source_type(path), SourceType.GROK)
 
-    def test_unknown_detection(self):
-        with open('temp_unknown.json', 'w') as f:
-            json.dump({"random": "data"}, f)
-        self.assertEqual(detect_source_type('temp_unknown.json'), SourceType.UNKNOWN)
-        os.remove('temp_unknown.json')
+    def test_filename_grok_test(self):
+        path = self._write("grok-test.json", [{"id": "grok_conv_1", "messages": []}])
+        self.assertEqual(detect_source_type(path), SourceType.GROK)
 
-    def test_malformed_json(self):
-        with open('temp_malformed.json', 'w') as f:
-            f.write("{invalid: json}")
-        self.assertEqual(detect_source_type('temp_malformed.json'), SourceType.UNKNOWN)
-        os.remove('temp_malformed.json')
+    def test_filename_myactivity_is_gemini(self):
+        path = self._write(
+            "MyActivity-081f794118b580a5.json",
+            [{"header": "Gemini Apps", "title": "Prompted hi"}],
+        )
+        self.assertEqual(detect_source_type(path), SourceType.GEMINI)
 
-if __name__ == '__main__':
+    def test_content_gemini_header(self):
+        path = self._write(
+            "export.json",
+            [{"header": "Gemini Apps", "title": "Prompted test", "time": "2026-01-01T00:00:00Z"}],
+        )
+        self.assertEqual(detect_source_type(path), SourceType.GEMINI)
+
+    def test_chatgpt_conversation_id(self):
+        path = self._write(
+            "slice.json",
+            [{"conversation_id": "abc", "title": "t", "mapping": {}}],
+        )
+        self.assertEqual(detect_source_type(path), SourceType.CHATGPT)
+
+    def test_chatgpt_filename_prefix(self):
+        path = self._write("conversations-000.json", [{"id": "x"}])
+        self.assertEqual(detect_source_type(path), SourceType.CHATGPT)
+
+    def test_grok_never_classified_as_gemini_by_name(self):
+        # Even if content looked vaguely list-like, filename rules Grok
+        path = self._write("prod-grok-backend.json", [{"header": "not gemini"}])
+        self.assertEqual(detect_source_type(path), SourceType.GROK)
+
+    def test_unknown(self):
+        path = self._write("random.json", {"foo": "bar"})
+        self.assertEqual(detect_source_type(path), SourceType.UNKNOWN)
+
+    def test_malformed_json_unknown(self):
+        path = self._write("broken.json", "{not json")
+        self.assertEqual(detect_source_type(path), SourceType.UNKNOWN)
+
+
+if __name__ == "__main__":
     unittest.main()

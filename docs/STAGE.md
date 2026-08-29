@@ -1,27 +1,27 @@
 # Current stage
 
-Verified 2026-08-29 ~04:30 SAST via GitHub connector as `UthieZz`.
+Verified 2026-08-29 ~04:30 SAST; Stage 2 fixes pushed same session.
 
-- Stage 0 COMPLETE: GitHub awareness, Studio located, compiler repo seeded.
-- Stage 1 COMPLETE: Real compiler tree is on `UthieZz/Oracle-Knowledge-Platform`.
-  Confirmed present: `run.py`, `src/importers/` (gemini, grok, chatgpt),
-  `src/exporters/firestore_exporter.py`, `src/services/import_dispatcher.py`,
-  `src/models/`, `tests/`, `scripts/`.
-- Stage 2 IN PROGRESS: Knowledge Objects mapping + provenance survival +
-  dispatcher enforcement.
-- Stage 3 QUEUED: grounded Ask verification against published Firestore.
+- Stage 0 COMPLETE
+- Stage 1 COMPLETE: compiler source on GitHub
+- Stage 2 COMPLETE (code): dispatcher hardened, Grok single-file import fixed,
+  cross-importer refusal guards, expanded regression tests, provenance locked on Grok path
+- Stage 2 remaining (runtime verification): run pytest + one real export against Firestore
+  and confirm Studio dashboard KO count matches `knowledgeObjects` collection size
+- Stage 3 QUEUED: grounded Ask verification
 
-Repos:
-- Compiler (canonical): `UthieZz/Oracle-Knowledge-Platform` @ `cb2a94f` (post-push tree).
-- Studio workspace (separate): `UthieZz/OKP-Studio` last known push 2026-08-27.
+## Stage 2 changes
 
-## Stage 2 evidence snapshot
+1. `import_dispatcher.py` — filename-first rules; `grok` in name always → GROK;
+   `myactivity` → GEMINI; stronger content markers.
+2. `grok_importer.py` — single-file `file_path` mode (fixes `prod-grok-backend.json`
+   being missed by `grok-*.json` glob only); always sets `source_platform=Grok` on
+   Conversation + KnowledgeObject.
+3. `import_service.py` — `run_grok_import` passes explicit file path; GeminiImporter
+   refuses Grok/ChatGPT-classified files; GrokImporter refuses Gemini-classified files;
+   post-import provenance assert on Grok path.
+4. Tests — real filename patterns + single-file + cross-importer refusal.
 
-| Concern | Current state |
-|---|---|
-| Dispatcher | `detect_source_type` exists; Gemini checked first (MyActivity / header), then Grok (`conversations` or `grok` in name), then ChatGPT. Tests are minimal dummy-file only. |
-| Grok provenance | `GrokImporter` hardcodes `source_platform: "Grok"` on Conversation + KnowledgeObject. |
-| Firestore KO write | `_write_knowledge_objects` writes to `knowledgeObjects`, falls back from `Other`/empty via `_derive_platform`. Dashboard meta counts `len(package.knowledge_objects)`. |
-| Known risk | Calling `run_gemini_import` directly on a Grok file bypasses dispatcher. Filename-based detection is the main guard for `prod-grok-backend.json`. |
+Repos: `UthieZz/Oracle-Knowledge-Platform` main after Stage 2 commit.
 
-Do not add graphs, Cloud Run, or vector DBs.
+No graphs. No Cloud Run. No vector DB.
