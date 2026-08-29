@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 from src.exporters.firestore_exporter import FirestoreExporter
 from src.models.knowledge_package import KnowledgePackage
+from src.models.knowledge_object import KnowledgeObject
 from src.models.conversation import Conversation
 from src.models.message import Message
 
@@ -25,6 +26,17 @@ class TestFirestoreExporter(unittest.TestCase):
             provenance={"source_platform": "Gemini"}
         )
         package.add_conversation(conv)
+        package.add_knowledge_object(KnowledgeObject(
+            id="ko1",
+            title="Test Conversation",
+            content="hello",
+            source_platform="Gemini",
+            source_file="test",
+            created_at="2026-08-15T00:00:00Z",
+            updated_at="2026-08-15T00:00:00Z",
+            provenance={"source_platform": "Gemini"},
+            evidence=["msg1"]
+        ))
         
         # Execute
         exporter.export(package)

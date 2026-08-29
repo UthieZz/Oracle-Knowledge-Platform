@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs & temp
+*.log
+api_server.log
+.DS_Store
+Thumbs.db
+
+# Node / Studio
+node_modules/
+studio/node_modules/
+functions/node_modules/
+studio/dist/
+studio/.firebase/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example

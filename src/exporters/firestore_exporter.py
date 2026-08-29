@@ -78,7 +78,7 @@ class FirestoreExporter(Exporter):
                 "entities": len(package.entities),
                 "attachments": len(package.attachment_knowledge),
                 "platforms": len(platform_map),
-                "knowledge_objects": len(package.conversations),
+                "knowledge_objects": len(package.knowledge_objects),
             }
         )
 
