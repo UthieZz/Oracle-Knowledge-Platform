@@ -1,33 +1,32 @@
 # OKP Roadmap — next stage
 
-Status captured 2026-08-29 after compiler push.
+Status captured 2026-08-29 after Stage 2 push + Stage 3 plan lock.
+HEAD: `d1de21d3` then this docs commit.
 
 ## What already exists
 
 | Surface | Repo | State |
 |---|---|---|
-| Compiler / IR / exporters | `UthieZz/Oracle-Knowledge-Platform` | **Live.** `run.py`, importers, exporters, models, tests present. |
-| Studio workspace | `UthieZz/OKP-Studio` (private) | Live TanStack/React app |
-| Drive | connected | No separate OKP roadmap doc required |
-
-Studio corpus previously locked Beta at ~94% engineering. Remaining work is verification and mapping fixes, not new architecture.
+| Compiler / IR / exporters | `UthieZz/Oracle-Knowledge-Platform` | Live. Stage 2 code on `main`. |
+| Studio workspace | same repo `studio/` + `UthieZz/OKP-Studio` | Live React/PWA |
+| Grounded Ask | `studio/src/services/ChatService.ts` | Implemented in Studio; Python path still conversation-first |
 
 Do **not** add before freeze: knowledge graphs, enterprise RBAC, Cloud Run, vector DBs, analytics cockpits.
 
 ## Priority order (frozen)
 
-1. **Knowledge objects mapping** — generation → stable IDs → Firestore `knowledgeObjects` → Studio count. Dashboard `0` while collection exists is a mapping defect.
-2. **Provenance survival** — `source_platform` must not be `Unknown` or fake `Other`. Map ChatGPT, Gemini, Grok from importer → package → exporter.
-3. **Dispatcher enforcement** — stop GeminiImporter eating Grok JSON (`prod-grok-backend.json`, `grok-test.json`). Mixed-source regression test required.
-4. **Grounded Ask** — retrieval → rank → context → model → citation check. Decline when evidence is thin.
-5. **Attachments understanding** — detection exists; processing pass still immature.
-6. **Markdown packer** — already verified at 4 MB. Leave it.
+1. Knowledge objects mapping — generation → stable IDs → Firestore `knowledgeObjects` → Studio count.
+2. Provenance survival — ChatGPT / Gemini / Grok must keep `source_platform`.
+3. Dispatcher enforcement — Grok files never compile via GeminiImporter.
+4. Grounded Ask — retrieve compiled objects → cite or decline.
+5. Attachments understanding — detection exists; processing still immature.
+6. Markdown packer — verified at 4 MB. Leave it.
 
 ## Stage status
 
 - Stage 1 COMPLETE (compiler on GitHub).
-- Stage 2 IN PROGRESS (mapping + provenance + dispatcher).
-- Stage 3 QUEUED (grounded Ask).
+- Stage 2 CODE COMPLETE. RUNTIME UNVERIFIED.
+- Stage 3 QUEUED (see `docs/STAGE3_GROUNDED_ASK.md`).
 
 ## Freeze criteria
 
