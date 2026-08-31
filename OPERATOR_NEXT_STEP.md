@@ -1,33 +1,30 @@
 # Exact next step for the operator
 
-Git is not empty. Compiler repo is live at `UthieZz/Oracle-Knowledge-Platform` on `main` (`d1de21d3`).
-Stage 2 code is pushed. Stage 3 plan is written. Runtime evidence is still missing.
+Stage 3 code is on `main`. Python grounded Ask is aligned with Studio: KO-first retrieval, empty-evidence refusal, citation shape.
 
-Do this on your machine and paste the output back. I cannot run pytest against your Firestore from here.
+Do this and paste results:
 
 ```bash
 cd /path/to/Oracle-Knowledge-Platform
 git pull origin main
-python3 -m pytest tests/test_import_dispatcher.py tests/test_grok_single_file_and_provenance.py -q
-python3 verify_grok_import.py
+git log -3 --oneline
+python3 -m pytest tests/test_grounded_ask.py -q
 ```
 
-If Firestore credentials are configured:
+Then in Studio Chat:
 
-```bash
-python3 verify_publishing.py
-```
+1. Ask a question that should hit a known knowledge object → expect citations.
+2. Ask nonsense with no matches → expect the insufficient-evidence refusal.
 
-Then report three numbers:
+Reply with:
 
-1. pytest result (pass/fail + any traceback)
-2. `knowledgeObjects` document count in Firestore
-3. Studio dashboard Knowledge Objects count
+- pytest result (pass/fail)
+- one screenshot or paste of a cited answer
+- one paste of the refusal path
 
-Reply with one of:
+Labels:
 
-- `Stage 2 verified` plus the three numbers → I start Stage 3 code (grounded Ask alignment + tests)
-- pytest / exporter output if anything fails → I patch the first broken boundary
-- `Studio count is 0, Firestore count is N` → Stage 2b (Studio read path), not Stage 3
+- `Stage 3 verified` → freeze Stage 3, pick next roadmap item (attachments or polish)
+- failure output → I patch the first broken boundary
 
 Do not add graphs, Cloud Run, or a vector database.
