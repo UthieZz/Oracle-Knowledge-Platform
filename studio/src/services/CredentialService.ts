@@ -1,78 +1,129 @@
 /**
- * Oracle Knowledge Platform — Credential Management Service
- *
- * NOTE: For Closed Beta on Firebase Spark (client-side PWA), this module manages
- * user-provided credentials via browser localStorage with an optional build-time
- * env fallback (VITE_GEMINI_API_KEY).
- *
- * In a future stage with server-side proxy/backend, this interface can be seamlessly
- * replaced with session token or backend proxy calls without modifying consumers.
+ * OKP Credential + model preference storage (browser localStorage, Closed Beta).
  */
 
-const STORAGE_KEY = 'okp_gemini_api_key';
+import {
+  PROVIDERS,
+  ProviderId,
+  DEFAULT_MODEL_ID,
+  getModelById,
+} from './ModelRegistry';
+
+const MODEL_STORAGE_KEY = 'okp_selected_model_id';
+const PROVIDER_STORAGE_KEY = 'okp_selected_provider';
+
+// Backward-compatible Gemini key alias
+const LEGACY_GEMINI_KEY = 'okp_gemini_api_key';
 
 export const CredentialService = {
-  /**
-   * Retrieve the configured Gemini API key (localStorage first, then Vite env).
-   */
-  getGeminiApiKey(): string | null {
+  getApiKey(provider: ProviderId): string | null {
+    const def = PROVIDERS[provider];
+    if (!def) return null;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && stored.trim()) {
-        return stored.trim();
-      }
+      const stored = localStorage.getItem(def.storageKey);
+      if (stored && stored.trim()) return stored.trim();
     } catch (e) {
-      console.warn('[CREDENTIALS] Failed to read from localStorage:', e);
+      console.warn('[CREDENTIALS] Failed to read localStorage:', e);
     }
-
-    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (envKey && typeof envKey === 'string' && envKey.trim()) {
-      return envKey.trim();
+    if (provider === 'gemini') {
+      const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      if (envKey && typeof envKey === 'string' && envKey.trim()) return envKey.trim();
     }
-
     return null;
   },
 
-  /**
-   * Store user-supplied Gemini API key into localStorage.
-   */
-  setGeminiApiKey(key: string): void {
+  setApiKey(provider: ProviderId, key: string): void {
+    const def = PROVIDERS[provider];
+    if (!def) return;
     try {
       if (key && key.trim()) {
-        localStorage.setItem(STORAGE_KEY, key.trim());
+        localStorage.setItem(def.storageKey, key.trim());
       } else {
-        this.clearGeminiApiKey();
+        localStorage.removeItem(def.storageKey);
       }
     } catch (e) {
-      console.error('[CREDENTIALS] Failed to save to localStorage:', e);
+      console.error('[CREDENTIALS] Failed to save key:', e);
     }
   },
 
-  /**
-   * Clear user-supplied Gemini API key from localStorage.
-   */
-  clearGeminiApiKey(): void {
+  clearApiKey(provider: ProviderId): void {
+    const def = PROVIDERS[provider];
+    if (!def) return;
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(def.storageKey);
     } catch (e) {
-      console.error('[CREDENTIALS] Failed to clear from localStorage:', e);
+      console.error('[CREDENTIALS] Failed to clear key:', e);
     }
   },
 
-  /**
-   * Check if a valid API key is currently configured.
-   */
-  hasGeminiApiKey(): boolean {
-    return Boolean(this.getGeminiApiKey());
+  hasApiKey(provider: ProviderId): boolean {
+    return Boolean(this.getApiKey(provider));
   },
 
-  /**
-   * Get a masked representation of the configured key for UI display (e.g. "AIzaSy...4Eedg").
-   */
-  getMaskedKey(): string | null {
-    const key = this.getGeminiApiKey();
+  /** @deprecated use getApiKey('gemini') */
+  getGeminiApiKey(): string | null {
+    return this.getApiKey('gemini');
+  },
+
+  /** @deprecated use setApiKey('gemini', key) */
+  setGeminiApiKey(key: string): void {
+    this.setApiKey('gemini', key);
+  },
+
+  /** @deprecated */
+  clearGeminiApiKey(): void {
+    this.clearApiKey('gemini');
+  },
+
+  /** @deprecated */
+  hasGeminiApiKey(): boolean {
+    return this.hasApiKey('gemini');
+  },
+
+  getMaskedKey(provider: ProviderId = 'gemini'): string | null {
+    const key = this.getApiKey(provider);
     if (!key) return null;
     if (key.length <= 8) return '••••••••';
     return `${key.slice(0, 6)}••••${key.slice(-4)}`;
-  }
+  },
+
+  getSelectedProvider(): ProviderId {
+    try {
+      const p = localStorage.getItem(PROVIDER_STORAGE_KEY) as ProviderId | null;
+      if (p && PROVIDERS[p]) return p;
+    } catch {
+      /* ignore */
+    }
+    return 'gemini';
+  },
+
+  setSelectedProvider(provider: ProviderId): void {
+    try {
+      localStorage.setItem(PROVIDER_STORAGE_KEY, provider);
+    } catch (e) {
+      console.error('[CREDENTIALS] Failed to save provider:', e);
+    }
+  },
+
+  getSelectedModelId(): string {
+    try {
+      const id = localStorage.getItem(MODEL_STORAGE_KEY);
+      if (id && getModelById(id)) return id;
+    } catch {
+      /* ignore */
+    }
+    return DEFAULT_MODEL_ID;
+  },
+
+  setSelectedModelId(modelId: string): void {
+    try {
+      localStorage.setItem(MODEL_STORAGE_KEY, modelId);
+      const model = getModelById(modelId);
+      if (model) {
+        localStorage.setItem(PROVIDER_STORAGE_KEY, model.provider);
+      }
+    } catch (e) {
+      console.error('[CREDENTIALS] Failed to save model:', e);
+    }
+  },
 };
