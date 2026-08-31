@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from src.studio.services.search_service import SearchService
 from dotenv import load_dotenv
 
@@ -13,9 +13,8 @@ INSUFFICIENT_EVIDENCE = (
 class ChatService:
     """Grounded chat over compiled knowledge objects (Stage 3).
 
-    Contract:
-      Question → retrieve ranked knowledge (KO first) → top 6 bound context
-      → cite [Source N] with stable ids + source_platform → decline when empty.
+    Default model: gemini-flash-latest (avoid hard-coded gemini-2.0-flash).
+    Studio UI holds multi-provider selection; Python path stays Gemini-env for beta.
     """
 
     def __init__(self, search_service: SearchService):
@@ -36,7 +35,6 @@ class ChatService:
                 f"ChatService initialized with Gemini Developer API (Model: {self.model_name})"
             )
         except ImportError:
-            # Allow unit tests without google-genai installed.
             print(
                 "Warning: google-genai not installed. Live chat will fail; retrieval tests still run."
             )
@@ -56,7 +54,6 @@ class ChatService:
             title = result.get("title") or result_id
             body = result.get("content") or ""
 
-            # Fallback only if search did not already attach body and type is conversation
             if not body and result.get("type") == "conversation":
                 details = self.search_service.knowledge_service.get_conversation_details(
                     platform, result_id
@@ -90,7 +87,6 @@ class ChatService:
         return context_parts, citations
 
     def chat(self, query: str) -> Dict[str, Any]:
-        """Grounded ask. Declines when no compiled evidence is available."""
         trimmed = (query or "").strip()
         if not trimmed:
             return {
@@ -100,7 +96,6 @@ class ChatService:
             }
 
         search_results = self.search_service.search(trimmed) or []
-        # Prefer knowledge type ordering already applied by search; keep top slice
         context_parts, citations = self._build_context(search_results, limit=6)
 
         if not context_parts:
@@ -152,6 +147,7 @@ class ChatService:
                 "answer": answer,
                 "citations": citations,
                 "query": trimmed,
+                "model": self.model_name,
             }
         except Exception as e:
             return {
