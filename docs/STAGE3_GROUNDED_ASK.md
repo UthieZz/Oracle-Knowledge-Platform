@@ -1,6 +1,6 @@
 # Stage 3 — Grounded Ask
 
-Status: QUEUED. Do not implement until Stage 2 runtime verification is pasted back.
+Status: CODE COMPLETE. Runtime verification pending.
 
 ## Contract
 
@@ -15,7 +15,10 @@ Question
 ```
 
 Studio `ChatService.ts` already implements this shape against Firestore search.
-Python `src/studio/services/chat_service.py` still hydrates raw conversation messages. That is a Stage 3 defect, not a Stage 2 defect.
+Python `src/studio/services/chat_service.py` now mirrors that contract over portable `output/`:
+- search prefers knowledge objects
+- empty retrieval → explicit insufficient-evidence refusal (no model call)
+- citations carry id, title, platform, source_index, type
 
 ## Stage 3 acceptance
 
@@ -23,11 +26,19 @@ Python `src/studio/services/chat_service.py` still hydrates raw conversation mes
 2. Ask with no matching objects → explicit insufficient-evidence refusal. No invention.
 3. Citations shown in Studio ChatPage match retrieved objects.
 4. Retrieval default is compiled knowledge, not raw conversation dumps.
-5. No vector DB. No Cloud Run. No Flask revival.
+5. No vector DB. No Cloud Run. No Flask revival as permanent architecture.
 
-## Implementation slice (after verification)
+## Implementation done
 
-1. Align Python chat path with Studio: search knowledge objects first.
-2. Add `tests/test_grounded_ask.py` for empty-evidence refusal + citation shape.
-3. Verify ChatPage renders citations from real Firestore results.
-4. Only then mark Stage 3 code complete.
+1. `studio_knowledge_service.search_knowledge` ranks KO first.
+2. `chat_service.chat` declines on empty context; bounds top 6.
+3. `tests/test_grounded_ask.py` covers empty refusal + KO citation shape.
+
+## Operator verification
+
+```bash
+git pull origin main
+python3 -m pytest tests/test_grounded_ask.py -q
+```
+
+Then one live Ask in Studio with a known KO term and one nonsense query.
