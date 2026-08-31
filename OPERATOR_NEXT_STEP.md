@@ -1,30 +1,43 @@
 # Exact next step for the operator
 
-Stage 3 code is on `main`. Python grounded Ask is aligned with Studio: KO-first retrieval, empty-evidence refusal, citation shape.
+## What “on main” means
 
-Do this and paste results:
+When I say code is **on main**, it is already **committed and pushed** to GitHub at
+`UthieZz/Oracle-Knowledge-Platform` branch `main`.
+
+You do **not** re-upload it. You only **pull** it to your machine / deploy target:
 
 ```bash
 cd /path/to/Oracle-Knowledge-Platform
 git pull origin main
-git log -3 --oneline
-python3 -m pytest tests/test_grounded_ask.py -q
 ```
 
-Then in Studio Chat:
+If Studio is a separate checkout or Vercel deploy, pull/redeploy that path too so
+`studio/src/services/ModelRegistry.ts` and Settings changes load.
 
-1. Ask a question that should hit a known knowledge object → expect citations.
-2. Ask nonsense with no matches → expect the insufficient-evidence refusal.
+## What just landed (multi-model)
 
-Reply with:
+- Removed hard-coded `gemini-2.0-flash` (shutdown / replaced family).
+- Default: `gemini-flash-latest`.
+- Settings: provider + model picker + per-provider API keys.
+- Providers: Gemini, Groq, OpenRouter, DeepSeek, xAI, OpenAI (optional paid).
+- Catalog includes Nano Banana / Omni / TTS entries for **later** media wiring;
+  grounded Ask is text-first today.
 
-- pytest result (pass/fail)
-- one screenshot or paste of a cited answer
-- one paste of the refusal path
+## Verify
 
-Labels:
+```bash
+git pull origin main
+git log -8 --oneline
+# rebuild Studio if needed
+cd studio && npm install && npm run build
+```
 
-- `Stage 3 verified` → freeze Stage 3, pick next roadmap item (attachments or polish)
-- failure output → I patch the first broken boundary
+In Studio → Settings:
 
-Do not add graphs, Cloud Run, or a vector database.
+1. Pick **Gemini Flash (latest)** or **2.5 / 3.x Flash** + your Gemini key → Ask once.
+2. Optionally add a **Groq** key and switch model → Ask once.
+
+Reply: model that worked + any error text.
+
+Do not start Stage 4 attachments until this pull is live on your Studio build.
