@@ -60,15 +60,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
     }
   };
 
-  const handleSave = () => {
+  const persistSettings = (showToast = true) => {
     CredentialService.setSelectedProvider(provider);
     CredentialService.setSelectedModelId(modelId);
     if (apiKey.trim()) {
       CredentialService.setApiKey(provider, apiKey.trim());
       setHasKey(true);
     }
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
+    if (showToast) {
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+    }
+  };
+
+  const handleSave = () => {
+    persistSettings(true);
+  };
+
+  const handleDone = () => {
+    // Always persist provider + model when leaving Settings (Save was easy to miss).
+    persistSettings(false);
+    onClose();
   };
 
   const handleClearKey = () => {
@@ -102,7 +114,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleDone}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-900 rounded-lg transition-colors"
           >
             <X size={18} />
@@ -110,7 +122,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
-          {/* Provider + model */}
           <div className="bg-gray-900/60 p-5 rounded-xl border border-gray-800 space-y-4">
             <label className="text-sm font-semibold text-white">Grounded Ask model</label>
             <p className="text-xs text-gray-400 leading-relaxed">
@@ -151,7 +162,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
             <p className="text-[11px] text-gray-500">{providerDef.freeTierNotes}</p>
           </div>
 
-          {/* API key for selected provider */}
           <div className="bg-gray-900/60 p-5 rounded-xl border border-gray-800 space-y-4">
             <div className="flex justify-between items-center">
               <label className="text-sm font-semibold text-white flex items-center gap-2">
@@ -214,7 +224,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
             </div>
           </div>
 
-          {/* Firestore */}
           <div className="bg-gray-900/60 p-5 rounded-xl border border-gray-800 space-y-3 text-xs">
             <div className="flex justify-between items-center">
               <span className="font-semibold text-white flex items-center gap-2">
@@ -246,7 +255,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
 
         <div className="p-4 border-t border-gray-800 bg-gray-900/40 flex justify-end">
           <button
-            onClick={onClose}
+            onClick={handleDone}
             className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-xs font-semibold transition-colors"
           >
             Done
