@@ -1,43 +1,42 @@
 # Exact next step for the operator
 
-## What “on main” means
-
-When I say code is **on main**, it is already **committed and pushed** to GitHub at
-`UthieZz/Oracle-Knowledge-Platform` branch `main`.
-
-You do **not** re-upload it. You only **pull** it to your machine / deploy target:
+Code is already on `main` at `UthieZz/Oracle-Knowledge-Platform`.
+You do **not** re-upload. Pull only.
 
 ```bash
 cd /path/to/Oracle-Knowledge-Platform
 git pull origin main
+git log -5 --oneline
 ```
 
-If Studio is a separate checkout or Vercel deploy, pull/redeploy that path too so
-`studio/src/services/ModelRegistry.ts` and Settings changes load.
-
-## What just landed (multi-model)
-
-- Removed hard-coded `gemini-2.0-flash` (shutdown / replaced family).
-- Default: `gemini-flash-latest`.
-- Settings: provider + model picker + per-provider API keys.
-- Providers: Gemini, Groq, OpenRouter, DeepSeek, xAI, OpenAI (optional paid).
-- Catalog includes Nano Banana / Omni / TTS entries for **later** media wiring;
-  grounded Ask is text-first today.
-
-## Verify
+Confirm these files exist and `studio/` was not replaced:
 
 ```bash
-git pull origin main
-git log -8 --oneline
-# rebuild Studio if needed
+test -f docs/studio-infusion.md && echo INFUSION_DOC_OK
+test -f studio/package.json && echo STUDIO_PACKAGE_OK
+grep -n '"name"' studio/package.json | head -1
+# expected: "oracle-studio" — NOT "app-builder-workspace"
+```
+
+Optional sanity build (does not deploy):
+
+```bash
 cd studio && npm install && npm run build
 ```
 
-In Studio → Settings:
+Also confirm the satellite repo is still separate:
 
-1. Pick **Gemini Flash (latest)** or **2.5 / 3.x Flash** + your Gemini key → Ask once.
-2. Optionally add a **Groq** key and switch model → Ask once.
+```bash
+git ls-remote git@github.com:UthieZz/OKP-Studio.git HEAD
+```
 
-Reply: model that worked + any error text.
+## Reply with this paste
 
-Do not start Stage 4 attachments until this pull is live on your Studio build.
+1. Last 5 `git log --oneline` lines.
+2. The `name` line from `studio/package.json`.
+3. Whether `npm run build` in `studio/` succeeded.
+4. Local path of both checkouts if you have `OKP-Studio` cloned.
+
+Do **not** copy `OKP-Studio` files into `studio/` yourself.
+Do **not** start a git subtree until the next agent step after this paste.
+Do **not** start Stage 4 attachments until Stage 3 live Ask is verified.
