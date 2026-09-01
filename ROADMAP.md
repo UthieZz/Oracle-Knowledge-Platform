@@ -1,7 +1,7 @@
 # OKP Roadmap — next stage
 
 Status captured 2026-09-01 after Stage 3.5 infusion contract.
-
+Work on exporter as well. Also when using import it tells you to insert the uploads into the uploads folder. I'd much rather have it just import using the browser as well
 ## What already exists
 
 | Surface | Repo | State |
