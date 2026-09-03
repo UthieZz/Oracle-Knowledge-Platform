@@ -1,13 +1,14 @@
 # OKP-Studio infusion plan
 
-Captured 2026-09-01. This file is the contract for merging `UthieZz/OKP-Studio` into `UthieZz/Oracle-Knowledge-Platform` without breaking working code.
+Captured 2026-09-01. Updated 2026-09-03 for Stage 3.6.
+This file is the contract for merging `UthieZz/OKP-Studio` into `UthieZz/Oracle-Knowledge-Platform` without breaking working code.
 
 ## Verified facts
 
 | Surface | Location | Stack | Last push |
 |---|---|---|---|
 | Compiler / IR / exporters | this repo (`src/`, `run_*.py`) | Python | 2026-08-31 |
-| Live Studio | this repo `studio/` | React 18, Vite 4, react-router-dom, Firebase, Tailwind 3 | 2026-08-31 (multi-model Ask) |
+| Live Studio | this repo `studio/` | React 18, Vite 4, react-router-dom, Firebase, Tailwind 3 | 2026-09-03 (browser ingest on branch) |
 | Satellite Studio | `UthieZz/OKP-Studio` @ `1c862953` | React 19, Vite 8, TanStack Start/Router, PGlite/Postgres, better-auth, Vercel | 2026-08-27 |
 
 `OKP-Studio` is **not** a drop-in replacement for `studio/`.
@@ -19,6 +20,12 @@ Different runtime, data store, auth, and router. A wholesale copy would break Fi
 Sources → Importers → KnowledgePackage → Compiler → Exporters
                                               ├─ portable outputs
                                               └─ FirestoreExporter → Firestore → studio/ → Grounded Ask
+```
+
+Browser ingest (Stage 3.6) is only:
+
+```text
+Studio file picker → POST /api/import/upload → uploads/ → python run.py → compiler
 ```
 
 - Compiler remains source of truth.
@@ -50,14 +57,17 @@ Do **not** merge histories onto `studio/`.
 
 Preferred sequence:
 
-1. Keep `studio/` untouched on `main`.
+1. Keep `studio/` the canonical app on `main`.
 2. Add a **reference remote** only (no subtree yet unless operator confirms).
 3. If code is needed for comparison, vendor onto a branch:
    `vendor/okp-studio-reference/` via `git subtree` or sparse checkout.
 4. Port file-by-file into `studio/src/` only when the contract is identical.
 5. Delete nothing in live `studio/` until the replacement path is verified.
 
+Stage 3.6 followed this method: upload UX only, written against existing Flask `/api/import/upload`. No satellite files were copied.
+
 ## Current stage
 
 Roadmap Stage 3 code is on `main`. Runtime Ask is still unverified.
-Infusion planning is Stage 3.5 documentation only. No runtime files changed in the commit that added this document.
+Stage 3.6 browser ingest is on `stage-3.6-browser-ingest`.
+Infusion planning remains documentation + selective UX ports. No wholesale runtime merge.
