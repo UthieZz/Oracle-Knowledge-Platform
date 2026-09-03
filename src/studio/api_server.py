@@ -10,10 +10,11 @@ from src.services.export_service import ExportService
 app = Flask(__name__)
 CORS(app)
 
-# UPLOAD_FOLDER for temporary storage
+# UPLOAD_FOLDER for temporary storage. Compiler still reads this directory.
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_UPLOAD_EXT = {".json", ".zip"}
 
 # Initialize controllers and services
 # In a real scenario, these would be managed more robustly (e.g., via a main controller)
@@ -21,6 +22,23 @@ controller = StudioController(main_controller=None)
 import_service = ImportService()
 pipeline_service = PipelineService()
 export_service = ExportService()
+
+
+def _allowed_filename(filename: str) -> bool:
+    lower = filename.lower()
+    return any(lower.endswith(ext) for ext in ALLOWED_UPLOAD_EXT)
+
+
+def _save_upload(file_storage):
+    if not file_storage or file_storage.filename == "":
+        return None, "No selected file"
+    filename = werkzeug.utils.secure_filename(file_storage.filename)
+    if not filename or not _allowed_filename(filename):
+        return None, f"Rejected {file_storage.filename}: only .json and .zip"
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    file_storage.save(filepath)
+    import_service.add_import_files([os.path.abspath(filepath)])
+    return {"filename": filename, "path": filepath}, None
 
 @app.route('/api/dashboard', methods=['GET'])
 def get_dashboard_data():
@@ -125,18 +143,33 @@ def get_knowledge_object(platform, title):
 
 @app.route('/api/import/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
+    """Stage 3.6: persist browser-selected exports into uploads/. Do not compile here."""
+    storages = request.files.getlist("file") or request.files.getlist("files")
+    if not storages and "file" in request.files:
+        storages = [request.files["file"]]
+    if not storages:
         return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    
-    filename = werkzeug.utils.secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
-    
-    import_service.add_import_files([os.path.abspath(filepath)])
-    return jsonify({"message": "File uploaded successfully", "filename": filename, "path": filepath})
+
+    saved = []
+    errors = []
+    for storage in storages:
+        result, err = _save_upload(storage)
+        if err:
+            errors.append(err)
+        else:
+            saved.append(result)
+
+    if not saved:
+        return jsonify({"error": errors[0] if errors else "No file saved"}), 400
+
+    payload = {
+        "message": "File uploaded successfully",
+        "filename": saved[0]["filename"],
+        "path": saved[0]["path"],
+        "files": saved,
+        "errors": errors,
+    }
+    return jsonify(payload)
 
 @app.route('/api/import/queue', methods=['GET'])
 def get_import_queue():
@@ -160,6 +193,7 @@ def run_compile():
         else:
             # Assume ChatGPT
             from src.importers.chatgpt_importer import ChatGPTImporter
+            from src.models.knowledge_package import KnowledgePackage
             # We don't have a run_chatgpt_import in ImportService, let's manually run it
             # This is a bit of a hack based on existing code structure
             importer = ChatGPTImporter(input_dir=os.path.dirname(path))
