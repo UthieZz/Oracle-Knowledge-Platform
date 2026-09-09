@@ -3,6 +3,9 @@ from src.exporters.exporter_registry import ExportRegistry
 from src.exporters.multi_source_exporter import MultiSourceExporter
 from src.exporters.firestore_exporter import FirestoreExporter
 from src.models.knowledge_package import KnowledgePackage
+from src.validators.knowledge_object_provenance import (
+    ensure_knowledge_object_provenance,
+)
 
 
 class ExportService:
@@ -36,6 +39,9 @@ class ExportService:
         mode = cfg.get("mode", self.mode)
         output_dir = cfg.get("output_dir", "output")
         exporter_name = cfg.get("exporter_name")
+        provenance = ensure_knowledge_object_provenance(
+            package, strict=bool(cfg.get("strict_provenance", False))
+        )
 
         if exporter_name:
             exporters = [self.registry.get_exporter(exporter_name)]
@@ -64,4 +70,5 @@ class ExportService:
             "exporters": results,
             "mode": mode,
             "output_dir": output_dir,
+            "provenance": provenance,
         }
