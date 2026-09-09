@@ -7,6 +7,9 @@ from google.cloud import firestore
 from src.core.interfaces import Exporter
 from src.models.conversation import Conversation
 from src.models.knowledge_package import KnowledgePackage
+from src.validators.knowledge_object_provenance import (
+    ensure_knowledge_object_provenance,
+)
 
 
 class FirestoreExporter(Exporter):
@@ -64,6 +67,7 @@ class FirestoreExporter(Exporter):
         """Publish the current KnowledgePackage to Firestore."""
 
         timestamp = datetime.now(timezone.utc).isoformat()
+        ensure_knowledge_object_provenance(package)
 
         platform_map = self._group_platforms(package)
 
@@ -125,7 +129,6 @@ class FirestoreExporter(Exporter):
             provenance = getattr(conversation, "provenance", {}) or {}
             platform = provenance.get("source_platform")
             if not platform:
-                # Force derivation but log a warning if it fails
                 platform = self._derive_platform(getattr(conversation, "source", ""))
 
             platforms.setdefault(platform, []).append(conversation)
@@ -233,22 +236,34 @@ class FirestoreExporter(Exporter):
         operations = []
         for ko in package.knowledge_objects:
             object_id = str(ko.id)
-            # Use source_platform from KnowledgeObject, fallback to derivation if needed
             platform = ko.source_platform
             if platform == "Other" or not platform:
                 platform = self._derive_platform(ko.source_file)
-            
+
+            provenance = self._safe_value(getattr(ko, "provenance", {}) or {})
+            conversation_id = (
+                provenance.get("conversation_id")
+                if isinstance(provenance, dict)
+                else None
+            ) or object_id
+            object_type = (
+                provenance.get("object_type")
+                if isinstance(provenance, dict)
+                else None
+            ) or "knowledge_object"
+
             operations.append({
                 "id": object_id,
                 "data": {
                     "id": object_id,
-                    "type": "conversation",
+                    "type": object_type,
                     "title": ko.title,
                     "content": ko.content,
-                    "conversation_id": object_id,
+                    "conversation_id": conversation_id,
                     "source_platform": platform,
                     "source_file": ko.source_file,
-                    "provenance": self._safe_value(ko.provenance),
+                    "evidence": self._safe_value(list(getattr(ko, "evidence", None) or [])),
+                    "provenance": provenance,
                     "created_at": ko.created_at,
                     "updated_at": ko.updated_at,
                     "published_at": timestamp,
