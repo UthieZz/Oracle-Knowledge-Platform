@@ -20,7 +20,13 @@ class FirestoreExporter(Exporter):
             "GOOGLE_CLOUD_PROJECT",
             "oracle-knowledge-platform",
         )
-        self.db = firestore.Client(project=self.project_id)
+        self._db = None
+
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = firestore.Client(project=self.project_id)
+        return self._db
 
     @property
     def name(self) -> str:
@@ -292,6 +298,27 @@ class FirestoreExporter(Exporter):
                     "conversation_id": self._safe_value(
                         getattr(entity, "conversation_id", None)
                     ),
+                    "message_id": self._safe_value(
+                        getattr(entity, "message_id", None)
+                    ),
+                    "source": self._safe_value(
+                        getattr(entity, "source", None)
+                    ),
+                    "confidence": self._safe_value(
+                        getattr(entity, "confidence", None)
+                    ),
+                    "provenance": {
+                        "conversation_id": self._safe_value(
+                            getattr(entity, "conversation_id", None)
+                        ),
+                        "message_id": self._safe_value(
+                            getattr(entity, "message_id", None)
+                        ),
+                        "source": self._safe_value(
+                            getattr(entity, "source", None)
+                        ),
+                        "object_type": "entity",
+                    },
                     "published_at": timestamp,
                 }
             })
@@ -319,6 +346,9 @@ class FirestoreExporter(Exporter):
                     "conversation_id": self._safe_value(
                         getattr(attachment, "conversation_id", None)
                     ),
+                    "message_id": self._safe_value(
+                        getattr(attachment, "message_id", None)
+                    ),
                     "file_name": self._safe_value(
                         getattr(attachment, "file_name", None)
                     ),
@@ -327,6 +357,15 @@ class FirestoreExporter(Exporter):
                     ),
                     "summary": self._safe_value(
                         getattr(attachment, "summary", None)
+                    ),
+                    "provenance": self._safe_value(
+                        getattr(attachment, "provenance", None)
+                        or {
+                            "conversation_id": getattr(attachment, "conversation_id", None),
+                            "message_id": getattr(attachment, "message_id", None),
+                            "attachment_id": getattr(attachment, "attachment_id", None),
+                            "object_type": "attachment",
+                        }
                     ),
                     "published_at": timestamp,
                 }

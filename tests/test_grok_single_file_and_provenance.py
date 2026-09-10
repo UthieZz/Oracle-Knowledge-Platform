@@ -77,7 +77,7 @@ class TestGrokSingleFileAndProvenance(unittest.TestCase):
 
         for ko in package.knowledge_objects:
             self.assertEqual(ko.source_platform, "Grok")
-            self.assertEqual(ko.id, next(c.id for c in package.conversations if c.id == ko.id).id)
+            self.assertEqual(ko.id, next(c.id for c in package.conversations if c.id == ko.id))
 
         # Mapping invariant: KO count tracks conversations added in this package
         self.assertEqual(len(package.knowledge_objects), len(package.conversations))
