@@ -1,8 +1,11 @@
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from google.cloud import firestore
+try:
+    from google.cloud import firestore as google_firestore
+except ImportError:  # portable export / unit tests without GCP SDK
+    google_firestore = None
 
 from src.core.interfaces import Exporter
 from src.models.conversation import Conversation
@@ -15,12 +18,23 @@ from src.validators.knowledge_object_provenance import (
 class FirestoreExporter(Exporter):
     """Publishes a KnowledgePackage projection to Google Cloud Firestore."""
 
-    def __init__(self, project_id: str | None = None):
+    def __init__(self, project_id: str | None = None, client: Any | None = None):
         self.project_id = project_id or os.getenv(
             "GOOGLE_CLOUD_PROJECT",
             "oracle-knowledge-platform",
         )
-        self.db = firestore.Client(project=self.project_id)
+        self._client = client
+
+    @property
+    def db(self):
+        if self._client is None:
+            if google_firestore is None:
+                raise RuntimeError(
+                    "google.cloud.firestore is not installed; "
+                    "cannot construct Firestore client."
+                )
+            self._client = google_firestore.Client(project=self.project_id)
+        return self._client
 
     @property
     def name(self) -> str:
@@ -28,7 +42,7 @@ class FirestoreExporter(Exporter):
 
     @property
     def version(self) -> str:
-        return "1.0.0"
+        return "1.1.0"
 
     @property
     def author(self) -> str:
@@ -97,11 +111,11 @@ class FirestoreExporter(Exporter):
     def _write_messages_batched(self, conversation: Conversation, timestamp: str) -> None:
         """Batch export all messages of a conversation."""
         messages_ref = self.db.collection("conversations").document(str(conversation.id)).collection("messages")
-        
+
         batch_size = 500
         messages = conversation.messages
         total_batches = (len(messages) + batch_size - 1) // batch_size
-        
+
         for i in range(0, len(messages), batch_size):
             batch = self.db.batch()
             chunk = messages[i:i + batch_size]
@@ -153,7 +167,6 @@ class FirestoreExporter(Exporter):
             return "Copilot"
 
         return "Unmapped"
-
 
     def _write_platforms(
         self,
@@ -208,7 +221,7 @@ class FirestoreExporter(Exporter):
             provenance = getattr(conversation, "provenance", {})
             if "source_platform" not in provenance:
                 provenance["source_platform"] = self._derive_platform(getattr(conversation, "source", ""))
-            
+
             operations.append({
                 "id": str(conversation.id),
                 "data": {
@@ -225,7 +238,7 @@ class FirestoreExporter(Exporter):
                 }
             })
             self._write_messages_batched(conversation, timestamp)
-            
+
         self._process_batches(operations, "conversations")
 
     def _write_knowledge_objects(
@@ -241,16 +254,11 @@ class FirestoreExporter(Exporter):
                 platform = self._derive_platform(ko.source_file)
 
             provenance = self._safe_value(getattr(ko, "provenance", {}) or {})
-            conversation_id = (
-                provenance.get("conversation_id")
-                if isinstance(provenance, dict)
-                else None
-            ) or object_id
-            object_type = (
-                provenance.get("object_type")
-                if isinstance(provenance, dict)
-                else None
-            ) or "knowledge_object"
+            conversation_id = None
+            object_type = "knowledge_object"
+            if isinstance(provenance, dict):
+                conversation_id = provenance.get("conversation_id") or None
+                object_type = provenance.get("object_type") or "knowledge_object"
 
             operations.append({
                 "id": object_id,
@@ -279,6 +287,14 @@ class FirestoreExporter(Exporter):
         operations = []
         for index, entity in enumerate(package.entities):
             entity_id = getattr(entity, "id", None) or f"{getattr(entity, 'conversation_id', 'unknown')}_{index}"
+            conversation_id = getattr(entity, "conversation_id", None)
+            message_id = getattr(entity, "message_id", None)
+            provenance = {
+                "conversation_id": conversation_id,
+                "message_id": message_id,
+                "source": getattr(entity, "source", None),
+                "object_type": "entity",
+            }
             operations.append({
                 "id": str(entity_id),
                 "data": {
@@ -289,9 +305,11 @@ class FirestoreExporter(Exporter):
                     "type": self._safe_value(
                         getattr(entity, "type", "entity")
                     ),
-                    "conversation_id": self._safe_value(
-                        getattr(entity, "conversation_id", None)
-                    ),
+                    "conversation_id": self._safe_value(conversation_id),
+                    "message_id": self._safe_value(message_id),
+                    "source": self._safe_value(getattr(entity, "source", None)),
+                    "confidence": self._safe_value(getattr(entity, "confidence", None)),
+                    "provenance": self._safe_value(provenance),
                     "published_at": timestamp,
                 }
             })
@@ -311,6 +329,12 @@ class FirestoreExporter(Exporter):
                 or getattr(attachment, "attachment_id", None)
                 or f"attachment_{index}"
             )
+            provenance = self._safe_value(getattr(attachment, "provenance", {}) or {})
+            if isinstance(provenance, dict):
+                provenance.setdefault("conversation_id", getattr(attachment, "conversation_id", None))
+                provenance.setdefault("message_id", getattr(attachment, "message_id", None))
+                provenance.setdefault("attachment_id", getattr(attachment, "attachment_id", None))
+                provenance.setdefault("object_type", "attachment")
 
             operations.append({
                 "id": str(attachment_id),
@@ -318,6 +342,9 @@ class FirestoreExporter(Exporter):
                     "id": str(attachment_id),
                     "conversation_id": self._safe_value(
                         getattr(attachment, "conversation_id", None)
+                    ),
+                    "message_id": self._safe_value(
+                        getattr(attachment, "message_id", None)
                     ),
                     "file_name": self._safe_value(
                         getattr(attachment, "file_name", None)
@@ -328,6 +355,7 @@ class FirestoreExporter(Exporter):
                     "summary": self._safe_value(
                         getattr(attachment, "summary", None)
                     ),
+                    "provenance": provenance,
                     "published_at": timestamp,
                 }
             })
