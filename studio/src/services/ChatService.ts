@@ -23,6 +23,22 @@ export interface ChatResponse {
   modelUsed?: string;
 }
 
+const SOURCE_RE = /\[Source\s+(\d+)\]/gi;
+
+export function verifyCitations(answer: string, citations: Citation[]): Citation[] {
+  const used = new Set<number>();
+  const text = answer || '';
+  let match: RegExpExecArray | null;
+  SOURCE_RE.lastIndex = 0;
+  while ((match = SOURCE_RE.exec(text)) !== null) {
+    used.add(Number(match[1]));
+  }
+  if (used.size === 0) {
+    return [];
+  }
+  return citations.filter((citation) => used.has(citation.source_index));
+}
+
 function buildPrompt(contextText: string, trimmedQuery: string): string {
   return `You are Oracle AI, the evidence-grounded reasoning layer of the Oracle Knowledge Platform (OKP).
 
@@ -192,7 +208,7 @@ export const ChatService = {
       })
       .join('\n\n---\n\n');
 
-    const citations: Citation[] = topResults.map((res, idx) => {
+    const retrievedCitations: Citation[] = topResults.map((res, idx) => {
       const body = res.content || res.first_user_message || '';
       return {
         id: res.id,
@@ -215,7 +231,7 @@ export const ChatService = {
 
       return {
         answer: rawAnswer,
-        citations,
+        citations: verifyCitations(rawAnswer, retrievedCitations),
         modelUsed: model.id,
       };
     } catch (err: any) {
