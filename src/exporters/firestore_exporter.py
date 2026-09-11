@@ -1,11 +1,11 @@
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 try:
-    from google.cloud import firestore as google_firestore
+    from google.cloud import firestore
 except ImportError:  # portable export / unit tests without GCP SDK
-    google_firestore = None
+    firestore = None
 
 from src.core.interfaces import Exporter
 from src.models.conversation import Conversation
@@ -28,12 +28,12 @@ class FirestoreExporter(Exporter):
     @property
     def db(self):
         if self._client is None:
-            if google_firestore is None:
+            if firestore is None:
                 raise RuntimeError(
                     "google.cloud.firestore is not installed; "
                     "cannot construct Firestore client."
                 )
-            self._client = google_firestore.Client(project=self.project_id)
+            self._client = firestore.Client(project=self.project_id)
         return self._client
 
     @property
