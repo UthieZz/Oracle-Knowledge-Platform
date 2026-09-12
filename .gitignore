@@ -40,3 +40,8 @@ studio/.firebase/
 .env
 .env.*
 !.env.example
+
+# Generated knowledge artifacts (recompile locally)
+output/
+output_split/
+uploads/

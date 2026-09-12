@@ -18,6 +18,8 @@ export interface KnowledgeObject {
   content: string;
   source_platform: string;
   source_file?: string;
+  conversation_id?: string;
+  evidence?: string[];
   provenance?: any;
   created_at?: string;
   updated_at?: string;
@@ -43,6 +45,8 @@ export interface Entity {
   value: string;
   type: string;
   conversation_id?: string;
+  message_id?: string;
+  provenance?: any;
   count?: number;
   published_at?: string;
 }
@@ -56,9 +60,11 @@ export interface Attachment {
   media_type?: string;
   content_type?: string;
   conversation_id?: string;
+  message_id?: string;
   conversation_title?: string;
   source_platform?: string;
   platform?: string;
+  provenance?: any;
   published_at?: string;
 }
 
@@ -83,6 +89,7 @@ export interface SearchResult {
   first_user_message?: string;
   source_platform?: string;
   platform?: string;
+  conversation_id?: string;
   created_at?: string;
   created_date?: string;
   message_count?: number;
@@ -114,7 +121,7 @@ export const FirestoreService = {
   async getPlatforms(): Promise<Platform[]> {
     try {
       const querySnapshot = await getDocs(collection(db, "platforms"));
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Platform[];
+      return querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Platform[];
     } catch (err) {
       console.error("[FIRESTORE] Error getting platforms:", err);
       return [];
@@ -125,12 +132,12 @@ export const FirestoreService = {
     try {
       const q = query(collection(db, "conversations"), limit(limitCount));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => {
-        const data = doc.data();
+      return querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
         const provenance = data.provenance || {};
         return {
-          id: doc.id,
-          title: data.title || doc.id,
+          id: docSnap.id,
+          title: data.title || docSnap.id,
           source: data.source,
           source_platform: data.source_platform || provenance.source_platform || 'Unmapped',
           message_count: data.message_count ?? 0,
@@ -152,15 +159,18 @@ export const FirestoreService = {
     try {
       const q = query(collection(db, "knowledgeObjects"), limit(limitCount));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => {
-        const data = doc.data();
+      return querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        const provenance = data.provenance || {};
         return {
-          id: doc.id,
-          title: data.title || doc.id,
-          type: data.type || 'conversation',
+          id: docSnap.id,
+          title: data.title || docSnap.id,
+          type: data.type || provenance.object_type || 'knowledge_object',
           content: data.content || '',
-          source_platform: data.source_platform || 'Unmapped',
-          source_file: data.source_file,
+          source_platform: data.source_platform || provenance.source_platform || 'Unmapped',
+          source_file: data.source_file || provenance.source_file,
+          conversation_id: data.conversation_id || provenance.conversation_id,
+          evidence: data.evidence || provenance.message_ids || [],
           provenance: data.provenance,
           created_at: data.created_at || data.published_at,
           updated_at: data.updated_at,
@@ -177,7 +187,15 @@ export const FirestoreService = {
     try {
       const q = query(collection(db, "entities"), limit(limitCount));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Entity[];
+      return querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          conversation_id: data.conversation_id || data.provenance?.conversation_id,
+          message_id: data.message_id || data.provenance?.message_id,
+        };
+      }) as Entity[];
     } catch (err) {
       console.error("[FIRESTORE] Error getting entities:", err);
       return [];
@@ -188,19 +206,22 @@ export const FirestoreService = {
     try {
       const q = query(collection(db, "attachments"), limit(limitCount));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => {
-        const data = doc.data();
+      return querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        const provenance = data.provenance || {};
         return {
-          id: doc.id,
-          file_name: data.file_name || data.name || doc.id,
-          name: data.name || data.file_name || doc.id,
+          id: docSnap.id,
+          file_name: data.file_name || data.name || docSnap.id,
+          name: data.name || data.file_name || docSnap.id,
           summary: data.summary || data.processed_content || data.ocr_text || '',
           processed_content: data.processed_content || data.summary || '',
           media_type: data.media_type || data.content_type || 'file',
-          conversation_id: data.conversation_id,
+          conversation_id: data.conversation_id || provenance.conversation_id,
+          message_id: data.message_id || provenance.message_id,
           conversation_title: data.conversation_title,
-          source_platform: data.source_platform || data.platform || 'General',
+          source_platform: data.source_platform || data.platform || provenance.source_platform || 'General',
           platform: data.platform || data.source_platform || 'General',
+          provenance: data.provenance,
           published_at: data.published_at
         };
       }) as Attachment[];
@@ -210,13 +231,9 @@ export const FirestoreService = {
     }
   },
 
-  /**
-   * Deterministic client-side multi-collection search for Beta.
-   * Matches terms across Knowledge Objects, Conversations, Entities, and Attachments.
-   */
   async search(searchTerm: string): Promise<SearchResult[]> {
     if (!searchTerm || !searchTerm.trim()) return [];
-    
+
     const term = searchTerm.trim().toLowerCase();
     const tokens = term.split(/\s+/).filter(Boolean);
 
@@ -230,16 +247,17 @@ export const FirestoreService = {
 
       const results: SearchResult[] = [];
 
-      // 1. Knowledge Objects
-      koSnap.docs.forEach(doc => {
-        const data = doc.data();
-        const title = (data.title || doc.id).toLowerCase();
+      koSnap.docs.forEach(docSnap => {
+        const data = docSnap.data();
+        const title = (data.title || docSnap.id).toLowerCase();
         const content = (data.content || '').toLowerCase();
-        
+        const cid = String(data.conversation_id || data.provenance?.conversation_id || '').toLowerCase();
+
         let score = 0;
         if (title.includes(term)) score += 10;
         if (content.includes(term)) score += 5;
-        
+        if (cid && cid.includes(term)) score += 2;
+
         tokens.forEach(tok => {
           if (title.includes(tok)) score += 3;
           if (content.includes(tok)) score += 1;
@@ -247,29 +265,28 @@ export const FirestoreService = {
 
         if (score > 0) {
           results.push({
-            id: doc.id,
+            id: docSnap.id,
             type: 'knowledge',
-            title: data.title || doc.id,
+            title: data.title || docSnap.id,
             content: data.content || '',
             source_platform: data.source_platform || 'Unmapped',
             platform: data.source_platform || 'Unmapped',
+            conversation_id: data.conversation_id || data.provenance?.conversation_id,
             created_at: data.created_at || data.published_at,
             score
           });
         }
       });
 
-      // 2. Conversations
-      convSnap.docs.forEach(doc => {
-        const data = doc.data();
-        const title = (data.title || doc.id).toLowerCase();
+      convSnap.docs.forEach(docSnap => {
+        const data = docSnap.data();
+        const title = (data.title || docSnap.id).toLowerCase();
         const firstMsg = (data.first_user_message || '').toLowerCase();
-        const platform = (data.source_platform || data.provenance?.source_platform || '').toLowerCase();
 
         let score = 0;
         if (title.includes(term)) score += 8;
         if (firstMsg.includes(term)) score += 4;
-        
+
         tokens.forEach(tok => {
           if (title.includes(tok)) score += 2;
           if (firstMsg.includes(tok)) score += 1;
@@ -277,9 +294,9 @@ export const FirestoreService = {
 
         if (score > 0) {
           results.push({
-            id: doc.id,
+            id: docSnap.id,
             type: 'conversation',
-            title: data.title || doc.id,
+            title: data.title || docSnap.id,
             first_user_message: data.first_user_message || '',
             source_platform: data.source_platform || data.provenance?.source_platform || 'General',
             platform: data.source_platform || data.provenance?.source_platform || 'General',
@@ -290,27 +307,25 @@ export const FirestoreService = {
         }
       });
 
-      // 3. Entities
-      entitySnap.docs.forEach(doc => {
-        const data = doc.data();
+      entitySnap.docs.forEach(docSnap => {
+        const data = docSnap.data();
         const val = (data.value || '').toLowerCase();
-        const type = (data.type || '').toLowerCase();
 
         if (val.includes(term) || tokens.some(tok => val.includes(tok))) {
           results.push({
-            id: doc.id,
+            id: docSnap.id,
             type: 'entity',
-            title: data.value || doc.id,
-            content: `Entity Type: ${data.type || 'Entity'} (Conversation: ${data.conversation_id || 'Unknown'})`,
+            title: data.value || docSnap.id,
+            content: `Entity Type: ${data.type || 'Entity'} (Conversation: ${data.conversation_id || data.provenance?.conversation_id || 'Unknown'})`,
             source_platform: 'Entity Graph',
+            conversation_id: data.conversation_id || data.provenance?.conversation_id,
             score: 4
           });
         }
       });
 
-      // 4. Attachments
-      attSnap.docs.forEach(doc => {
-        const data = doc.data();
+      attSnap.docs.forEach(docSnap => {
+        const data = docSnap.data();
         const name = (data.file_name || data.name || '').toLowerCase();
         const summary = (data.summary || data.processed_content || '').toLowerCase();
 
@@ -320,18 +335,18 @@ export const FirestoreService = {
 
         if (score > 0 || tokens.some(tok => name.includes(tok) || summary.includes(tok))) {
           results.push({
-            id: doc.id,
+            id: docSnap.id,
             type: 'attachment',
-            title: data.file_name || data.name || doc.id,
+            title: data.file_name || data.name || docSnap.id,
             content: data.summary || data.processed_content || 'No summary available',
             source_platform: data.source_platform || data.platform || 'Attachment',
+            conversation_id: data.conversation_id || data.provenance?.conversation_id,
             media_type: data.media_type || data.content_type,
             score: score || 2
           });
         }
       });
 
-      // Sort by score descending
       return results.sort((a, b) => (b.score || 0) - (a.score || 0));
     } catch (err) {
       console.error("[FIRESTORE] Search execution error:", err);

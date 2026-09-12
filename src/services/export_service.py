@@ -2,9 +2,13 @@ from typing import Any, Dict, Optional
 from src.exporters.exporter_registry import ExportRegistry
 from src.exporters.multi_source_exporter import MultiSourceExporter
 from src.exporters.firestore_exporter import FirestoreExporter
+from src.exporters.relationship_index_exporter import RelationshipIndexExporter
 from src.models.knowledge_package import KnowledgePackage
 from src.validators.knowledge_object_provenance import (
     ensure_knowledge_object_provenance,
+)
+from src.validators.knowledge_object_quality import (
+    annotate_knowledge_object_quality,
 )
 
 
@@ -19,6 +23,7 @@ class ExportService:
     def _register_defaults(self) -> None:
         self.registry.register(MultiSourceExporter(mode=self.mode))
         self.registry.register(FirestoreExporter())
+        self.registry.register(RelationshipIndexExporter())
 
     def set_export_mode(self, mode: str) -> None:
         """Update the export configuration mode ('Unified', 'Separate by Source', 'Both')."""
@@ -42,6 +47,7 @@ class ExportService:
         provenance = ensure_knowledge_object_provenance(
             package, strict=bool(cfg.get("strict_provenance", False))
         )
+        quality = annotate_knowledge_object_quality(package)
 
         if exporter_name:
             exporters = [self.registry.get_exporter(exporter_name)]
@@ -71,4 +77,8 @@ class ExportService:
             "mode": mode,
             "output_dir": output_dir,
             "provenance": provenance,
+            "quality": {
+                "total": quality["total"],
+                "conversation_shaped_or_thin": quality["conversation_shaped_or_thin"],
+            },
         }
