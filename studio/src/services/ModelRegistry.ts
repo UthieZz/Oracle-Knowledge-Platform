@@ -2,11 +2,11 @@
  * OKP model registry — free-tier oriented catalog for Studio grounded Ask.
  * Media generation (image/audio) is marked as capability; wiring comes later.
  *
- * Notes (2026-08):
+ * Notes (2026-09):
  * - Gemini 2.0 Flash family is shut down / replaced — do not hardcode it.
  * - Prefer gemini-2.5-flash, gemini-3.x-flash, or gemini-flash-latest aliases.
- * - True free image/audio generation is thinner than free text; Gemini image/
- *   TTS/Omni/Lyria and OpenRouter/Groq free text are the practical beta path.
+ * - xAI: OpenAI-compatible at https://api.x.ai/v1. Older fast/4.1 slugs
+ *   retired May 2026 and redirect; prefer explicit grok-4.3 / 4.5 / 4.6.
  */
 
 export type ModelCapability = 'text' | 'vision' | 'image_gen' | 'audio_in' | 'audio_out' | 'video';
@@ -80,7 +80,7 @@ export const PROVIDERS: Record<ProviderId, ProviderDefinition> = {
     keyUrl: 'https://console.x.ai/',
     storageKey: 'okp_xai_api_key',
     baseUrl: 'https://api.x.ai/v1',
-    freeTierNotes: 'Signup credit, not permanent free. Text-first for API.',
+    freeTierNotes: 'API key from console.x.ai. Pay-as-you-go / credits — not a permanent free tier.',
   },
   openai: {
     id: 'openai',
@@ -234,15 +234,50 @@ export const MODELS: ModelDefinition[] = [
     capabilities: ['text'],
     freeTier: true,
   },
-  // --- xAI ---
+  // --- xAI (OpenAI-compatible Chat Completions) ---
+  {
+    id: 'xai-grok-4.3',
+    label: 'Grok 4.3 (xAI)',
+    provider: 'xai',
+    apiModel: 'grok-4.3',
+    capabilities: ['text', 'vision'],
+    freeTier: false,
+    notes: 'Current general-purpose API target after May 2026 retirements.',
+  },
+  {
+    id: 'xai-grok-4.6',
+    label: 'Grok 4.6 (xAI)',
+    provider: 'xai',
+    apiModel: 'grok-4.6',
+    capabilities: ['text', 'vision'],
+    freeTier: false,
+    notes: 'Higher capability tier; paid API usage.',
+  },
+  {
+    id: 'xai-grok-4.5',
+    label: 'Grok 4.5 (xAI)',
+    provider: 'xai',
+    apiModel: 'grok-4.5',
+    capabilities: ['text', 'vision'],
+    freeTier: false,
+  },
+  {
+    id: 'xai-grok-build',
+    label: 'Grok Build 0.1 (xAI)',
+    provider: 'xai',
+    apiModel: 'grok-build-0.1',
+    capabilities: ['text'],
+    freeTier: false,
+    notes: 'Lower-cost build/code oriented model.',
+  },
   {
     id: 'xai-grok-fast',
-    label: 'Grok Fast (xAI)',
+    label: 'Grok Fast legacy alias (xAI)',
     provider: 'xai',
     apiModel: 'grok-4.1-fast',
     capabilities: ['text'],
     freeTier: false,
-    notes: 'Signup credit. Not permanent free.',
+    notes: 'Legacy slug; xAI redirects retired fast models. Prefer Grok 4.3 explicitly.',
   },
   // --- OpenAI optional paid ---
   {

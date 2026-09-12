@@ -7,9 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV PORT=8080
-
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "src.studio.api_server:app"]
-
-
-
+# Flask web API removed. This image is for the OKC compiler / export path only.
+# Studio reads Firestore directly; run compile locally or in CI:
+#   python run.py
+CMD ["python", "-c", "print('OKP compiler image. Flask removed. Use: python run.py')"]
