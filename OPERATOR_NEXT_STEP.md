@@ -1,42 +1,37 @@
 # Exact next step for the operator
 
-Code is already on `main` at `UthieZz/Oracle-Knowledge-Platform`.
-You do **not** re-upload. Pull only.
+Code is on `main` at `UthieZz/Oracle-Knowledge-Platform`.
+
+## Tenant / silo gate (required before Firestore export)
 
 ```bash
 cd /path/to/Oracle-Knowledge-Platform
 git pull origin main
-git log -5 --oneline
+cp .env.example .env
+# set OKP_TENANT_ID, OKP_SILO_ID, GOOGLE_APPLICATION_CREDENTIALS
 ```
 
-Confirm these files exist and `studio/` was not replaced:
+Assign claims (first admin):
 
 ```bash
-test -f docs/studio-infusion.md && echo INFUSION_DOC_OK
-test -f studio/package.json && echo STUDIO_PACKAGE_OK
-grep -n '"name"' studio/package.json | head -1
-# expected: "oracle-studio" — NOT "app-builder-workspace"
+pip install -r requirements.txt
+python scripts/assign_okp_claims.py --uid YOUR_FIREBASE_UID \
+  --tenant acme --silo default --role analyst --admin --dry-run
+# remove --dry-run to apply
 ```
 
-Optional sanity build (does not deploy):
+Full procedure: `docs/OPERATOR_TENANT_SILO_SETUP.md`
+
+## Studio identity
+
+Set `VITE_OKP_AUTH_PROVIDER` in Studio env to your Firebase OIDC/SAML provider ID.
+Deploy `firestore.rules` before production reads.
+
+## Confirm
 
 ```bash
-cd studio && npm install && npm run build
+test -f scripts/assign_okp_claims.py && echo CLAIMS_CLI_OK
+test -f functions/index.js && echo CLAIMS_FN_OK
+test -f docs/OPERATOR_TENANT_SILO_SETUP.md && echo SETUP_DOC_OK
+grep -n OKP_TENANT_ID .env.example
 ```
-
-Also confirm the satellite repo is still separate:
-
-```bash
-git ls-remote git@github.com:UthieZz/OKP-Studio.git HEAD
-```
-
-## Reply with this paste
-
-1. Last 5 `git log --oneline` lines.
-2. The `name` line from `studio/package.json`.
-3. Whether `npm run build` in `studio/` succeeded.
-4. Local path of both checkouts if you have `OKP-Studio` cloned.
-
-Do **not** copy `OKP-Studio` files into `studio/` yourself.
-Do **not** start a git subtree until the next agent step after this paste.
-Do **not** start Stage 4 attachments until Stage 3 live Ask is verified.
