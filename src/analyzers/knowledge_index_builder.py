@@ -128,6 +128,14 @@ class KnowledgeIndexBuilder(Analyzer):
             
         self.save_index(package.index)
         self.print_summary(package.index)
+        # Identity runs before enrichment so every model-ready object inherits
+        # the duplicate status, content fingerprint, and source aliases.
+        from src.analyzers.source_identity import SourceIdentityAnalyzer
+        SourceIdentityAnalyzer().analyze(package)
+        # Enrichment follows lexical indexing so model-ready objects carry
+        # consistent retrieval material and evidence-linked structure.
+        from src.analyzers.knowledge_object_enricher import KnowledgeObjectEnricher
+        KnowledgeObjectEnricher().analyze(package)
         return package
 
     def save_index(self, package_index):

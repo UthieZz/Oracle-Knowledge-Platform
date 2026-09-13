@@ -18,12 +18,16 @@ from src.validators.knowledge_object_provenance import (
 class FirestoreExporter(Exporter):
     """Publishes a KnowledgePackage projection to Google Cloud Firestore."""
 
-    def __init__(self, project_id: str | None = None, client: Any | None = None):
+    def __init__(self, project_id: str | None = None, tenant_id: str | None = None, silo_id: str | None = None, client: Any | None = None):
         self.project_id = project_id or os.getenv(
             "GOOGLE_CLOUD_PROJECT",
             "oracle-knowledge-platform",
         )
         self._client = client
+        self.tenant_id = tenant_id or os.getenv("OKP_TENANT_ID")
+        self.silo_id = silo_id or os.getenv("OKP_SILO_ID")
+        if not self.tenant_id or not self.silo_id:
+            raise ValueError("OKP_TENANT_ID and OKP_SILO_ID are required for enterprise Firestore export.")
 
     @property
     def db(self):
@@ -36,13 +40,20 @@ class FirestoreExporter(Exporter):
             self._client = firestore.Client(project=self.project_id)
         return self._client
 
+    def _collection(self, name: str):
+        return (
+            self.db.collection("tenants").document(self.tenant_id)
+            .collection("silos").document(self.silo_id)
+            .collection(name)
+        )
+
     @property
     def name(self) -> str:
         return "Firestore Exporter"
 
     @property
     def version(self) -> str:
-        return "1.1.0"
+        return "1.2.0"
 
     @property
     def author(self) -> str:
@@ -50,7 +61,7 @@ class FirestoreExporter(Exporter):
 
     @property
     def description(self) -> str:
-        return "Publishes the KnowledgePackage operational projection to Firestore."
+        return "Publishes the KnowledgePackage operational projection to tenant/silo Firestore paths."
 
     @property
     def plugin_type(self) -> str:
@@ -72,7 +83,7 @@ class FirestoreExporter(Exporter):
             batch = self.db.batch()
             chunk = operations[i:i + batch_size]
             for op in chunk:
-                doc_ref = self.db.collection(collection_name).document(op["id"])
+                doc_ref = self._collection(collection_name).document(op["id"])
                 batch.set(doc_ref, op["data"])
             batch.commit()
             print(f"Batch {i//batch_size + 1}/{total_batches} committed for {collection_name}")
@@ -85,7 +96,7 @@ class FirestoreExporter(Exporter):
 
         platform_map = self._group_platforms(package)
 
-        self.db.collection("meta").document("dashboard").set(
+        self._collection("meta").document("dashboard").set(
             {
                 "updated_at": timestamp,
                 "conversations": len(package.conversations),
@@ -105,12 +116,13 @@ class FirestoreExporter(Exporter):
         self._write_knowledge_objects(package, timestamp)
         self._write_entities(package, timestamp)
         self._write_attachments(package, timestamp)
+        self._write_source_fingerprints(package, timestamp)
 
         return package
 
     def _write_messages_batched(self, conversation: Conversation, timestamp: str) -> None:
         """Batch export all messages of a conversation."""
-        messages_ref = self.db.collection("conversations").document(str(conversation.id)).collection("messages")
+        messages_ref = self._collection("conversations").document(str(conversation.id)).collection("messages")
 
         batch_size = 500
         messages = conversation.messages
@@ -265,6 +277,7 @@ class FirestoreExporter(Exporter):
                 "data": {
                     "id": object_id,
                     "type": object_type,
+                    "schema_version": self._safe_value(getattr(ko, "schema_version", "1.0")),
                     "title": ko.title,
                     "content": ko.content,
                     "conversation_id": conversation_id,
@@ -360,6 +373,21 @@ class FirestoreExporter(Exporter):
                 }
             })
         self._process_batches(operations, "attachments")
+
+    def _write_source_fingerprints(self, package: KnowledgePackage, timestamp: str) -> None:
+        fingerprints = (getattr(package, "metadata", {}) or {}).get("source_fingerprints") or {}
+        operations = []
+        for fingerprint, payload in fingerprints.items():
+            operations.append({
+                "id": str(fingerprint),
+                "data": {
+                    **self._safe_value(payload if isinstance(payload, dict) else {"value": payload}),
+                    "content_fingerprint": str(fingerprint),
+                    "published_at": timestamp,
+                }
+            })
+        if operations:
+            self._process_batches(operations, "sourceFingerprints")
 
     @staticmethod
     def _safe_value(value: Any) -> Any:

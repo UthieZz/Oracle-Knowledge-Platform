@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isPlatformAdmin() { return signedIn() && request.auth.token.okp_admin == true; }
+    // `okp_silos` is a server-issued custom-claim list of "tenantId/siloId".
+    function hasSilo(tenantId, siloId) {
+      return isPlatformAdmin() || (signedIn() && (tenantId + "/" + siloId) in request.auth.token.okp_silos);
+    }
+
+    match /tenants/{tenantId}/silos/{siloId}/{document=**} {
+      allow read: if hasSilo(tenantId, siloId);
+      // Browser clients remain read-only. Trusted compiler services use Admin SDK.
+      allow write: if false;
+    }
+  }
+}
