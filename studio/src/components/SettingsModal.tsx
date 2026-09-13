@@ -4,9 +4,9 @@ import { CredentialService } from '../services/CredentialService';
 import { FirestoreService, DashboardStats } from '../services/FirestoreService';
 import {
   PROVIDERS,
-  MODELS,
   ProviderId,
   listModelsForProvider,
+  getModelById,
 } from '../services/ModelRegistry';
 
 interface SettingsModalProps {
@@ -45,11 +45,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
     const existing = CredentialService.getApiKey(provider);
     setApiKey(existing || '');
     setHasKey(CredentialService.hasApiKey(provider));
-    const stillValid = modelsForProvider.some((m) => m.id === modelId);
-    if (!stillValid && modelsForProvider[0]) {
-      setModelId(modelsForProvider[0].id);
-    }
-  }, [provider, isOpen, modelsForProvider, modelId]);
+  }, [provider, isOpen]);
 
   const loadStats = async () => {
     try {
@@ -57,6 +53,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
       setStats(data);
     } catch (e) {
       console.error('Error loading stats in settings:', e);
+    }
+  };
+
+  const applyProvider = (next: ProviderId) => {
+    setProvider(next);
+    const models = listModelsForProvider(next);
+    const nextModel =
+      models.find((m) => m.id === modelId)?.id || models[0]?.id || 'gemini-flash-latest';
+    setModelId(nextModel);
+    CredentialService.setSelectedProvider(next);
+    CredentialService.setSelectedModelId(nextModel);
+    const existing = CredentialService.getApiKey(next);
+    setApiKey(existing || '');
+    setHasKey(CredentialService.hasApiKey(next));
+  };
+
+  const applyModel = (nextModelId: string) => {
+    setModelId(nextModelId);
+    CredentialService.setSelectedModelId(nextModelId);
+    const model = getModelById(nextModelId);
+    if (model) {
+      setProvider(model.provider);
+      CredentialService.setSelectedProvider(model.provider);
+      setHasKey(CredentialService.hasApiKey(model.provider));
     }
   };
 
@@ -78,7 +98,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
   };
 
   const handleDone = () => {
-    // Always persist provider + model when leaving Settings (Save was easy to miss).
     persistSettings(false);
     onClose();
   };
@@ -125,8 +144,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
           <div className="bg-gray-900/60 p-5 rounded-xl border border-gray-800 space-y-4">
             <label className="text-sm font-semibold text-white">Grounded Ask model</label>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Default is Gemini Flash latest. Free-tier text also works via Groq and OpenRouter.
-              Image/audio models (Nano Banana, Omni, Lyria/TTS) are listed for later media wiring — most are paid or limited on free.
+              Default is Gemini Flash (latest). Gemini 2.0 is retired and will be auto-migrated.
+              Free text also works via Groq and OpenRouter — use the matching provider key.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -134,7 +153,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
                 <label className="text-[11px] text-gray-500 uppercase tracking-wide">Provider</label>
                 <select
                   value={provider}
-                  onChange={(e) => setProvider(e.target.value as ProviderId)}
+                  onChange={(e) => applyProvider(e.target.value as ProviderId)}
                   className="mt-1 w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {(Object.keys(PROVIDERS) as ProviderId[]).map((id) => (
@@ -147,8 +166,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
               <div>
                 <label className="text-[11px] text-gray-500 uppercase tracking-wide">Model</label>
                 <select
-                  value={modelId}
-                  onChange={(e) => setModelId(e.target.value)}
+                  value={modelsForProvider.some((m) => m.id === modelId) ? modelId : modelsForProvider[0]?.id}
+                  onChange={(e) => applyModel(e.target.value)}
                   className="mt-1 w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {modelsForProvider.map((m) => (
@@ -179,7 +198,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onStatsR
             </div>
 
             <p className="text-xs text-gray-400 leading-relaxed">
-              Stored only in this browser for Closed Beta. Required for the selected provider.
+              Stored only in this browser. Key must match the selected provider (Gemini key does not work for Groq/xAI).
             </p>
 
             <div className="space-y-2">
