@@ -12,8 +12,40 @@ import {
 const MODEL_STORAGE_KEY = 'okp_selected_model_id';
 const PROVIDER_STORAGE_KEY = 'okp_selected_provider';
 
-// Backward-compatible Gemini key alias
-const LEGACY_GEMINI_KEY = 'okp_gemini_api_key';
+/** Retired / invalid model ids that must never be sent to the API. */
+const DEAD_MODEL_IDS = new Set([
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-001',
+  'gemini-2.0-flash-exp',
+  'gemini-2.0-pro',
+  'gemini-2.0-pro-exp',
+  'gemini-pro',
+  'gemini-pro-vision',
+  'gemini-1.5-pro',
+  'gemini-1.5-flash',
+]);
+
+function resolveStoredModelId(raw: string | null): string {
+  if (!raw || !raw.trim()) return DEFAULT_MODEL_ID;
+  const id = raw.trim();
+  if (DEAD_MODEL_IDS.has(id) || id.startsWith('gemini-2.0')) {
+    try {
+      localStorage.setItem(MODEL_STORAGE_KEY, DEFAULT_MODEL_ID);
+      localStorage.setItem(PROVIDER_STORAGE_KEY, 'gemini');
+    } catch {
+      /* ignore */
+    }
+    return DEFAULT_MODEL_ID;
+  }
+  if (getModelById(id)) return id;
+  // Unknown id in storage — reset so UI cannot stick on a ghost selection.
+  try {
+    localStorage.setItem(MODEL_STORAGE_KEY, DEFAULT_MODEL_ID);
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_MODEL_ID;
+}
 
 export const CredentialService = {
   getApiKey(provider: ProviderId): string | null {
@@ -60,6 +92,13 @@ export const CredentialService = {
     return Boolean(this.getApiKey(provider));
   },
 
+  /** True if the currently selected model has a key for its provider. */
+  hasKeyForSelectedModel(): boolean {
+    const model = getModelById(this.getSelectedModelId());
+    const provider = (model?.provider || this.getSelectedProvider()) as ProviderId;
+    return this.hasApiKey(provider);
+  },
+
   /** @deprecated use getApiKey('gemini') */
   getGeminiApiKey(): string | null {
     return this.getApiKey('gemini');
@@ -94,6 +133,8 @@ export const CredentialService = {
     } catch {
       /* ignore */
     }
+    const model = getModelById(this.getSelectedModelId());
+    if (model) return model.provider;
     return 'gemini';
   },
 
@@ -107,18 +148,17 @@ export const CredentialService = {
 
   getSelectedModelId(): string {
     try {
-      const id = localStorage.getItem(MODEL_STORAGE_KEY);
-      if (id && getModelById(id)) return id;
+      return resolveStoredModelId(localStorage.getItem(MODEL_STORAGE_KEY));
     } catch {
-      /* ignore */
+      return DEFAULT_MODEL_ID;
     }
-    return DEFAULT_MODEL_ID;
   },
 
   setSelectedModelId(modelId: string): void {
+    const resolved = resolveStoredModelId(modelId);
+    const model = getModelById(resolved);
     try {
-      localStorage.setItem(MODEL_STORAGE_KEY, modelId);
-      const model = getModelById(modelId);
+      localStorage.setItem(MODEL_STORAGE_KEY, resolved);
       if (model) {
         localStorage.setItem(PROVIDER_STORAGE_KEY, model.provider);
       }

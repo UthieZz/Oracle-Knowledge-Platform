@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Search, MessageSquare, BookOpen, Settings, Zap, Paperclip, Tag, Layers, ShieldCheck, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Search, MessageSquare, BookOpen, Settings, Zap, Paperclip, Tag, Layers, Menu, X } from 'lucide-react';
 import ImportPage from './components/ImportPage';
 import ConversationsBrowser from './components/ConversationsBrowser';
 import Dashboard from './components/Dashboard';
@@ -18,7 +18,11 @@ const App = () => {
   const [stats, setStats] = useState({ platforms: 0, conversations: 0, status: 'Ready', last_compile: 'Never', knowledge_objects: 0 });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hasGeminiKey, setHasGeminiKey] = useState(CredentialService.hasGeminiApiKey());
+  const [hasSelectedKey, setHasSelectedKey] = useState(CredentialService.hasKeyForSelectedModel());
+
+  const refreshKeyStatus = () => {
+    setHasSelectedKey(CredentialService.hasKeyForSelectedModel());
+  };
 
   const fetchStats = async () => {
     try {
@@ -30,7 +34,7 @@ const App = () => {
         last_compile: data.updated_at ? new Date(data.updated_at).toLocaleString() : 'Never',
         knowledge_objects: data.knowledge_objects ?? 0,
       });
-      setHasGeminiKey(CredentialService.hasGeminiApiKey());
+      refreshKeyStatus();
     } catch (err) {
       console.error("[STUDIO] Error fetching dashboard stats:", err);
     }
@@ -56,15 +60,13 @@ const App = () => {
 
   return (
     <div className="flex h-screen bg-black text-white font-sans selection:bg-blue-500/30 overflow-hidden">
-      {/* Mobile Menu Backdrop */}
       {mobileMenuOpen && (
-        <div 
+        <div
           onClick={() => setMobileMenuOpen(false)}
           className="fixed inset-0 bg-black/70 z-40 md:hidden"
         />
       )}
 
-      {/* Sidebar Navigation */}
       <nav className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gray-950 p-6 border-r border-gray-800 flex flex-col justify-between transform transition-transform duration-200 md:translate-x-0 ${
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
@@ -76,25 +78,25 @@ const App = () => {
               </div>
               <span className="tracking-tight font-black text-white">Oracle Studio</span>
             </h1>
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(false)}
               className="md:hidden text-gray-400 hover:text-white"
             >
               <X size={20} />
             </button>
           </div>
-          
+
           <div className="space-y-6">
             <div>
               <h2 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-2">Navigation</h2>
               <ul className="space-y-1 text-gray-400">
                 {navItems.map((item) => (
-                  <li 
+                  <li
                     key={item.id}
                     onClick={() => { setView(item.id as any); setMobileMenuOpen(false); }}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors text-sm ${
-                      view === item.id 
-                        ? 'bg-blue-600 text-white font-semibold shadow-sm' 
+                      view === item.id
+                        ? 'bg-blue-600 text-white font-semibold shadow-sm'
                         : 'hover:bg-gray-900/80 hover:text-white'
                     }`}
                   >
@@ -107,7 +109,6 @@ const App = () => {
           </div>
         </div>
 
-        {/* Sidebar Footer */}
         <div className="pt-4 border-t border-gray-800 space-y-2">
           <button
             onClick={() => setIsSettingsOpen(true)}
@@ -117,10 +118,10 @@ const App = () => {
               <Settings size={18}/>
               <span>Settings</span>
             </div>
-            {hasGeminiKey ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-400" title="Gemini API Key Active"></span>
+            {hasSelectedKey ? (
+              <span className="w-2 h-2 rounded-full bg-emerald-400" title="API key configured for selected model"></span>
             ) : (
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Gemini API Key Missing"></span>
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="API key missing for selected model"></span>
             )}
           </button>
           <div className="px-3 py-1 flex items-center justify-between text-[10px] text-gray-600 font-mono">
@@ -130,12 +131,10 @@ const App = () => {
         </div>
       </nav>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
-        {/* Top Header */}
         <header className="p-6 md:p-8 border-b border-gray-800/80 flex justify-between items-center bg-gray-950/40 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(true)}
               className="md:hidden p-2 rounded-lg bg-gray-900 text-gray-300 hover:text-white"
             >
@@ -146,8 +145,8 @@ const App = () => {
                 {view === 'knowledgeObjects' ? 'Knowledge Objects' : view}
               </h2>
               <p className="text-gray-500 text-xs mt-0.5 hidden sm:block">
-                {view === 'dashboard' ? 'Compiled system knowledge statistics and health.' : 
-                 view === 'import' ? 'Canonical local compilation workflow.' : 
+                {view === 'dashboard' ? 'Compiled system knowledge statistics and health.' :
+                 view === 'import' ? 'Canonical local compilation workflow.' :
                  view === 'search' ? 'Global multi-collection deterministic retrieval.' :
                  view === 'chat' ? 'Evidence-grounded conversational reasoning layer.' :
                  view === 'attachments' ? 'Files and media extracted from imported sources.' :
@@ -158,7 +157,7 @@ const App = () => {
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -170,10 +169,9 @@ const App = () => {
           </div>
         </header>
 
-        {/* Scrollable View Area */}
         <div className="flex-1 p-6 md:p-8 overflow-y-auto">
-          {view === 'dashboard' ? <Dashboard stats={stats} /> : 
-           view === 'import' ? <ImportPage /> : 
+          {view === 'dashboard' ? <Dashboard stats={stats} /> :
+           view === 'import' ? <ImportPage /> :
            view === 'search' ? <SearchPage /> :
            view === 'chat' ? <ChatPage onOpenSettings={() => setIsSettingsOpen(true)} /> :
            view === 'attachments' ? <AttachmentsBrowser /> :
@@ -184,12 +182,11 @@ const App = () => {
         </div>
       </main>
 
-      {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
+      <SettingsModal
+        isOpen={isSettingsOpen}
         onClose={() => {
           setIsSettingsOpen(false);
-          setHasGeminiKey(CredentialService.hasGeminiApiKey());
+          refreshKeyStatus();
         }}
         onStatsRefresh={fetchStats}
       />
