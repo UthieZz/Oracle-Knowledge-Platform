@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any
 import os
 import logging
 
@@ -15,66 +15,98 @@ class BaseAttachmentProcessor(ABC):
         pass
 
 
+def _basic_text_probe(file_path: str, max_bytes: int = 64_000) -> str:
+    """Best-effort text extraction without heavy native deps."""
+    try:
+        with open(file_path, "rb") as fh:
+            raw = fh.read(max_bytes)
+        # Prefer utf-8; fall back to latin-1 for partial recovery
+        try:
+            return raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return raw.decode("latin-1", errors="ignore")
+    except OSError as exc:
+        logger.warning("Failed reading %s: %s", file_path, exc)
+        return ""
+
+
 class ImageOCRProcessor(BaseAttachmentProcessor):
-    """Performs optical character recognition (OCR) and visual element extraction."""
+    """OCR path. Uses pytesseract when available; otherwise metadata-only stub."""
 
     def process(self, file_path: str) -> Dict[str, Any]:
         if not os.path.exists(file_path):
-            logger.warning(f"Image file not found: {file_path}")
+            logger.warning("Image file not found: %s", file_path)
             return {"status": "failed", "error": "File not found"}
 
-        # Perform OCR and visual feature detection
-        extracted_text = f"[OCR Extracted Text from {os.path.basename(file_path)}]"
-        keywords = ["diagram", "architecture", "schematic"]
-        confidence = 0.94
+        extracted_text = ""
+        engine = "stub"
+        try:
+            from PIL import Image  # type: ignore
+            import pytesseract  # type: ignore
+
+            extracted_text = pytesseract.image_to_string(Image.open(file_path)) or ""
+            engine = "pytesseract"
+        except Exception:
+            extracted_text = f"[OCR unavailable — install pillow+pytesseract for {os.path.basename(file_path)}]"
 
         return {
             "status": "processed",
-            "extracted_text": extracted_text,
-            "keywords": keywords,
-            "confidence": confidence,
+            "extracted_text": extracted_text.strip(),
+            "keywords": ["image", "ocr"],
+            "confidence": 0.9 if engine == "pytesseract" else 0.2,
             "media_type": "image",
+            "engine": engine,
         }
 
 
 class AudioTranscriptProcessor(BaseAttachmentProcessor):
-    """Performs speech-to-text transcription and audio analysis."""
+    """Speech-to-text path. Placeholder until a local STT backend is configured."""
 
     def process(self, file_path: str) -> Dict[str, Any]:
         if not os.path.exists(file_path):
-            logger.warning(f"Audio file not found: {file_path}")
+            logger.warning("Audio file not found: %s", file_path)
             return {"status": "failed", "error": "File not found"}
 
-        # Perform speech-to-text processing
-        transcript = f"[Audio Transcript from {os.path.basename(file_path)}]"
-        keywords = ["meeting", "decision", "action_item"]
-        confidence = 0.91
-
+        size = os.path.getsize(file_path)
         return {
             "status": "processed",
-            "extracted_text": transcript,
-            "keywords": keywords,
-            "confidence": confidence,
+            "extracted_text": f"[Audio transcript pending — {os.path.basename(file_path)} ({size} bytes)]",
+            "keywords": ["audio", "transcript"],
+            "confidence": 0.15,
             "media_type": "audio",
+            "engine": "stub",
         }
 
 
 class PDFProcessor(BaseAttachmentProcessor):
-    """Extracts text, document layout, and embedded tables from PDF documents."""
+    """PDF text extraction. Uses pypdf when available; binary probe otherwise."""
 
     def process(self, file_path: str) -> Dict[str, Any]:
         if not os.path.exists(file_path):
-            logger.warning(f"PDF file not found: {file_path}")
+            logger.warning("PDF file not found: %s", file_path)
             return {"status": "failed", "error": "File not found"}
 
-        extracted_text = f"[Document Text from {os.path.basename(file_path)}]"
-        keywords = ["specification", "requirements", "report"]
-        confidence = 0.98
+        extracted_text = ""
+        engine = "stub"
+        try:
+            from pypdf import PdfReader  # type: ignore
+
+            reader = PdfReader(file_path)
+            parts = []
+            for page in reader.pages:
+                parts.append(page.extract_text() or "")
+            extracted_text = "\n".join(parts).strip()
+            engine = "pypdf"
+        except Exception:
+            # Last-resort probe (often noisy for binary PDFs)
+            probe = _basic_text_probe(file_path)
+            extracted_text = probe if probe.strip() else f"[PDF text unavailable — install pypdf for {os.path.basename(file_path)}]"
 
         return {
             "status": "processed",
             "extracted_text": extracted_text,
-            "keywords": keywords,
-            "confidence": confidence,
+            "keywords": ["pdf", "document"],
+            "confidence": 0.95 if engine == "pypdf" else 0.25,
             "media_type": "pdf",
+            "engine": engine,
         }
