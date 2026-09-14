@@ -1,5 +1,5 @@
-import { doc, getDoc, collection, getDocs, query, limit } from "firebase/firestore";
-import { db } from "./firebase";
+import { getDoc, getDocs, query, limit } from "firebase/firestore";
+import { siloCollection, dashboardDoc } from "./firestorePath";
 
 export interface DashboardStats {
   platforms: number;
@@ -20,6 +20,8 @@ export interface KnowledgeObject {
   source_file?: string;
   conversation_id?: string;
   evidence?: string[];
+  message_ids?: string[];
+  attachment_ids?: string[];
   provenance?: any;
   created_at?: string;
   updated_at?: string;
@@ -100,7 +102,7 @@ export interface SearchResult {
 export const FirestoreService = {
   async getDashboardStats(): Promise<DashboardStats> {
     try {
-      const snapshot = await getDoc(doc(db, "meta", "dashboard"));
+      const snapshot = await getDoc(dashboardDoc());
       if (!snapshot.exists()) return { platforms: 0, conversations: 0, knowledge_objects: 0 };
       const data = snapshot.data();
       return {
@@ -120,7 +122,7 @@ export const FirestoreService = {
 
   async getPlatforms(): Promise<Platform[]> {
     try {
-      const querySnapshot = await getDocs(collection(db, "platforms"));
+      const querySnapshot = await getDocs(siloCollection("platforms"));
       return querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Platform[];
     } catch (err) {
       console.error("[FIRESTORE] Error getting platforms:", err);
@@ -130,7 +132,7 @@ export const FirestoreService = {
 
   async getConversations(limitCount = 100): Promise<Conversation[]> {
     try {
-      const q = query(collection(db, "conversations"), limit(limitCount));
+      const q = query(siloCollection("conversations"), limit(limitCount));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(docSnap => {
         const data = docSnap.data();
@@ -157,7 +159,7 @@ export const FirestoreService = {
 
   async getKnowledgeObjects(limitCount = 100): Promise<KnowledgeObject[]> {
     try {
-      const q = query(collection(db, "knowledgeObjects"), limit(limitCount));
+      const q = query(siloCollection("knowledgeObjects"), limit(limitCount));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(docSnap => {
         const data = docSnap.data();
@@ -171,6 +173,8 @@ export const FirestoreService = {
           source_file: data.source_file || provenance.source_file,
           conversation_id: data.conversation_id || provenance.conversation_id,
           evidence: data.evidence || provenance.message_ids || [],
+          message_ids: provenance.message_ids || data.evidence || [],
+          attachment_ids: provenance.attachment_ids || [],
           provenance: data.provenance,
           created_at: data.created_at || data.published_at,
           updated_at: data.updated_at,
@@ -185,7 +189,7 @@ export const FirestoreService = {
 
   async getEntities(limitCount = 100): Promise<Entity[]> {
     try {
-      const q = query(collection(db, "entities"), limit(limitCount));
+      const q = query(siloCollection("entities"), limit(limitCount));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(docSnap => {
         const data = docSnap.data();
@@ -204,7 +208,7 @@ export const FirestoreService = {
 
   async getAttachments(limitCount = 100): Promise<Attachment[]> {
     try {
-      const q = query(collection(db, "attachments"), limit(limitCount));
+      const q = query(siloCollection("attachments"), limit(limitCount));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(docSnap => {
         const data = docSnap.data();
@@ -233,65 +237,54 @@ export const FirestoreService = {
 
   async search(searchTerm: string): Promise<SearchResult[]> {
     if (!searchTerm || !searchTerm.trim()) return [];
-
     const term = searchTerm.trim().toLowerCase();
     const tokens = term.split(/\s+/).filter(Boolean);
-
     try {
       const [koSnap, convSnap, entitySnap, attSnap] = await Promise.all([
-        getDocs(query(collection(db, "knowledgeObjects"), limit(100))),
-        getDocs(query(collection(db, "conversations"), limit(100))),
-        getDocs(query(collection(db, "entities"), limit(100))),
-        getDocs(query(collection(db, "attachments"), limit(100)))
+        getDocs(query(siloCollection("knowledgeObjects"), limit(100))),
+        getDocs(query(siloCollection("conversations"), limit(100))),
+        getDocs(query(siloCollection("entities"), limit(100))),
+        getDocs(query(siloCollection("attachments"), limit(100)))
       ]);
-
       const results: SearchResult[] = [];
-
       koSnap.docs.forEach(docSnap => {
         const data = docSnap.data();
         const title = (data.title || docSnap.id).toLowerCase();
         const content = (data.content || '').toLowerCase();
         const cid = String(data.conversation_id || data.provenance?.conversation_id || '').toLowerCase();
-
         let score = 0;
         if (title.includes(term)) score += 10;
         if (content.includes(term)) score += 5;
         if (cid && cid.includes(term)) score += 2;
-
         tokens.forEach(tok => {
           if (title.includes(tok)) score += 3;
           if (content.includes(tok)) score += 1;
         });
-
         if (score > 0) {
           results.push({
             id: docSnap.id,
             type: 'knowledge',
             title: data.title || docSnap.id,
             content: data.content || '',
-            source_platform: data.source_platform || 'Unmapped',
-            platform: data.source_platform || 'Unmapped',
+            source_platform: data.source_platform || data.provenance?.source_platform || 'Unmapped',
+            platform: data.source_platform || data.provenance?.source_platform || 'Unmapped',
             conversation_id: data.conversation_id || data.provenance?.conversation_id,
             created_at: data.created_at || data.published_at,
             score
           });
         }
       });
-
       convSnap.docs.forEach(docSnap => {
         const data = docSnap.data();
         const title = (data.title || docSnap.id).toLowerCase();
         const firstMsg = (data.first_user_message || '').toLowerCase();
-
         let score = 0;
         if (title.includes(term)) score += 8;
         if (firstMsg.includes(term)) score += 4;
-
         tokens.forEach(tok => {
           if (title.includes(tok)) score += 2;
           if (firstMsg.includes(tok)) score += 1;
         });
-
         if (score > 0) {
           results.push({
             id: docSnap.id,
@@ -306,11 +299,9 @@ export const FirestoreService = {
           });
         }
       });
-
       entitySnap.docs.forEach(docSnap => {
         const data = docSnap.data();
         const val = (data.value || '').toLowerCase();
-
         if (val.includes(term) || tokens.some(tok => val.includes(tok))) {
           results.push({
             id: docSnap.id,
@@ -323,16 +314,13 @@ export const FirestoreService = {
           });
         }
       });
-
       attSnap.docs.forEach(docSnap => {
         const data = docSnap.data();
         const name = (data.file_name || data.name || '').toLowerCase();
         const summary = (data.summary || data.processed_content || '').toLowerCase();
-
         let score = 0;
         if (name.includes(term)) score += 7;
         if (summary.includes(term)) score += 3;
-
         if (score > 0 || tokens.some(tok => name.includes(tok) || summary.includes(tok))) {
           results.push({
             id: docSnap.id,
@@ -346,7 +334,6 @@ export const FirestoreService = {
           });
         }
       });
-
       return results.sort((a, b) => (b.score || 0) - (a.score || 0));
     } catch (err) {
       console.error("[FIRESTORE] Search execution error:", err);
