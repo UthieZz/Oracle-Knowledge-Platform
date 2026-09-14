@@ -68,11 +68,7 @@ def ensure_knowledge_object_provenance(
     *,
     strict: bool = False,
 ) -> Dict[str, Any]:
-    """Fill missing KO lineage from the package. Returns a repair report.
-
-    If ``strict`` is True, raises ValueError when any KO still lacks
-    REQUIRED_PROVENANCE_KEYS after repair.
-    """
+    """Fill missing KO lineage from the package. Returns a repair report."""
     convs = _conv_index(package)
     report: Dict[str, Any] = {
         "ok": 0,
@@ -118,6 +114,14 @@ def ensure_knowledge_object_provenance(
             if not prov.get("schema_version") and conv_prov.get("schema_version"):
                 prov["schema_version"] = conv_prov["schema_version"]
                 repaired = True
+            if not prov.get("source_file"):
+                conv_source = getattr(conv, "source", None)
+                if conv_source:
+                    prov["source_file"] = conv_source
+                    repaired = True
+                if not getattr(ko, "source_file", None) and conv_source:
+                    ko.source_file = conv_source
+                    repaired = True
 
             msg_ids = _message_ids(conv)
             if msg_ids and not prov.get("message_ids"):
@@ -159,7 +163,6 @@ def ensure_knowledge_object_provenance(
 
 
 def provenance_report(package: KnowledgePackage) -> Dict[str, Any]:
-    """Read-only check. Does not mutate the package."""
     failed = []
     for ko in package.knowledge_objects:
         prov = getattr(ko, "provenance", None) or {}
