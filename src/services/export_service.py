@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, Optional
 from src.exporters.exporter_registry import ExportRegistry
 from src.exporters.multi_source_exporter import MultiSourceExporter
@@ -22,11 +23,13 @@ class ExportService:
 
     def _register_defaults(self) -> None:
         self.registry.register(MultiSourceExporter(mode=self.mode))
-        self.registry.register(FirestoreExporter())
         self.registry.register(RelationshipIndexExporter())
+        tenant = os.getenv("OKP_TENANT_ID")
+        silo = os.getenv("OKP_SILO_ID")
+        if tenant and silo:
+            self.registry.register(FirestoreExporter(tenant_id=tenant, silo_id=silo))
 
     def set_export_mode(self, mode: str) -> None:
-        """Update the export configuration mode ('Unified', 'Separate by Source', 'Both')."""
         self.mode = mode
 
     def get_available_exporters(self) -> list[dict[str, str]]:
@@ -35,11 +38,6 @@ class ExportService:
     def export_knowledge(
         self, package: KnowledgePackage, config: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """Execute knowledge export.
-
-        By default, publish to all registered exporters. An explicit
-        ``exporter_name`` can still be supplied for single-exporter operation.
-        """
         cfg = config or {}
         mode = cfg.get("mode", self.mode)
         output_dir = cfg.get("output_dir", "output")
@@ -63,10 +61,8 @@ class ExportService:
         for exporter in exporters:
             if hasattr(exporter, "mode"):
                 setattr(exporter, "mode", mode)
-
             if hasattr(exporter, "output_dir"):
                 setattr(exporter, "output_dir", output_dir)
-
             exporter.export(package)
             results.append(exporter.name)
 
