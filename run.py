@@ -4,23 +4,22 @@ import subprocess
 import argparse
 
 def run_compiler():
-    # Placeholder for compiler logic, preserving architecture
     print("Running Compiler...")
-    # Set PYTHONPATH to include the project root
     env = os.environ.copy()
     env["PYTHONPATH"] = os.getcwd()
     subprocess.run(["python3", "scripts/compile_data.py"], env=env)
 
 def run_studio():
-    print("Starting Oracle Studio Backend...")
-    # Launching as a module to preserve relative imports and package structure
-    subprocess.run(["python3", "-m", "src.studio.api_server"])
+    studio_dir = os.path.join(os.getcwd(), "studio")
+    if not os.path.isdir(studio_dir):
+        raise SystemExit("studio/ directory not found")
+    print("Starting Oracle Studio (Vite). Flask is not the Studio runtime.")
+    subprocess.run(["npm", "run", "dev"], cwd=studio_dir)
 
 def main():
     parser = argparse.ArgumentParser(description="Oracle Knowledge Platform")
     parser.add_argument("mode", choices=["compiler", "studio"], help="Mode to run.")
     args = parser.parse_args()
-    
     if args.mode == "compiler":
         run_compiler()
     elif args.mode == "studio":
