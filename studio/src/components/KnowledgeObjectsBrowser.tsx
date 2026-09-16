@@ -25,11 +25,13 @@ const KnowledgeObjectsBrowser = () => {
   }, []);
 
   const platforms = Array.from(new Set(data.map(d => d.source_platform).filter(Boolean)));
+  const incompleteCount = data.filter(item => !item.provenance_complete).length;
 
   const filtered = data.filter(item => {
     const matchesQuery = !query || 
       (item.title && item.title.toLowerCase().includes(query.toLowerCase())) ||
-      (item.content && item.content.toLowerCase().includes(query.toLowerCase()));
+      (item.content && item.content.toLowerCase().includes(query.toLowerCase())) ||
+      (item.conversation_id && item.conversation_id.toLowerCase().includes(query.toLowerCase()));
     const matchesPlatform = platformFilter === 'all' || item.source_platform === platformFilter;
     return matchesQuery && matchesPlatform;
   });
@@ -44,7 +46,10 @@ const KnowledgeObjectsBrowser = () => {
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <BookOpen className="text-blue-500" /> Knowledge Objects
           </h2>
-          <p className="text-gray-500 text-sm mt-1">Compiled canonical knowledge representations with provenance tracking.</p>
+          <p className="text-gray-500 text-sm mt-1">Compiled knowledge with required lineage: platform, source file, conversation.</p>
+          {incompleteCount > 0 && (
+            <p className="text-amber-400 text-xs mt-1">{incompleteCount} object(s) missing required provenance.</p>
+          )}
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -86,8 +91,8 @@ const KnowledgeObjectsBrowser = () => {
                 <tr className="border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
                   <th className="p-3">Title</th>
                   <th className="p-3">Platform</th>
-                  <th className="p-3">Type</th>
-                  <th className="p-3">Created</th>
+                  <th className="p-3">Conversation</th>
+                  <th className="p-3">Lineage</th>
                   <th className="p-3 text-right">Action</th>
                 </tr>
               </thead>
@@ -103,11 +108,17 @@ const KnowledgeObjectsBrowser = () => {
                     </td>
                     <td className="p-3">
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-900 border border-gray-800 text-gray-300 uppercase">
-                        {item.source_platform}
+                        {item.source_platform || 'missing'}
                       </span>
                     </td>
-                    <td className="p-3 text-xs text-gray-500 uppercase">{item.type || 'Object'}</td>
-                    <td className="p-3 text-xs text-gray-500">{item.created_at ? new Date(item.created_at).toLocaleDateString() : '—'}</td>
+                    <td className="p-3 text-xs font-mono text-gray-500 max-w-xs truncate">{item.conversation_id || '—'}</td>
+                    <td className="p-3">
+                      {item.provenance_complete ? (
+                        <span className="text-xs text-emerald-400">complete</span>
+                      ) : (
+                        <span className="text-xs text-amber-400">incomplete</span>
+                      )}
+                    </td>
                     <td className="p-3 text-right">
                       <span className="text-xs text-blue-500 group-hover:underline">View Details</span>
                     </td>
@@ -150,7 +161,6 @@ const KnowledgeObjectsBrowser = () => {
         </>
       )}
 
-      {/* Detail Modal */}
       {selectedKO && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
@@ -158,11 +168,19 @@ const KnowledgeObjectsBrowser = () => {
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30">
-                    {selectedKO.source_platform}
+                    {selectedKO.source_platform || 'missing platform'}
                   </span>
                   <span className="text-xs text-gray-500 font-mono">ID: {selectedKO.id}</span>
+                  {!selectedKO.provenance_complete && (
+                    <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 border border-amber-500/30">
+                      lineage incomplete
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-xl font-bold text-white">{selectedKO.title}</h3>
+                <p className="text-xs text-gray-500 mt-1 font-mono">
+                  file: {selectedKO.source_file || '—'} · conversation: {selectedKO.conversation_id || '—'}
+                </p>
               </div>
               <button 
                 onClick={() => setSelectedKO(null)}
@@ -182,16 +200,21 @@ const KnowledgeObjectsBrowser = () => {
                 </div>
               </div>
 
-              {selectedKO.provenance && Object.keys(selectedKO.provenance).length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1.5">
-                    <Layers size={14} /> Provenance Metadata
-                  </h4>
-                  <pre className="bg-gray-950 p-3.5 rounded-xl border border-gray-800/80 text-xs font-mono text-gray-400 overflow-x-auto">
-                    {JSON.stringify(selectedKO.provenance, null, 2)}
-                  </pre>
-                </div>
-              )}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1.5">
+                  <Layers size={14} /> Provenance Metadata
+                </h4>
+                <pre className="bg-gray-950 p-3.5 rounded-xl border border-gray-800/80 text-xs font-mono text-gray-400 overflow-x-auto">
+                  {JSON.stringify({
+                    source_platform: selectedKO.source_platform || null,
+                    source_file: selectedKO.source_file || null,
+                    conversation_id: selectedKO.conversation_id || null,
+                    message_ids: selectedKO.message_ids || [],
+                    attachment_ids: selectedKO.attachment_ids || [],
+                    provenance: selectedKO.provenance || {}
+                  }, null, 2)}
+                </pre>
+              </div>
             </div>
 
             <div className="p-4 border-t border-gray-800 flex justify-end">

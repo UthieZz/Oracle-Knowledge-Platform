@@ -23,6 +23,7 @@ export interface KnowledgeObject {
   message_ids?: string[];
   attachment_ids?: string[];
   provenance?: any;
+  provenance_complete?: boolean;
   created_at?: string;
   updated_at?: string;
   published_at?: string;
@@ -99,6 +100,10 @@ export interface SearchResult {
   score?: number;
 }
 
+function lineageComplete(platform?: string, sourceFile?: string, conversationId?: string): boolean {
+  return Boolean(platform && sourceFile && conversationId);
+}
+
 export const FirestoreService = {
   async getDashboardStats(): Promise<DashboardStats> {
     try {
@@ -141,7 +146,7 @@ export const FirestoreService = {
           id: docSnap.id,
           title: data.title || docSnap.id,
           source: data.source,
-          source_platform: data.source_platform || provenance.source_platform || 'Unmapped',
+          source_platform: data.source_platform || provenance.source_platform || '',
           message_count: data.message_count ?? 0,
           created: data.created,
           created_date: data.created || data.created_date,
@@ -164,18 +169,22 @@ export const FirestoreService = {
       return querySnapshot.docs.map(docSnap => {
         const data = docSnap.data();
         const provenance = data.provenance || {};
+        const source_platform = data.source_platform || provenance.source_platform || '';
+        const source_file = data.source_file || provenance.source_file || '';
+        const conversation_id = data.conversation_id || provenance.conversation_id || '';
         return {
           id: docSnap.id,
           title: data.title || docSnap.id,
           type: data.type || provenance.object_type || 'knowledge_object',
           content: data.content || '',
-          source_platform: data.source_platform || provenance.source_platform || 'Unmapped',
-          source_file: data.source_file || provenance.source_file,
-          conversation_id: data.conversation_id || provenance.conversation_id,
+          source_platform,
+          source_file,
+          conversation_id,
           evidence: data.evidence || provenance.message_ids || [],
           message_ids: provenance.message_ids || data.evidence || [],
           attachment_ids: provenance.attachment_ids || [],
           provenance: data.provenance,
+          provenance_complete: lineageComplete(source_platform, source_file, conversation_id),
           created_at: data.created_at || data.published_at,
           updated_at: data.updated_at,
           published_at: data.published_at
@@ -223,8 +232,8 @@ export const FirestoreService = {
           conversation_id: data.conversation_id || provenance.conversation_id,
           message_id: data.message_id || provenance.message_id,
           conversation_title: data.conversation_title,
-          source_platform: data.source_platform || data.platform || provenance.source_platform || 'General',
-          platform: data.platform || data.source_platform || 'General',
+          source_platform: data.source_platform || data.platform || provenance.source_platform || '',
+          platform: data.platform || data.source_platform || '',
           provenance: data.provenance,
           published_at: data.published_at
         };
@@ -266,8 +275,8 @@ export const FirestoreService = {
             type: 'knowledge',
             title: data.title || docSnap.id,
             content: data.content || '',
-            source_platform: data.source_platform || data.provenance?.source_platform || 'Unmapped',
-            platform: data.source_platform || data.provenance?.source_platform || 'Unmapped',
+            source_platform: data.source_platform || data.provenance?.source_platform || '',
+            platform: data.source_platform || data.provenance?.source_platform || '',
             conversation_id: data.conversation_id || data.provenance?.conversation_id,
             created_at: data.created_at || data.published_at,
             score
@@ -291,8 +300,8 @@ export const FirestoreService = {
             type: 'conversation',
             title: data.title || docSnap.id,
             first_user_message: data.first_user_message || '',
-            source_platform: data.source_platform || data.provenance?.source_platform || 'General',
-            platform: data.source_platform || data.provenance?.source_platform || 'General',
+            source_platform: data.source_platform || data.provenance?.source_platform || '',
+            platform: data.source_platform || data.provenance?.source_platform || '',
             created_date: data.created || data.created_date,
             message_count: data.message_count || 0,
             score
@@ -308,7 +317,7 @@ export const FirestoreService = {
             type: 'entity',
             title: data.value || docSnap.id,
             content: `Entity Type: ${data.type || 'Entity'} (Conversation: ${data.conversation_id || data.provenance?.conversation_id || 'Unknown'})`,
-            source_platform: 'Entity Graph',
+            source_platform: '',
             conversation_id: data.conversation_id || data.provenance?.conversation_id,
             score: 4
           });
@@ -327,7 +336,7 @@ export const FirestoreService = {
             type: 'attachment',
             title: data.file_name || data.name || docSnap.id,
             content: data.summary || data.processed_content || 'No summary available',
-            source_platform: data.source_platform || data.platform || 'Attachment',
+            source_platform: data.source_platform || data.platform || '',
             conversation_id: data.conversation_id || data.provenance?.conversation_id,
             media_type: data.media_type || data.content_type,
             score: score || 2

@@ -13,6 +13,11 @@ from src.validators.knowledge_object_quality import (
 )
 
 
+def _is_firestore_exporter(exporter: Any) -> bool:
+    name = str(getattr(exporter, "name", "") or exporter.__class__.__name__)
+    return "firestore" in name.lower()
+
+
 class ExportService:
     """Service governing export execution and exporter plugins."""
 
@@ -42,10 +47,6 @@ class ExportService:
         mode = cfg.get("mode", self.mode)
         output_dir = cfg.get("output_dir", "output")
         exporter_name = cfg.get("exporter_name")
-        provenance = ensure_knowledge_object_provenance(
-            package, strict=bool(cfg.get("strict_provenance", False))
-        )
-        quality = annotate_knowledge_object_quality(package)
 
         if exporter_name:
             exporters = [self.registry.get_exporter(exporter_name)]
@@ -55,6 +56,15 @@ class ExportService:
 
         if not exporters:
             raise RuntimeError("No exporters are registered.")
+
+        publishing_firestore = any(_is_firestore_exporter(exp) for exp in exporters)
+        if "strict_provenance" in cfg:
+            strict = bool(cfg.get("strict_provenance"))
+        else:
+            strict = publishing_firestore
+
+        provenance = ensure_knowledge_object_provenance(package, strict=strict)
+        quality = annotate_knowledge_object_quality(package)
 
         results = []
 
@@ -72,6 +82,7 @@ class ExportService:
             "exporters": results,
             "mode": mode,
             "output_dir": output_dir,
+            "strict_provenance": strict,
             "provenance": provenance,
             "quality": {
                 "total": quality["total"],
