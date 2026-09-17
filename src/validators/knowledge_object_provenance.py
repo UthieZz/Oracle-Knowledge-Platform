@@ -57,10 +57,25 @@ def _resolve_conversation_id(ko: Any, convs: Dict[str, Any]) -> Optional[str]:
         value = prov.get(key)
         if value:
             return str(value)
+    field_cid = getattr(ko, "conversation_id", None)
+    if field_cid:
+        return str(field_cid)
     kid = str(getattr(ko, "id", "") or "")
     if kid in convs:
         return kid
     return None
+
+
+def _set_if_present(obj: Any, attr: str, value: Any) -> bool:
+    if value is None or not hasattr(obj, attr):
+        return False
+    current = getattr(obj, attr, None)
+    if current == value:
+        return False
+    if current:
+        return False
+    setattr(obj, attr, value)
+    return True
 
 
 def ensure_knowledge_object_provenance(
@@ -139,6 +154,13 @@ def ensure_knowledge_object_provenance(
 
         if "object_type" not in prov:
             prov["object_type"] = "knowledge_object"
+            repaired = True
+
+        if _set_if_present(ko, "conversation_id", prov.get("conversation_id")):
+            repaired = True
+        if _set_if_present(ko, "source_platform", prov.get("source_platform")):
+            repaired = True
+        if _set_if_present(ko, "source_file", prov.get("source_file")):
             repaired = True
 
         ko.provenance = prov
