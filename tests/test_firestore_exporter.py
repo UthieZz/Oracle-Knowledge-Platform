@@ -38,13 +38,12 @@ class TestFirestoreExporter(unittest.TestCase):
             source_file="test",
             created_at="2026-08-15T00:00:00Z",
             updated_at="2026-08-15T00:00:00Z",
-            provenance={"source_platform": "Gemini"},
+            provenance={"source_platform": "Gemini", "source_file": "test", "conversation_id": "conv1"},
             evidence=["msg1"]
         ))
 
         exporter.export(package)
 
-        # Tenant/silo path: tenants/{id}/silos/{id}/collection
         self.assertTrue(mock_db.collection.called)
         self.assertEqual(mock_db.collection.call_args_list[0][0][0], "tenants")
 
@@ -64,6 +63,28 @@ class TestFirestoreExporter(unittest.TestCase):
     def test_requires_tenant_and_silo(self):
         with self.assertRaises(ValueError):
             FirestoreExporter(project_id="test-project", client=MagicMock())
+
+    def test_export_rejects_incomplete_provenance(self):
+        exporter = FirestoreExporter(
+            project_id="test-project",
+            tenant_id="acme",
+            silo_id="default",
+            client=MagicMock(),
+        )
+        package = KnowledgePackage()
+        package.add_knowledge_object(KnowledgeObject(
+            id="orphan",
+            title="No lineage",
+            content="",
+            source_platform="",
+            source_file="",
+            created_at=None,
+            updated_at=None,
+            provenance={},
+            evidence=[],
+        ))
+        with self.assertRaises(ValueError):
+            exporter.export(package)
 
 if __name__ == "__main__":
     unittest.main()
