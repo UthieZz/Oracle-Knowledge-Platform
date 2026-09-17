@@ -92,7 +92,7 @@ class FirestoreExporter(Exporter):
         """Publish the current KnowledgePackage to Firestore."""
 
         timestamp = datetime.now(timezone.utc).isoformat()
-        ensure_knowledge_object_provenance(package)
+        ensure_knowledge_object_provenance(package, strict=True)
 
         platform_map = self._group_platforms(package)
 
@@ -266,10 +266,10 @@ class FirestoreExporter(Exporter):
                 platform = self._derive_platform(ko.source_file)
 
             provenance = self._safe_value(getattr(ko, "provenance", {}) or {})
-            conversation_id = None
+            conversation_id = getattr(ko, "conversation_id", None)
             object_type = "knowledge_object"
             if isinstance(provenance, dict):
-                conversation_id = provenance.get("conversation_id") or None
+                conversation_id = conversation_id or provenance.get("conversation_id") or None
                 object_type = provenance.get("object_type") or "knowledge_object"
 
             operations.append({
