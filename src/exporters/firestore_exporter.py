@@ -53,7 +53,7 @@ class FirestoreExporter(Exporter):
 
     @property
     def version(self) -> str:
-        return "1.2.0"
+        return "1.2.1"
 
     @property
     def author(self) -> str:
@@ -92,7 +92,7 @@ class FirestoreExporter(Exporter):
         """Publish the current KnowledgePackage to Firestore."""
 
         timestamp = datetime.now(timezone.utc).isoformat()
-        ensure_knowledge_object_provenance(package)
+        ensure_knowledge_object_provenance(package, strict=True)
 
         platform_map = self._group_platforms(package)
 
@@ -179,6 +179,15 @@ class FirestoreExporter(Exporter):
             return "Copilot"
 
         return "Unmapped"
+
+    def _conversation_by_id(self, package: KnowledgePackage, conversation_id: Any) -> Any:
+        if not conversation_id:
+            return None
+        target = str(conversation_id)
+        for conv in package.conversations:
+            if str(getattr(conv, "id", "")) == target:
+                return conv
+        return None
 
     def _write_platforms(
         self,
@@ -302,11 +311,17 @@ class FirestoreExporter(Exporter):
             entity_id = getattr(entity, "id", None) or f"{getattr(entity, 'conversation_id', 'unknown')}_{index}"
             conversation_id = getattr(entity, "conversation_id", None)
             message_id = getattr(entity, "message_id", None)
+            conv = self._conversation_by_id(package, conversation_id)
+            conv_prov = getattr(conv, "provenance", {}) or {} if conv else {}
+            source_platform = conv_prov.get("source_platform")
+            source_file = getattr(conv, "source", None) if conv else None
             provenance = {
                 "conversation_id": conversation_id,
                 "message_id": message_id,
                 "source": getattr(entity, "source", None),
                 "object_type": "entity",
+                "source_platform": source_platform,
+                "source_file": source_file,
             }
             operations.append({
                 "id": str(entity_id),
@@ -321,6 +336,8 @@ class FirestoreExporter(Exporter):
                     "conversation_id": self._safe_value(conversation_id),
                     "message_id": self._safe_value(message_id),
                     "source": self._safe_value(getattr(entity, "source", None)),
+                    "source_platform": self._safe_value(source_platform),
+                    "source_file": self._safe_value(source_file),
                     "confidence": self._safe_value(getattr(entity, "confidence", None)),
                     "provenance": self._safe_value(provenance),
                     "published_at": timestamp,
