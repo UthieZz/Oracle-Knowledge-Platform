@@ -74,6 +74,9 @@ class TestKnowledgeObjectProvenance(unittest.TestCase):
         self.assertEqual(ko.evidence, ["msg1", "msg2"])
         self.assertTrue(ko.provenance["attachment_ids"])
         self.assertEqual(ko.provenance["object_type"], "knowledge_object")
+        self.assertEqual(ko.source_platform, "Grok")
+        self.assertEqual(ko.source_file, "/input/grok-export.json")
+        self.assertEqual(ko.conversation_id, "conv1")
 
         after = provenance_report(package)
         self.assertEqual(after["failed"], [])
