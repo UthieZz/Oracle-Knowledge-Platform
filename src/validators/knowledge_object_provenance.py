@@ -141,6 +141,19 @@ def ensure_knowledge_object_provenance(
             prov["object_type"] = "knowledge_object"
             repaired = True
 
+        # Keep top-level KO fields aligned with provenance so exporters
+        # and Studio do not depend on nested keys only.
+        if prov.get("source_platform") and getattr(ko, "source_platform", None) != prov["source_platform"]:
+            ko.source_platform = prov["source_platform"]
+            repaired = True
+        if prov.get("source_file") and getattr(ko, "source_file", None) != prov["source_file"]:
+            ko.source_file = prov["source_file"]
+            repaired = True
+        if prov.get("conversation_id") and getattr(ko, "conversation_id", None) != prov["conversation_id"]:
+            if hasattr(ko, "conversation_id"):
+                ko.conversation_id = prov["conversation_id"]
+                repaired = True
+
         ko.provenance = prov
 
         missing = [key for key in REQUIRED_PROVENANCE_KEYS if not prov.get(key)]
