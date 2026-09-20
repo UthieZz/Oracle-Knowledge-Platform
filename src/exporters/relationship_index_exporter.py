@@ -51,7 +51,8 @@ class RelationshipIndexExporter(Exporter):
         return ["json"]
 
     def export(self, package: KnowledgePackage) -> KnowledgePackage:
-        ensure_knowledge_object_provenance(package, strict=True)
+        # Repair only. Hard reject belongs to ExportService / FirestoreExporter.
+        ensure_knowledge_object_provenance(package)
         quality = annotate_knowledge_object_quality(package)
         edges: List[Dict[str, Any]] = []
         for ko in package.knowledge_objects:
