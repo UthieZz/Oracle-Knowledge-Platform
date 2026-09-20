@@ -28,7 +28,7 @@ class RelationshipIndexExporter(Exporter):
 
     @property
     def version(self) -> str:
-        return "1.0.0"
+        return "1.0.1"
 
     @property
     def author(self) -> str:
@@ -51,12 +51,12 @@ class RelationshipIndexExporter(Exporter):
         return ["json"]
 
     def export(self, package: KnowledgePackage) -> KnowledgePackage:
-        ensure_knowledge_object_provenance(package)
+        ensure_knowledge_object_provenance(package, strict=True)
         quality = annotate_knowledge_object_quality(package)
         edges: List[Dict[str, Any]] = []
         for ko in package.knowledge_objects:
             prov = getattr(ko, "provenance", None) or {}
-            cid = prov.get("conversation_id")
+            cid = prov.get("conversation_id") or getattr(ko, "conversation_id", None)
             if cid:
                 edges.append({
                     "type": "sourced_from",
@@ -64,6 +64,8 @@ class RelationshipIndexExporter(Exporter):
                     "from_kind": "knowledge_object",
                     "to": str(cid),
                     "to_kind": "conversation",
+                    "source_platform": prov.get("source_platform") or getattr(ko, "source_platform", None),
+                    "source_file": prov.get("source_file") or getattr(ko, "source_file", None),
                 })
             for mid in prov.get("message_ids") or []:
                 edges.append({
