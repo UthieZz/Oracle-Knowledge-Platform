@@ -4,6 +4,7 @@ from src.exporters.exporter_registry import ExportRegistry
 from src.exporters.multi_source_exporter import MultiSourceExporter
 from src.exporters.firestore_exporter import FirestoreExporter
 from src.exporters.relationship_index_exporter import RelationshipIndexExporter
+from src.exporters.provenance_ledger_exporter import ProvenanceLedgerExporter
 from src.models.knowledge_package import KnowledgePackage
 from src.validators.knowledge_object_provenance import (
     ensure_knowledge_object_provenance,
@@ -29,6 +30,7 @@ class ExportService:
     def _register_defaults(self) -> None:
         self.registry.register(MultiSourceExporter(mode=self.mode))
         self.registry.register(RelationshipIndexExporter())
+        self.registry.register(ProvenanceLedgerExporter())
         tenant = os.getenv("OKP_TENANT_ID")
         silo = os.getenv("OKP_SILO_ID")
         if tenant and silo:
