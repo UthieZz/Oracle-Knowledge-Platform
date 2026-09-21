@@ -57,10 +57,31 @@ def _resolve_conversation_id(ko: Any, convs: Dict[str, Any]) -> Optional[str]:
         value = prov.get(key)
         if value:
             return str(value)
+    field_cid = getattr(ko, "conversation_id", None)
+    if field_cid:
+        return str(field_cid)
     kid = str(getattr(ko, "id", "") or "")
     if kid in convs:
         return kid
     return None
+
+
+def _sync_identity_fields(ko: Any, prov: Dict[str, Any]) -> bool:
+    """Keep top-level KO identity fields aligned with provenance."""
+    repaired = False
+    platform = prov.get("source_platform")
+    if platform and getattr(ko, "source_platform", None) != platform:
+        ko.source_platform = platform
+        repaired = True
+    source_file = prov.get("source_file")
+    if source_file and getattr(ko, "source_file", None) != source_file:
+        ko.source_file = source_file
+        repaired = True
+    conversation_id = prov.get("conversation_id")
+    if conversation_id and getattr(ko, "conversation_id", None) != conversation_id:
+        ko.conversation_id = conversation_id
+        repaired = True
+    return repaired
 
 
 def ensure_knowledge_object_provenance(
@@ -139,6 +160,9 @@ def ensure_knowledge_object_provenance(
 
         if "object_type" not in prov:
             prov["object_type"] = "knowledge_object"
+            repaired = True
+
+        if _sync_identity_fields(ko, prov):
             repaired = True
 
         ko.provenance = prov

@@ -61,7 +61,8 @@ class ExportService:
         if "strict_provenance" in cfg:
             strict = bool(cfg.get("strict_provenance"))
         else:
-            strict = publishing_firestore
+            # Portable and published KnowledgeObjects share the same lineage contract.
+            strict = True
 
         provenance = ensure_knowledge_object_provenance(package, strict=strict)
         quality = annotate_knowledge_object_quality(package)
@@ -83,6 +84,7 @@ class ExportService:
             "mode": mode,
             "output_dir": output_dir,
             "strict_provenance": strict,
+            "publishing_firestore": publishing_firestore,
             "provenance": provenance,
             "quality": {
                 "total": quality["total"],
