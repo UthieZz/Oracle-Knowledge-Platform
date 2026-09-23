@@ -91,3 +91,19 @@ Do **not** add before freeze: knowledge graphs, enterprise RBAC, Cloud Run, vect
 - Application can be installed and used as normal desktop software.
 - External AI usage is optional, not a storage dependency.
 - No unnecessary cloud infrastructure is required for the core product.
+
+## Agent and B2B architecture foundation — 2026-09-23
+
+The long-term product boundary now explicitly separates OKP from the model and agent runtime.
+
+- KnowledgePackage remains the canonical IR.
+- AgentContextPackage is the model-facing, filtered representation.
+- okc/agent/ provides the first Agent Context Gateway contracts.
+- Tenant and silo checks occur at the context boundary.
+- Provenance is preserved across the boundary.
+- MCP and specific agent SDKs remain optional adapters, not core dependencies.
+- B2B concerns such as enterprise identity, authorization, audit, metering, and hosted multi-tenancy remain separate control-plane concerns.
+- The first implementation intentionally avoids premature enterprise RBAC and vendor lock-in.
+
+The next implementation target is a real retrieval adapter plus a feedback contract for
+citations, tool events, memory candidates, and audit records.
