@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any
+import hashlib
 import os
 import logging
 
@@ -8,6 +9,10 @@ logger = logging.getLogger(__name__)
 
 class BaseAttachmentProcessor(ABC):
     """Abstract base class for all OKC media attachment processors."""
+
+    name: str = "base"
+    version: str = "1.0.0"
+    transformation: str = "extract"
 
     @abstractmethod
     def process(self, file_path: str) -> Dict[str, Any]:
@@ -20,7 +25,6 @@ def _basic_text_probe(file_path: str, max_bytes: int = 64_000) -> str:
     try:
         with open(file_path, "rb") as fh:
             raw = fh.read(max_bytes)
-        # Prefer utf-8; fall back to latin-1 for partial recovery
         try:
             return raw.decode("utf-8")
         except UnicodeDecodeError:
@@ -32,6 +36,10 @@ def _basic_text_probe(file_path: str, max_bytes: int = 64_000) -> str:
 
 class ImageOCRProcessor(BaseAttachmentProcessor):
     """OCR path. Uses pytesseract when available; otherwise metadata-only stub."""
+
+    name = "image_ocr"
+    version = "1.0.0"
+    transformation = "ocr"
 
     def process(self, file_path: str) -> Dict[str, Any]:
         if not os.path.exists(file_path):
@@ -62,6 +70,10 @@ class ImageOCRProcessor(BaseAttachmentProcessor):
 class AudioTranscriptProcessor(BaseAttachmentProcessor):
     """Speech-to-text path. Placeholder until a local STT backend is configured."""
 
+    name = "audio_transcript"
+    version = "1.0.0"
+    transformation = "transcribe"
+
     def process(self, file_path: str) -> Dict[str, Any]:
         if not os.path.exists(file_path):
             logger.warning("Audio file not found: %s", file_path)
@@ -81,6 +93,10 @@ class AudioTranscriptProcessor(BaseAttachmentProcessor):
 class PDFProcessor(BaseAttachmentProcessor):
     """PDF text extraction. Uses pypdf when available; binary probe otherwise."""
 
+    name = "pdf_parse"
+    version = "1.0.0"
+    transformation = "parse"
+
     def process(self, file_path: str) -> Dict[str, Any]:
         if not os.path.exists(file_path):
             logger.warning("PDF file not found: %s", file_path)
@@ -98,7 +114,6 @@ class PDFProcessor(BaseAttachmentProcessor):
             extracted_text = "\n".join(parts).strip()
             engine = "pypdf"
         except Exception:
-            # Last-resort probe (often noisy for binary PDFs)
             probe = _basic_text_probe(file_path)
             extracted_text = probe if probe.strip() else f"[PDF text unavailable — install pypdf for {os.path.basename(file_path)}]"
 
@@ -110,3 +125,30 @@ class PDFProcessor(BaseAttachmentProcessor):
             "media_type": "pdf",
             "engine": engine,
         }
+
+
+class TextParseProcessor(BaseAttachmentProcessor):
+    """Parse text-like attachments without promoting them to KnowledgeObjects."""
+
+    name = "text_parse"
+    version = "1.0.0"
+    transformation = "parse"
+
+    def process(self, file_path: str) -> Dict[str, Any]:
+        if not os.path.exists(file_path):
+            logger.warning("Text file not found: %s", file_path)
+            return {"status": "failed", "error": "File not found"}
+
+        extracted_text = _basic_text_probe(file_path)
+        return {
+            "status": "processed",
+            "extracted_text": extracted_text,
+            "keywords": ["text", "parse"],
+            "confidence": 0.8 if extracted_text.strip() else 0.2,
+            "media_type": "text",
+            "engine": "text_probe",
+        }
+
+
+def content_hash(text: str) -> str:
+    return hashlib.sha256((text or "").encode("utf-8", errors="ignore")).hexdigest()

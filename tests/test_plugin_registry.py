@@ -1,0 +1,120 @@
+"""PluginRegistry and attachment-pass provenance enrichment."""
+
+from pathlib import Path
+
+import pytest
+
+from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
+from okc.compiler.processors.attachment_processor import TextParseProcessor
+from okc.models.knowledge_package import KnowledgeObject, KnowledgePackage, Provenance
+from okc.plugins.registry import (
+    PluginRegistry,
+    PluginRegistryError,
+    default_attachment_registry,
+)
+
+
+def test_register_and_lookup_by_kind():
+    reg = PluginRegistry()
+    reg.register(object(), name="json", kind="importer", version="1.0.0")
+    spec = reg.get("importer", "json")
+    assert spec.kind == "importer"
+    assert spec.version == "1.0.0"
+    assert [s.name for s in reg.list("importer")] == ["json"]
+
+
+def test_unknown_kind_rejected():
+    reg = PluginRegistry()
+    with pytest.raises(PluginRegistryError):
+        reg.register(object(), name="x", kind="vector_index")  # type: ignore[arg-type]
+
+
+def test_duplicate_registration_rejected_unless_replace():
+    reg = PluginRegistry()
+    reg.register(object(), name="json", kind="exporter")
+    with pytest.raises(PluginRegistryError):
+        reg.register(object(), name="json", kind="exporter")
+    reg.register(object(), name="json", kind="exporter", replace=True)
+
+
+def test_default_attachment_registry_resolves_extensions():
+    reg = default_attachment_registry()
+    assert reg.attachment_processor_for("a.PNG").name == "image_ocr"
+    assert reg.attachment_processor_for("/tmp/notes.mp3").name == "audio_transcript"
+    assert reg.attachment_processor_for("doc.pdf").name == "pdf_parse"
+    assert reg.attachment_processor_for("readme.md").name == "text_parse"
+    assert reg.attachment_processor_for("bin.xyz") is None
+
+
+def test_attachment_pass_records_processor_and_hash(tmp_path: Path):
+    path = tmp_path / "note.txt"
+    path.write_text("tenant isolation matters", encoding="utf-8")
+    prov = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass().execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    assert att["status"] == "processed"
+    assert "tenant isolation" in att["extracted_text"]
+    assert att["processor"] == "text_parse"
+    assert att["processor_version"] == TextParseProcessor.version
+    assert att["transformation"] == "parse"
+    assert len(att["content_hash"]) == 64
+    assert att["provenance"]["tenant_id"] == "t"
+    assert att["provenance"]["silo_id"] == "s"
+
+
+def test_custom_processor_can_be_registered(tmp_path: Path):
+    class Fake:
+        transformation = "structured_extract"
+
+        def process(self, file_path: str):
+            return {
+                "status": "processed",
+                "extracted_text": "TABLE:1",
+                "keywords": ["table"],
+                "confidence": 0.7,
+                "media_type": "structured",
+                "engine": "fake",
+            }
+
+    reg = PluginRegistry()
+    reg.register(
+        Fake(),
+        name="csv_table",
+        kind="attachment_processor",
+        version="0.1.0",
+        extensions=(".csv",),
+    )
+    path = tmp_path / "rows.csv"
+    path.write_text("a,b\n1,2\n", encoding="utf-8")
+    prov = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass(registry=reg).execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    assert att["processor"] == "csv_table"
+    assert att["extracted_text"] == "TABLE:1"
+    assert att["transformation"] == "structured_extract"
