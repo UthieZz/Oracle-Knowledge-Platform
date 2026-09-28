@@ -1,13 +1,9 @@
 import logging
-from typing import Dict, Type
+from typing import Any, Dict, Optional
 
 from okc.models.knowledge_package import KnowledgePackage
-from okc.compiler.processors.attachment_processor import (
-    BaseAttachmentProcessor,
-    ImageOCRProcessor,
-    AudioTranscriptProcessor,
-    PDFProcessor,
-)
+from okc.compiler.processors.attachment_processor import content_hash
+from okc.plugins.registry import PluginRegistry, default_attachment_registry
 
 logger = logging.getLogger(__name__)
 
@@ -15,18 +11,14 @@ logger = logging.getLogger(__name__)
 class AttachmentProcessingPass:
     """
     Compiler pass that dispatches attachments to specialized processors and enriches
-    KnowledgeObjects with extracted transcripts, OCR text, and metadata.
+    attachment records with extracted text, hashes, processor identity, and provenance.
+
+    Extracted attachment content stays on the attachment record. It is not promoted
+    to a KnowledgeObject by this pass.
     """
 
-    def __init__(self):
-        self.registry: Dict[str, BaseAttachmentProcessor] = {
-            ".png": ImageOCRProcessor(),
-            ".jpg": ImageOCRProcessor(),
-            ".jpeg": ImageOCRProcessor(),
-            ".mp3": AudioTranscriptProcessor(),
-            ".wav": AudioTranscriptProcessor(),
-            ".pdf": PDFProcessor(),
-        }
+    def __init__(self, registry: Optional[PluginRegistry] = None):
+        self.registry = registry or default_attachment_registry()
 
     def execute(self, package: KnowledgePackage) -> KnowledgePackage:
         logger.info("Executing AttachmentProcessingPass across KnowledgeObjects...")
@@ -34,24 +26,33 @@ class AttachmentProcessingPass:
         for obj in package.objects:
             updated_attachments = []
             for attachment in obj.attachments:
-                file_path = attachment.get("file_path", "")
-                ext = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
+                file_path = attachment.get("file_path") or attachment.get("url") or ""
+                spec = self.registry.attachment_processor_for(file_path) if file_path else None
 
-                if ext in self.registry:
-                    processor = self.registry[ext]
-                    result = processor.process(file_path)
-
-                    # Enrich attachment record with extracted knowledge
-                    attachment.update({
-                        "status": result["status"],
-                        "extracted_text": result.get("extracted_text", ""),
-                        "keywords": result.get("keywords", []),
-                        "confidence": result.get("confidence", 0.0),
-                        "provenance": obj.provenance.model_dump(),
-                    })
-                else:
+                if spec is None:
                     attachment["status"] = "unsupported_format"
+                    attachment.setdefault("provenance", obj.provenance.model_dump())
+                    updated_attachments.append(attachment)
+                    continue
 
+                processor = spec.plugin
+                result: Dict[str, Any] = processor.process(file_path)
+                extracted = result.get("extracted_text", "") or ""
+                attachment.update({
+                    "status": result.get("status", "processed"),
+                    "extracted_text": extracted,
+                    "keywords": result.get("keywords", []),
+                    "confidence": result.get("confidence", 0.0),
+                    "media_type": result.get("media_type"),
+                    "engine": result.get("engine"),
+                    "processor": spec.name,
+                    "processor_version": spec.version,
+                    "transformation": getattr(processor, "transformation", spec.kind),
+                    "content_hash": content_hash(extracted),
+                    "provenance": obj.provenance.model_dump(),
+                })
+                if "error" in result:
+                    attachment["error"] = result["error"]
                 updated_attachments.append(attachment)
 
             obj.attachments = updated_attachments

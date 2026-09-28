@@ -3,6 +3,8 @@ from .attachment_processor import (
     ImageOCRProcessor,
     AudioTranscriptProcessor,
     PDFProcessor,
+    TextParseProcessor,
+    content_hash,
 )
 
 __all__ = [
@@ -10,4 +12,6 @@ __all__ = [
     "ImageOCRProcessor",
     "AudioTranscriptProcessor",
     "PDFProcessor",
+    "TextParseProcessor",
+    "content_hash",
 ]
