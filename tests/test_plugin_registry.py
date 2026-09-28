@@ -126,7 +126,7 @@ def test_default_okc_registry_contains_runtime_components():
 
     assert reg.get("importer", "json_v2_importer").plugin.__class__.__name__ == "JsonToV2Importer"
     assert reg.get("analyzer", "entity_extractor").plugin.__class__.__name__ == "EntityExtractor"
-    assert reg.get("exporter", "sqlite_exporter").plugin.__class__.__name__ == "SQLiteExporter"
+    assert reg.get("exporter", "sqlite_exporter").plugin.__name__ == "SQLiteExporter"
     assert reg.get("context_provider", "context_gateway").plugin.__name__ == "ContextGateway"
     assert reg.get("attachment_processor", "text_parse").plugin.__class__.__name__ == "TextParseProcessor"
 
