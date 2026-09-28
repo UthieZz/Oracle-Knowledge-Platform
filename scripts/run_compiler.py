@@ -2,7 +2,9 @@ import os
 import sys
 import logging
 
+from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
 from okc.plugins import default_okc_registry
+from okc.search.hybrid_rag import HybridRAGEngine
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("OKC_Driver")
@@ -38,7 +40,7 @@ def run_pipeline(source_file: str, tenant_id: str, silo_id: str) -> None:
         logger.info("Importing via %s: %s", registry.get("importer", "json_v2_importer").name, source_file)
         pkg = importer.process(source_file, tenant_id=tenant_id, silo_id=silo_id)
 
-    attachment_pass = __import__("okc.compiler.passes.attachment_processing_pass", fromlist=["AttachmentProcessingPass"]).AttachmentProcessingPass(registry=registry)
+    attachment_pass = AttachmentProcessingPass(registry=registry)
     pkg = attachment_pass.execute(pkg)
     analyzer = registry.get("analyzer", "entity_extractor").plugin
     pkg = analyzer.run(pkg)
