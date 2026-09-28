@@ -105,5 +105,10 @@ The long-term product boundary now explicitly separates OKP from the model and a
 - B2B concerns such as enterprise identity, authorization, audit, metering, and hosted multi-tenancy remain separate control-plane concerns.
 - The first implementation intentionally avoids premature enterprise RBAC and vendor lock-in.
 
-The next implementation target is a real retrieval adapter plus a feedback contract for
-citations, tool events, memory candidates, and audit records.
+Landed 2026-09-28: `KnowledgePackageRetriever` plus `AgentFeedbackPackage` /
+`FeedbackLedger` in `okc/agent/`. Memory candidates are rejected if marked
+accepted; they are not canonical knowledge.
+
+The next implementation target is a persistence adapter for the feedback ledger
+and a compilation contract that can promote validated memory candidates, or
+PluginRegistry coverage for attachment processors and context providers.

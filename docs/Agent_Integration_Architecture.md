@@ -79,8 +79,9 @@ Direct SDK, REST, local-process, and embedded-Python adapters may coexist.
 7. The agent runtime supplies that package to its model.
 8. The agent may call tools or request additional context.
 9. Outputs, tool events, memory candidates, and citations can be returned to OKP
-   through a future feedback contract.
-10. OKP records relevant audit and provenance events.
+   through `AgentFeedbackPackage` / `FeedbackLedger`.
+10. OKP records relevant audit and provenance events. Memory candidates remain
+    process artifacts until a compilation/validation contract exists.
 
 Context requests can therefore occur multiple times during one agent run.
 
@@ -119,9 +120,13 @@ Agent Runtime:
 - handoffs
 - approvals
 
-This commit intentionally adds only the boundary contract and a safe local gateway.
-It does not prematurely implement enterprise RBAC, billing, hosted multi-tenancy,
-or a specific agent framework.
+Implemented boundary pieces:
+- `ContextGateway` converts approved KnowledgeObjects into AgentContextPackage.
+- `KnowledgePackageRetriever` selects tenant/silo-scoped objects from a KnowledgePackage.
+- `AgentFeedbackPackage` accepts citations, tool events, memory candidates, and audit records.
+
+Not implemented: enterprise RBAC, billing, hosted multi-tenancy, vector indexes,
+or a specific agent framework. Memory candidates are not KnowledgeObjects.
 
 ## Security principles
 
