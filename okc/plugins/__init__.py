@@ -4,6 +4,7 @@ from .registry import (
     PluginRegistryError,
     PluginSpec,
     default_attachment_registry,
+    default_okc_registry,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "PluginRegistryError",
     "PluginSpec",
     "default_attachment_registry",
+    "default_okc_registry",
 ]
