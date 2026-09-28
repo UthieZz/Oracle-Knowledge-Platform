@@ -186,7 +186,7 @@ def default_okc_registry() -> PluginRegistry:
         description="Deterministic entity extraction over KnowledgePackage objects",
     )
     registry.register(
-        SQLiteExporter(),
+        SQLiteExporter,
         name="sqlite_exporter",
         kind="exporter",
         version="1.0.0",
