@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, Iterable, List, Literal, Optional
 PluginKind = Literal[
     "importer",
     "processor",
+    "analyzer",
     "attachment_processor",
     "compiler",
     "exporter",
@@ -21,6 +22,7 @@ VALID_KINDS = frozenset(
     {
         "importer",
         "processor",
+        "analyzer",
         "attachment_processor",
         "compiler",
         "exporter",
@@ -152,5 +154,51 @@ def default_attachment_registry(
         version=TextParseProcessor.version,
         extensions=(".txt", ".md", ".csv", ".json", ".xml", ".html"),
         description="Plain/structured text parse",
+    )
+    return registry
+
+
+def default_okc_registry() -> PluginRegistry:
+    """Build the runtime registry from concrete OKC components only.
+
+    This intentionally does not import the legacy src/ plugin tree. The
+    registry describes components that actually exist in the okc runtime.
+    """
+    from okc.agent.context_gateway import ContextGateway
+    from okc.analyzers.entity_extractor import EntityExtractor
+    from okc.exporters.sqlite_exporter import SQLiteExporter
+    from okc.importers.json_importer import JsonToV2Importer
+
+    registry = default_attachment_registry()
+    registry.register(
+        JsonToV2Importer(),
+        name="json_v2_importer",
+        kind="importer",
+        version="2.0.0",
+        extensions=(".json",),
+        description="Deterministic ChatGPT/Grok JSON to KnowledgePackage v2 importer",
+    )
+    registry.register(
+        EntityExtractor(),
+        name="entity_extractor",
+        kind="analyzer",
+        version="1.0.0",
+        description="Deterministic entity extraction over KnowledgePackage objects",
+    )
+    registry.register(
+        SQLiteExporter(),
+        name="sqlite_exporter",
+        kind="exporter",
+        version="1.0.0",
+        description="Local SQLite persistence for KnowledgePackage objects",
+    )
+    # ContextGateway requires a retriever at construction time, so the class is
+    # registered as the context-provider factory rather than as a fake instance.
+    registry.register(
+        ContextGateway,
+        name="context_gateway",
+        kind="context_provider",
+        version="1.0.0",
+        description="Governed KnowledgePackage -> AgentContextPackage boundary",
     )
     return registry
