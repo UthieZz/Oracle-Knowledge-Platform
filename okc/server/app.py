@@ -24,10 +24,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-from okc.analyzers.entity_extractor import EntityExtractor
 from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
-from okc.exporters.sqlite_exporter import SQLiteExporter
-from okc.importers.json_importer import JsonToV2Importer
+from okc.plugins import default_okc_registry
 from okc.search.hybrid_rag import HybridRAGEngine
 
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
@@ -113,22 +111,25 @@ def _run_pipeline(job_id: str) -> None:
     silo_id = job["silo_id"]
 
     try:
+        registry = default_okc_registry()
         _set_job(job_id, status="running", progress=10, message="Importing source into v2 IR")
-        importer = JsonToV2Importer()
+        importer = registry.get("importer", "json_v2_importer").plugin
         package = importer.process(file_path, tenant_id=tenant_id, silo_id=silo_id)
 
         _set_job(job_id, status="running", progress=35, message="Attachment processing")
-        package = AttachmentProcessingPass().execute(package)
+        package = AttachmentProcessingPass(registry=registry).execute(package)
 
         _set_job(job_id, status="running", progress=55, message="Entity extraction")
-        package = EntityExtractor().run(package)
+        analyzer = registry.get("analyzer", "entity_extractor").plugin
+        package = analyzer.run(package)
 
         _set_job(job_id, status="running", progress=75, message="Hybrid RAG indexing")
         rag = HybridRAGEngine()
         rag.index_package(package)
 
         _set_job(job_id, status="running", progress=90, message="Persisting to SQLite")
-        SQLiteExporter(db_path=DB_PATH).export(package, tenant_id=tenant_id, silo_id=silo_id)
+        exporter_cls = registry.get("exporter", "sqlite_exporter").plugin
+        exporter_cls(db_path=DB_PATH).export(package, tenant_id=tenant_id, silo_id=silo_id)
 
         _set_job(
             job_id,
