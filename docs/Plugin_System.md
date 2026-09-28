@@ -8,6 +8,7 @@ Status: implemented in `okc/plugins` (2026-09-28). Not a second IR.
 
 - importer
 - processor
+- analyzer
 - attachment_processor
 - compiler
 - exporter
@@ -49,3 +50,18 @@ AttachmentProcessingPass(registry=registry).execute(package)
 ```
 
 Built-in attachment processors are loaded by `default_attachment_registry()`.
+
+
+## Runtime registry
+
+`default_okc_registry()` registers the concrete components that are actually implemented in the `okc/` runtime:
+
+- `json_v2_importer` — importer
+- `entity_extractor` — analyzer
+- `sqlite_exporter` — exporter
+- `context_gateway` — context provider factory/class
+- all built-in attachment processors
+
+The registry is used by the local compiler driver and local API pipeline for runtime construction. The legacy `src/` plugin registry is not imported.
+
+There is currently no `okc/` compiler implementation to register. The legacy `src/compiler/markdown_compiler.py` therefore remains outside this registry until an actual `okc` compiler contract and implementation exist.
