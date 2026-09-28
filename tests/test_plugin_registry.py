@@ -11,6 +11,7 @@ from okc.plugins.registry import (
     PluginRegistry,
     PluginRegistryError,
     default_attachment_registry,
+    default_okc_registry,
 )
 
 
@@ -118,3 +119,20 @@ def test_custom_processor_can_be_registered(tmp_path: Path):
     assert att["processor"] == "csv_table"
     assert att["extracted_text"] == "TABLE:1"
     assert att["transformation"] == "structured_extract"
+
+
+def test_default_okc_registry_contains_runtime_components():
+    reg = default_okc_registry()
+
+    assert reg.get("importer", "json_v2_importer").plugin.__class__.__name__ == "JsonToV2Importer"
+    assert reg.get("analyzer", "entity_extractor").plugin.__class__.__name__ == "EntityExtractor"
+    assert reg.get("exporter", "sqlite_exporter").plugin.__class__.__name__ == "SQLiteExporter"
+    assert reg.get("context_provider", "context_gateway").plugin.__name__ == "ContextGateway"
+    assert reg.get("attachment_processor", "text_parse").plugin.__class__.__name__ == "TextParseProcessor"
+
+
+def test_default_okc_registry_does_not_register_legacy_src_components():
+    reg = default_okc_registry()
+    assert all(spec.plugin.__class__.__module__.startswith("okc.") or spec.kind == "context_provider"
+               for spec in reg.list())
+    assert not [spec for spec in reg.list() if spec.kind == "compiler"]
