@@ -50,8 +50,8 @@ def run_pipeline(source_file: str, tenant_id: str, silo_id: str) -> None:
     hits = rag_engine.search("SQLite Python integration", tenant_id=tenant_id, silo_id=silo_id)
     logger.info("Hybrid Search Validation Hits: %s", len(hits))
 
-    exporter = registry.get("exporter", "sqlite_exporter").plugin
-    exporter.db_path = "okp_local.db"
+    exporter_cls = registry.get("exporter", "sqlite_exporter").plugin
+    exporter = exporter_cls(db_path="okp_local.db")
     exporter.export(pkg, tenant_id=tenant_id, silo_id=silo_id)
     logger.info("Pipeline run completed successfully (%s objects).", len(pkg.objects))
 
