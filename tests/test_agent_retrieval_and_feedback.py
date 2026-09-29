@@ -6,6 +6,7 @@ from okc.agent import (
     FeedbackAcceptanceError,
     FeedbackLedger,
     KnowledgePackageRetriever,
+    SQLiteFeedbackStore,
     MemoryCandidate,
     ToolEvent,
     AuditRecord,
@@ -109,3 +110,51 @@ def test_feedback_rejects_premature_memory_promotion():
     except FeedbackAcceptanceError:
         return
     raise AssertionError("Accepted memory candidate crossed the canonical-knowledge boundary.")
+
+
+def test_sqlite_feedback_store_persists_and_isolates(tmp_path):
+    store = SQLiteFeedbackStore(str(tmp_path / "feedback.db"))
+    store.accept(AgentFeedbackPackage(
+        request_id="req_persist_1",
+        tenant_id="acme",
+        silo_id="finance",
+        agent_id="agent_1",
+        citations=[CitationEvent(object_id="ko_transfer")],
+        memory_candidates=[MemoryCandidate(candidate_id="mem_p1", text="not knowledge")],
+    ))
+    store.accept(AgentFeedbackPackage(
+        request_id="req_persist_legal",
+        tenant_id="acme",
+        silo_id="legal",
+        agent_id="agent_1",
+        citations=[CitationEvent(object_id="ko_legal")],
+    ))
+
+    finance = store.list("acme", "finance")
+    assert len(finance) == 1
+    assert finance[0].request_id == "req_persist_1"
+    assert finance[0].memory_candidates[0].accepted is False
+    assert store.get("req_persist_legal", "acme", "finance") is None
+    legal = store.get("req_persist_legal", "acme", "legal")
+    assert legal is not None
+    assert legal.citations[0].object_id == "ko_legal"
+
+
+def test_sqlite_feedback_store_rejects_accepted_memory(tmp_path):
+    store = SQLiteFeedbackStore(str(tmp_path / "feedback.db"))
+    try:
+        store.accept(AgentFeedbackPackage(
+            request_id="req_persist_bad",
+            tenant_id="acme",
+            silo_id="finance",
+            agent_id="agent_1",
+            memory_candidates=[MemoryCandidate(
+                candidate_id="mem_bad",
+                text="do not persist",
+                accepted=True,
+            )],
+        ))
+    except FeedbackAcceptanceError:
+        assert store.list("acme", "finance") == []
+        return
+    raise AssertionError("Persisted accepted memory candidate.")
