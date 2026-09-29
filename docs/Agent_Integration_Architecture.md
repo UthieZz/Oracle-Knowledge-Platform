@@ -124,6 +124,7 @@ Implemented boundary pieces:
 - `ContextGateway` converts approved KnowledgeObjects into AgentContextPackage.
 - `KnowledgePackageRetriever` selects tenant/silo-scoped objects from a KnowledgePackage.
 - `AgentFeedbackPackage` accepts citations, tool events, memory candidates, and audit records.
+- `SQLiteFeedbackStore` persists accepted feedback without writing KnowledgeObjects.
 
 Not implemented: enterprise RBAC, billing, hosted multi-tenancy, vector indexes,
 or a specific agent framework. Memory candidates are not KnowledgeObjects.

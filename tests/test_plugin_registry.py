@@ -133,6 +133,15 @@ def test_default_okc_registry_contains_runtime_components():
 
 def test_default_okc_registry_does_not_register_legacy_src_components():
     reg = default_okc_registry()
-    assert all(spec.plugin.__class__.__module__.startswith("okc.") or spec.kind == "context_provider"
-               for spec in reg.list())
+
+    def plugin_module(plugin):
+        # Classes are registered as factories; instances as live components.
+        if isinstance(plugin, type):
+            return plugin.__module__
+        return plugin.__class__.__module__
+
+    assert all(
+        plugin_module(spec.plugin).startswith("okc.")
+        for spec in reg.list()
+    )
     assert not [spec for spec in reg.list() if spec.kind == "compiler"]

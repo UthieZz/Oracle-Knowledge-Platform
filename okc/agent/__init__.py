@@ -11,6 +11,7 @@ from .feedback import (
     MemoryCandidate,
     ToolEvent,
 )
+from .feedback_store import SQLiteFeedbackStore
 
 __all__ = [
     "AgentContextRequest",
@@ -26,4 +27,5 @@ __all__ = [
     "FeedbackLedger",
     "MemoryCandidate",
     "ToolEvent",
+    "SQLiteFeedbackStore",
 ]
