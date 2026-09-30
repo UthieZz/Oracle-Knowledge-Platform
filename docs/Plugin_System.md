@@ -58,10 +58,16 @@ Built-in attachment processors are loaded by `default_attachment_registry()`.
 
 - `json_v2_importer` — importer
 - `entity_extractor` — analyzer
+- `attachment_processing_pass` — processor
+- `package_compiler` — compiler
 - `sqlite_exporter` — exporter
 - `context_gateway` — context provider factory/class
 - all built-in attachment processors
 
 The registry is used by the local compiler driver and local API pipeline for runtime construction. The legacy `src/` plugin registry is not imported.
 
-There is currently no `okc/` compiler implementation to register. The legacy `src/compiler/markdown_compiler.py` therefore remains outside this registry until an actual `okc` compiler contract and implementation exist.
+`PackageCompiler` (`okc/compiler/package_compiler.py`) is the okc compile orchestrator:
+
+import (optional) → process attachments → enrich (entity extractor) → validate provenance
+
+It does not create a second IR. Hybrid RAG indexing and SQLite export remain driver/server concerns, not compiler stages. The legacy `src/compiler/markdown_compiler.py` remains outside this registry.

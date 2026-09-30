@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 
-from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
 from okc.plugins import default_okc_registry
 from okc.search.hybrid_rag import HybridRAGEngine
 
@@ -13,6 +12,8 @@ logger = logging.getLogger("OKC_Driver")
 def run_pipeline(source_file: str, tenant_id: str, silo_id: str) -> None:
     logger.info("Initializing Oracle Knowledge Compiler Pipeline (v2)...")
     registry = default_okc_registry()
+    compiler_cls = registry.get("compiler", "package_compiler").plugin
+    compiler = compiler_cls(registry=registry)
 
     if not os.path.isfile(source_file):
         logger.warning("Source file missing (%s); falling back to synthetic package path", source_file)
@@ -35,15 +36,13 @@ def run_pipeline(source_file: str, tenant_id: str, silo_id: str) -> None:
                 )
             ],
         )
+        compiled = compiler.compile_package(pkg)
     else:
-        importer = registry.get("importer", "json_v2_importer").plugin
         logger.info("Importing via %s: %s", registry.get("importer", "json_v2_importer").name, source_file)
-        pkg = importer.process(source_file, tenant_id=tenant_id, silo_id=silo_id)
+        compiled = compiler.compile_file(source_file, tenant_id=tenant_id, silo_id=silo_id)
 
-    attachment_pass = AttachmentProcessingPass(registry=registry)
-    pkg = attachment_pass.execute(pkg)
-    analyzer = registry.get("analyzer", "entity_extractor").plugin
-    pkg = analyzer.run(pkg)
+    pkg = compiled.package
+    logger.info("Compile stages: %s", ",".join(compiled.stages))
 
     rag_engine = HybridRAGEngine()
     rag_engine.index_package(pkg)
