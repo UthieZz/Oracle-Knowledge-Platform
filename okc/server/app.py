@@ -24,7 +24,6 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
 from okc.plugins import default_okc_registry
 from okc.search.hybrid_rag import HybridRAGEngine
 
@@ -112,16 +111,17 @@ def _run_pipeline(job_id: str) -> None:
 
     try:
         registry = default_okc_registry()
-        _set_job(job_id, status="running", progress=10, message="Importing source into v2 IR")
-        importer = registry.get("importer", "json_v2_importer").plugin
-        package = importer.process(file_path, tenant_id=tenant_id, silo_id=silo_id)
-
-        _set_job(job_id, status="running", progress=35, message="Attachment processing")
-        package = AttachmentProcessingPass(registry=registry).execute(package)
-
-        _set_job(job_id, status="running", progress=55, message="Entity extraction")
-        analyzer = registry.get("analyzer", "entity_extractor").plugin
-        package = analyzer.run(package)
+        compiler_cls = registry.get("compiler", "package_compiler").plugin
+        compiler = compiler_cls(registry=registry)
+        _set_job(job_id, status="running", progress=10, message="Compiling source into KnowledgePackage")
+        compiled = compiler.compile_file(file_path, tenant_id=tenant_id, silo_id=silo_id)
+        package = compiled.package
+        _set_job(
+            job_id,
+            status="running",
+            progress=55,
+            message="Compiled: " + ",".join(compiled.stages),
+        )
 
         _set_job(job_id, status="running", progress=75, message="Hybrid RAG indexing")
         rag = HybridRAGEngine()
