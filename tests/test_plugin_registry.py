@@ -129,10 +129,15 @@ def test_default_okc_registry_contains_runtime_components():
     assert reg.get("exporter", "sqlite_exporter").plugin.__name__ == "SQLiteExporter"
     assert reg.get("context_provider", "context_gateway").plugin.__name__ == "ContextGateway"
     assert reg.get("attachment_processor", "text_parse").plugin.__class__.__name__ == "TextParseProcessor"
+    assert reg.get("compiler", "package_compiler").plugin.__name__ == "PackageCompiler"
+    assert reg.get("processor", "attachment_processing_pass").plugin.__name__ == "AttachmentProcessingPass"
 
 
 def test_default_okc_registry_does_not_register_legacy_src_components():
     reg = default_okc_registry()
-    assert all(spec.plugin.__class__.__module__.startswith("okc.") or spec.kind == "context_provider"
-               for spec in reg.list())
-    assert not [spec for spec in reg.list() if spec.kind == "compiler"]
+    def _module(plugin):
+        return getattr(plugin, "__module__", plugin.__class__.__module__)
+
+    assert all(_module(spec.plugin).startswith("okc.") for spec in reg.list())
+    compilers = [spec for spec in reg.list() if spec.kind == "compiler"]
+    assert [spec.name for spec in compilers] == ["package_compiler"]
