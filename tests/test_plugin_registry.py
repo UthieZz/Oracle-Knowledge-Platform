@@ -131,8 +131,14 @@ def test_default_okc_registry_contains_runtime_components():
     assert reg.get("attachment_processor", "text_parse").plugin.__class__.__name__ == "TextParseProcessor"
 
 
+def _plugin_module(plugin):
+    return getattr(plugin, "__module__", plugin.__class__.__module__)
+
+
 def test_default_okc_registry_does_not_register_legacy_src_components():
     reg = default_okc_registry()
-    assert all(spec.plugin.__class__.__module__.startswith("okc.") or spec.kind == "context_provider"
-               for spec in reg.list())
+    # Classes and instances both expose their defining module on __module__.
+    # Using plugin.__class__.__module__ is wrong for registered classes
+    # (SQLiteExporter, ContextGateway) because that is builtins.type.
+    assert all(_plugin_module(spec.plugin).startswith("okc.") for spec in reg.list())
     assert not [spec for spec in reg.list() if spec.kind == "compiler"]

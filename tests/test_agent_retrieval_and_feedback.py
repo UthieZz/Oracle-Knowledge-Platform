@@ -5,6 +5,7 @@ from okc.agent import (
     ContextGateway,
     FeedbackAcceptanceError,
     FeedbackLedger,
+    SQLiteFeedbackLedger,
     KnowledgePackageRetriever,
     MemoryCandidate,
     ToolEvent,
@@ -109,3 +110,39 @@ def test_feedback_rejects_premature_memory_promotion():
     except FeedbackAcceptanceError:
         return
     raise AssertionError("Accepted memory candidate crossed the canonical-knowledge boundary.")
+
+
+def test_sqlite_feedback_ledger_persists_and_isolates(tmp_path):
+    db = tmp_path / "feedback.db"
+    ledger = SQLiteFeedbackLedger(str(db))
+    ledger.accept(AgentFeedbackPackage(
+        request_id="req_persist",
+        tenant_id="acme",
+        silo_id="finance",
+        agent_id="agent_1",
+        memory_candidates=[MemoryCandidate(candidate_id="mem_p", text="candidate only")],
+    ))
+    reopened = SQLiteFeedbackLedger(str(db))
+    found = reopened.get("req_persist", "acme", "finance")
+    assert found is not None
+    assert found.memory_candidates[0].accepted is False
+    assert reopened.list_for("acme", "legal") == []
+    assert reopened.get("req_persist", "acme", "legal") is None
+
+
+def test_sqlite_feedback_rejects_duplicate_request_id(tmp_path):
+    db = tmp_path / "feedback.db"
+    ledger = SQLiteFeedbackLedger(str(db))
+    payload = dict(
+        request_id="req_dup",
+        tenant_id="acme",
+        silo_id="finance",
+        agent_id="agent_1",
+    )
+    ledger.accept(AgentFeedbackPackage(**payload))
+    try:
+        ledger.accept(AgentFeedbackPackage(**payload))
+    except FeedbackAcceptanceError:
+        assert len(ledger.list_for("acme", "finance")) == 1
+        return
+    raise AssertionError("Duplicate feedback request was stored.")
