@@ -2,6 +2,7 @@
 from .models import AgentContextRequest, AgentContextPackage, ContextItem
 from .context_gateway import ContextGateway, ContextAccessError
 from .retrievers import KnowledgePackageRetriever
+from .feedback_store import SQLiteFeedbackLedger
 from .feedback import (
     AgentFeedbackPackage,
     AuditRecord,
@@ -24,6 +25,7 @@ __all__ = [
     "CitationEvent",
     "FeedbackAcceptanceError",
     "FeedbackLedger",
+    "SQLiteFeedbackLedger",
     "MemoryCandidate",
     "ToolEvent",
 ]
