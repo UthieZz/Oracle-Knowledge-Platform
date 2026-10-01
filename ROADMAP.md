@@ -109,6 +109,10 @@ Landed 2026-09-28: `KnowledgePackageRetriever` plus `AgentFeedbackPackage` /
 `FeedbackLedger` in `okc/agent/`. Memory candidates are rejected if marked
 accepted; they are not canonical knowledge.
 
-The next implementation target is a persistence adapter for the feedback ledger
-and a compilation contract that can promote validated memory candidates, or
-PluginRegistry coverage for attachment processors and context providers.
+Landed 2026-10-01: `SQLiteFeedbackLedger` persists `AgentFeedbackPackage`
+locally with tenant/silo isolation. Memory candidates remain unaccepted.
+
+The next implementation target is a compilation/validation contract that can
+promote *validated* memory candidates into KnowledgeObjects, or an `okc/`
+compiler implementation that can be registered without importing `src/`.
+Do not invent promotion rules without an explicit decision.

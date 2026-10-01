@@ -142,3 +142,21 @@ High-impact actions require deterministic policy checks and, where appropriate,
 human approval.
 
 Every context package should be traceable to its source KnowledgeObjects.
+
+
+## Feedback persistence
+
+Status: implemented 2026-10-01.
+
+`FeedbackLedger` is the in-memory acceptance boundary.
+
+`SQLiteFeedbackLedger` is a local persistence adapter. It stores
+`AgentFeedbackPackage` JSON keyed by `(request_id, tenant_id, silo_id)`.
+
+Reads require tenant and silo identity. Duplicate request IDs in the same
+tenant/silo are rejected.
+
+This table is audit/process data. It is not KnowledgePackage storage.
+Memory candidates remain unaccepted. Promotion into canonical knowledge
+still requires an explicit compilation/validation contract that does not
+yet exist.
