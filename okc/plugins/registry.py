@@ -166,6 +166,7 @@ def default_okc_registry() -> PluginRegistry:
     """
     from okc.agent.context_gateway import ContextGateway
     from okc.analyzers.entity_extractor import EntityExtractor
+    from okc.compiler.package_compiler import PackageCompiler
     from okc.exporters.sqlite_exporter import SQLiteExporter
     from okc.importers.json_importer import JsonToV2Importer
 
@@ -184,6 +185,13 @@ def default_okc_registry() -> PluginRegistry:
         kind="analyzer",
         version="1.0.0",
         description="Deterministic entity extraction over KnowledgePackage objects",
+    )
+    registry.register(
+        PackageCompiler(),
+        name="package_compiler",
+        kind="compiler",
+        version=PackageCompiler.version,
+        description="Structural provenance/identity validation; does not promote inference",
     )
     registry.register(
         SQLiteExporter,

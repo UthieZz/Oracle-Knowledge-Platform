@@ -112,7 +112,10 @@ accepted; they are not canonical knowledge.
 Landed 2026-10-01: `SQLiteFeedbackLedger` persists `AgentFeedbackPackage`
 locally with tenant/silo isolation. Memory candidates remain unaccepted.
 
-The next implementation target is a compilation/validation contract that can
-promote *validated* memory candidates into KnowledgeObjects, or an `okc/`
-compiler implementation that can be registered without importing `src/`.
-Do not invent promotion rules without an explicit decision.
+Landed 2026-10-02: `PackageCompiler` is the registered `okc/` compiler. It
+validates identity and provenance and stamps compilation metadata. It does
+not import `src/` and does not promote memory candidates.
+
+The next implementation target remains a compilation/validation contract that
+can promote *validated* memory candidates into KnowledgeObjects. Do not invent
+promotion rules without an explicit decision.

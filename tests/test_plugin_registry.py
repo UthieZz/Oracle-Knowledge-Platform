@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from okc.compiler.package_compiler import PackageCompileError, PackageCompiler
 from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
 from okc.compiler.processors.attachment_processor import TextParseProcessor
 from okc.models.knowledge_package import KnowledgeObject, KnowledgePackage, Provenance
@@ -126,6 +127,7 @@ def test_default_okc_registry_contains_runtime_components():
 
     assert reg.get("importer", "json_v2_importer").plugin.__class__.__name__ == "JsonToV2Importer"
     assert reg.get("analyzer", "entity_extractor").plugin.__class__.__name__ == "EntityExtractor"
+    assert reg.get("compiler", "package_compiler").plugin.__class__.__name__ == "PackageCompiler"
     assert reg.get("exporter", "sqlite_exporter").plugin.__name__ == "SQLiteExporter"
     assert reg.get("context_provider", "context_gateway").plugin.__name__ == "ContextGateway"
     assert reg.get("attachment_processor", "text_parse").plugin.__class__.__name__ == "TextParseProcessor"
@@ -141,4 +143,44 @@ def test_default_okc_registry_does_not_register_legacy_src_components():
     # Using plugin.__class__.__module__ is wrong for registered classes
     # (SQLiteExporter, ContextGateway) because that is builtins.type.
     assert all(_plugin_module(spec.plugin).startswith("okc.") for spec in reg.list())
-    assert not [spec for spec in reg.list() if spec.kind == "compiler"]
+    compilers = [spec for spec in reg.list() if spec.kind == "compiler"]
+    assert [spec.name for spec in compilers] == ["package_compiler"]
+    assert _plugin_module(compilers[0].plugin) == "okc.compiler.package_compiler"
+
+
+def _package():
+    prov = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        tenant_id="t",
+        silo_id="s",
+    )
+    return KnowledgePackage(
+        package_id="p1",
+        metadata={"source": "kept"},
+        objects=[
+            KnowledgeObject(object_id="o1", title="T", provenance=prov, content="body"),
+        ],
+    )
+
+
+def test_package_compiler_stamps_without_rewriting_content():
+    package = _package()
+    compiled = PackageCompiler().compile(package)
+    assert compiled.objects[0].content == "body"
+    assert compiled.metadata["source"] == "kept"
+    stamp = compiled.metadata["compilation"]
+    assert stamp["compiler"] == "package_compiler"
+    assert stamp["status"] == "validated"
+    assert stamp["object_count"] == 1
+    assert package.metadata.get("compilation") is None
+
+
+def test_package_compiler_rejects_mixed_silo():
+    package = _package()
+    other = package.objects[0].model_copy(deep=True)
+    other.object_id = "o2"
+    other.provenance.silo_id = "other"
+    package.objects.append(other)
+    with pytest.raises(PackageCompileError):
+        PackageCompiler().compile(package)

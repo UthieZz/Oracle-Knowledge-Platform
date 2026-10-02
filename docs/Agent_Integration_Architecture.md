@@ -160,3 +160,7 @@ This table is audit/process data. It is not KnowledgePackage storage.
 Memory candidates remain unaccepted. Promotion into canonical knowledge
 still requires an explicit compilation/validation contract that does not
 yet exist.
+
+`PackageCompiler` (`okc/compiler/package_compiler.py`) is registered as
+`package_compiler`. It is a structural gate only: identity, provenance, and
+single tenant/silo. It is not the memory-promotion contract.

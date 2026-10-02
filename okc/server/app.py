@@ -123,6 +123,10 @@ def _run_pipeline(job_id: str) -> None:
         analyzer = registry.get("analyzer", "entity_extractor").plugin
         package = analyzer.run(package)
 
+        _set_job(job_id, status="running", progress=65, message="Structural compilation")
+        compiler = registry.get("compiler", "package_compiler").plugin
+        package = compiler.compile(package)
+
         _set_job(job_id, status="running", progress=75, message="Hybrid RAG indexing")
         rag = HybridRAGEngine()
         rag.index_package(package)

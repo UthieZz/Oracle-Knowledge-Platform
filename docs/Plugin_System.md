@@ -58,10 +58,11 @@ Built-in attachment processors are loaded by `default_attachment_registry()`.
 
 - `json_v2_importer` — importer
 - `entity_extractor` — analyzer
+- `package_compiler` — compiler
 - `sqlite_exporter` — exporter
 - `context_gateway` — context provider factory/class
 - all built-in attachment processors
 
 The registry is used by the local compiler driver and local API pipeline for runtime construction. The legacy `src/` plugin registry is not imported.
 
-There is currently no `okc/` compiler implementation to register. The legacy `src/compiler/markdown_compiler.py` therefore remains outside this registry until an actual `okc` compiler contract and implementation exist.
+`package_compiler` validates object identity, required provenance fields, and single tenant/silo membership, then stamps `package.metadata["compilation"]`. It does not create objects, rewrite content, or promote memory candidates or attachment text.
