@@ -56,7 +56,8 @@ Built-in attachment processors are loaded by `default_attachment_registry()`.
 
 `default_okc_registry()` registers the concrete components that are actually implemented in the `okc/` runtime:
 
-- `json_v2_importer` — importer
+- `json_v2_importer` — importer (`.json`)
+- `plain_text_importer` — importer (`.txt`, `.md`)
 - `entity_extractor` — analyzer
 - `package_compiler` — compiler
 - `sqlite_exporter` — exporter
@@ -66,3 +67,7 @@ Built-in attachment processors are loaded by `default_attachment_registry()`.
 The registry is used by the local compiler driver and local API pipeline for runtime construction. The legacy `src/` plugin registry is not imported.
 
 `package_compiler` validates object identity, required provenance fields, and single tenant/silo membership, then stamps `package.metadata["compilation"]`. It does not create objects, rewrite content, or promote memory candidates or attachment text.
+
+The local API resolves an importer by extension via `PluginRegistry.importer_for`. It does not send PDF, image, or audio uploads through `json_v2_importer`. Those media types remain attachment processors. A source file of that type is not a KnowledgePackage until an explicit attachment-as-source import contract exists.
+
+`plain_text_importer` copies UTF-8 source text into one KnowledgeObject with `source_platform=local_file`, source file path, content hash, and a `source` evidence span. That is source import, not inference promotion.

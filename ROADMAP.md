@@ -119,3 +119,7 @@ not import `src/` and does not promote memory candidates.
 The next implementation target remains a compilation/validation contract that
 can promote *validated* memory candidates into KnowledgeObjects. Do not invent
 promotion rules without an explicit decision.
+
+Landed 2026-10-03: local import dispatch resolves an importer by extension.
+`.json` uses `json_v2_importer`. `.txt`/`.md` use `plain_text_importer` and
+remain source evidence. PDF/image/audio still have no package importer.

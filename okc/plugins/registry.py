@@ -51,6 +51,7 @@ class PluginRegistry:
     def __init__(self) -> None:
         self._by_name: Dict[tuple[str, str], PluginSpec] = {}
         self._by_extension: Dict[str, PluginSpec] = {}
+        self._importers_by_extension: Dict[str, PluginSpec] = {}
 
     def register(
         self,
@@ -83,6 +84,14 @@ class PluginRegistry:
         if kind == "attachment_processor":
             for ext in ext_tuple:
                 self._by_extension[ext] = spec
+        elif kind == "importer":
+            for ext in ext_tuple:
+                existing = self._importers_by_extension.get(ext)
+                if existing and existing.name != name and not replace:
+                    raise PluginRegistryError(
+                        f"Importer already registered for {ext}: {existing.name}"
+                    )
+                self._importers_by_extension[ext] = spec
         return spec
 
     def get(self, kind: PluginKind, name: str) -> PluginSpec:
@@ -98,10 +107,19 @@ class PluginRegistry:
         return sorted(specs, key=lambda s: (s.kind, s.name))
 
     def attachment_processor_for(self, file_path: str) -> Optional[PluginSpec]:
-        ext = ""
-        if "." in file_path:
-            ext = self._normalize_ext(file_path.rsplit(".", 1)[-1])
+        ext = self._extension(file_path)
         return self._by_extension.get(ext)
+
+    def importer_for(self, file_path: str) -> Optional[PluginSpec]:
+        """Resolve a source importer by extension. Does not fall back to JSON."""
+        ext = self._extension(file_path)
+        return self._importers_by_extension.get(ext)
+
+    @staticmethod
+    def _extension(file_path: str) -> str:
+        if "." not in file_path:
+            return ""
+        return PluginRegistry._normalize_ext(file_path.rsplit(".", 1)[-1])
 
     @staticmethod
     def _normalize_ext(ext: str) -> str:
@@ -169,6 +187,7 @@ def default_okc_registry() -> PluginRegistry:
     from okc.compiler.package_compiler import PackageCompiler
     from okc.exporters.sqlite_exporter import SQLiteExporter
     from okc.importers.json_importer import JsonToV2Importer
+    from okc.importers.text_importer import PlainTextImporter
 
     registry = default_attachment_registry()
     registry.register(
@@ -178,6 +197,14 @@ def default_okc_registry() -> PluginRegistry:
         version="2.0.0",
         extensions=(".json",),
         description="Deterministic ChatGPT/Grok JSON to KnowledgePackage v2 importer",
+    )
+    registry.register(
+        PlainTextImporter(),
+        name="plain_text_importer",
+        kind="importer",
+        version=PlainTextImporter.version,
+        extensions=(".txt", ".md"),
+        description="Deterministic UTF-8 text/markdown source importer; not an inference promoter",
     )
     registry.register(
         EntityExtractor(),

@@ -7,6 +7,7 @@ import pytest
 from okc.compiler.package_compiler import PackageCompileError, PackageCompiler
 from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
 from okc.compiler.processors.attachment_processor import TextParseProcessor
+from okc.importers.text_importer import PlainTextImportError, PlainTextImporter
 from okc.models.knowledge_package import KnowledgeObject, KnowledgePackage, Provenance
 from okc.plugins.registry import (
     PluginRegistry,
@@ -126,6 +127,10 @@ def test_default_okc_registry_contains_runtime_components():
     reg = default_okc_registry()
 
     assert reg.get("importer", "json_v2_importer").plugin.__class__.__name__ == "JsonToV2Importer"
+    assert reg.get("importer", "plain_text_importer").plugin.__class__.__name__ == "PlainTextImporter"
+    assert reg.importer_for("export.json").name == "json_v2_importer"
+    assert reg.importer_for("notes.md").name == "plain_text_importer"
+    assert reg.importer_for("scan.pdf") is None
     assert reg.get("analyzer", "entity_extractor").plugin.__class__.__name__ == "EntityExtractor"
     assert reg.get("compiler", "package_compiler").plugin.__class__.__name__ == "PackageCompiler"
     assert reg.get("exporter", "sqlite_exporter").plugin.__name__ == "SQLiteExporter"
@@ -184,3 +189,41 @@ def test_package_compiler_rejects_mixed_silo():
     package.objects.append(other)
     with pytest.raises(PackageCompileError):
         PackageCompiler().compile(package)
+
+
+def test_plain_text_importer_preserves_source_and_provenance(tmp_path: Path):
+    path = tmp_path / "decision.md"
+    path.write_text("# Keep provenance\n\nSource text stays source text.\n", encoding="utf-8")
+    package = PlainTextImporter().process(str(path), tenant_id="acme", silo_id="default")
+    obj = package.objects[0]
+    assert obj.title == "Keep provenance"
+    assert obj.content.startswith("# Keep provenance")
+    assert obj.provenance.source_platform == "local_file"
+    assert obj.provenance.source_file == str(path)
+    assert obj.provenance.tenant_id == "acme"
+    assert obj.provenance.silo_id == "default"
+    assert obj.evidence[0].role == "source"
+    assert obj.evidence[0].content == obj.content
+    assert package.metadata["importer"] == "plain_text_importer"
+    assert package.metadata["transformation"] == "import_plain_text"
+    compiled = PackageCompiler().compile(package)
+    assert compiled.objects[0].content == obj.content
+    assert compiled.metadata["compilation"]["status"] == "validated"
+
+
+def test_plain_text_importer_rejects_empty_and_non_utf8(tmp_path: Path):
+    empty = tmp_path / "empty.txt"
+    empty.write_text("   \n", encoding="utf-8")
+    with pytest.raises(PlainTextImportError):
+        PlainTextImporter().process(str(empty), tenant_id="acme", silo_id="default")
+    binary = tmp_path / "bad.txt"
+    binary.write_bytes(b"\xff\xfe not utf-8")
+    with pytest.raises(PlainTextImportError):
+        PlainTextImporter().process(str(binary), tenant_id="acme", silo_id="default")
+
+
+def test_importer_extension_conflict_is_rejected():
+    reg = PluginRegistry()
+    reg.register(object(), name="a", kind="importer", extensions=(".txt",))
+    with pytest.raises(PluginRegistryError):
+        reg.register(object(), name="b", kind="importer", extensions=(".txt",))

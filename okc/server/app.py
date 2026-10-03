@@ -25,7 +25,7 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
-from okc.plugins import default_okc_registry
+from okc.plugins import PluginRegistryError, default_okc_registry
 from okc.search.hybrid_rag import HybridRAGEngine
 
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
@@ -113,8 +113,15 @@ def _run_pipeline(job_id: str) -> None:
     try:
         registry = default_okc_registry()
         _set_job(job_id, status="running", progress=10, message="Importing source into v2 IR")
-        importer = registry.get("importer", "json_v2_importer").plugin
-        package = importer.process(file_path, tenant_id=tenant_id, silo_id=silo_id)
+        importer_spec = registry.importer_for(file_path)
+        if importer_spec is None:
+            suffix = Path(file_path).suffix.lower() or "(no extension)"
+            raise PluginRegistryError(
+                f"No importer registered for {suffix}. "
+                "Supported source imports: .json conversation export, .txt, .md. "
+                "PDF, image, and audio stay attachment processors and are not package importers."
+            )
+        package = importer_spec.plugin.process(file_path, tenant_id=tenant_id, silo_id=silo_id)
 
         _set_job(job_id, status="running", progress=35, message="Attachment processing")
         package = AttachmentProcessingPass(registry=registry).execute(package)
