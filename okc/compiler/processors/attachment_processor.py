@@ -140,15 +140,58 @@ class TextParseProcessor(BaseAttachmentProcessor):
             return {"status": "failed", "error": "File not found"}
 
         extracted_text = _basic_text_probe(file_path)
-        return {
+        ext = os.path.splitext(file_path)[1].lower()
+        structured = None
+        if ext == ".csv":
+            structured = _csv_structure(extracted_text)
+        result = {
             "status": "processed",
             "extracted_text": extracted_text,
-            "keywords": ["text", "parse"],
+            "keywords": ["text", "parse"] if structured is None else ["text", "csv", "structured"],
             "confidence": 0.8 if extracted_text.strip() else 0.2,
-            "media_type": "text",
-            "engine": "text_probe",
+            "media_type": "text" if structured is None else "structured",
+            "engine": "text_probe" if structured is None else "csv_structure",
         }
+        if structured is not None:
+            result["structured_extraction"] = structured
+        return result
+
+
+def _csv_structure(text: str) -> Dict[str, Any]:
+    """Deterministic header/row summary. Not a KnowledgeObject promotion."""
+    import csv
+    from io import StringIO
+
+    rows = list(csv.reader(StringIO(text or "")))
+    headers = rows[0] if rows else []
+    data_rows = rows[1:] if len(rows) > 1 else []
+    return {
+        "format": "csv",
+        "headers": headers,
+        "row_count": len(data_rows),
+        "column_count": len(headers),
+    }
 
 
 def content_hash(text: str) -> str:
     return hashlib.sha256((text or "").encode("utf-8", errors="ignore")).hexdigest()
+
+
+def source_file_hash(file_path: str) -> str:
+    """SHA-256 of source bytes. Empty string if the file cannot be read."""
+    digest = hashlib.sha256()
+    try:
+        with open(file_path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(65536), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    except OSError as exc:
+        logger.warning("Failed hashing %s: %s", file_path, exc)
+        return ""
+
+
+def source_file_size(file_path: str):
+    try:
+        return os.path.getsize(file_path)
+    except OSError:
+        return None

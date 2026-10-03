@@ -6,6 +6,8 @@ import pytest
 
 from okc.compiler.package_compiler import PackageCompileError, PackageCompiler
 from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
+import hashlib
+
 from okc.compiler.processors.attachment_processor import TextParseProcessor
 from okc.importers.text_importer import PlainTextImportError, PlainTextImporter
 from okc.models.knowledge_package import KnowledgeObject, KnowledgePackage, Provenance
@@ -74,8 +76,15 @@ def test_attachment_pass_records_processor_and_hash(tmp_path: Path):
     assert att["processor_version"] == TextParseProcessor.version
     assert att["transformation"] == "parse"
     assert len(att["content_hash"]) == 64
+    assert att["source_hash"] == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert att["source_size"] == path.stat().st_size
     assert att["provenance"]["tenant_id"] == "t"
     assert att["provenance"]["silo_id"] == "s"
+    lineage = att["provenance"]["attachment_lineage"]
+    assert lineage["processor"] == "text_parse"
+    assert lineage["source_hash"] == att["source_hash"]
+    assert lineage["content_hash"] == att["content_hash"]
+    assert lineage["transformation"] == "parse"
 
 
 def test_custom_processor_can_be_registered(tmp_path: Path):
@@ -90,6 +99,7 @@ def test_custom_processor_can_be_registered(tmp_path: Path):
                 "confidence": 0.7,
                 "media_type": "structured",
                 "engine": "fake",
+                "structured_extraction": {"format": "table", "row_count": 1},
             }
 
     reg = PluginRegistry()
@@ -121,6 +131,39 @@ def test_custom_processor_can_be_registered(tmp_path: Path):
     assert att["processor"] == "csv_table"
     assert att["extracted_text"] == "TABLE:1"
     assert att["transformation"] == "structured_extract"
+    assert att["structured_extraction"] == {"format": "table", "row_count": 1}
+    assert att["source_hash"] == hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_csv_structured_extraction_stays_on_attachment(tmp_path: Path):
+    path = tmp_path / "rows.csv"
+    path.write_text("name,qty\nalpha,2\nbeta,3\n", encoding="utf-8")
+    prov = Provenance(
+        source_platform="local_file",
+        source_file="rows.csv",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass().execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    assert att["processor"] == "text_parse"
+    assert att["media_type"] == "structured"
+    assert att["structured_extraction"] == {
+        "format": "csv",
+        "headers": ["name", "qty"],
+        "row_count": 2,
+        "column_count": 2,
+    }
+    assert pkg.objects[0].content == "body"
+    assert len(pkg.objects) == 1
 
 
 def test_default_okc_registry_contains_runtime_components():

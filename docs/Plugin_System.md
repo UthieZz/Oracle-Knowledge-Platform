@@ -26,11 +26,13 @@ Each processed attachment record receives:
 
 - status, extracted_text, keywords, confidence, media_type, engine
 - processor name and version
-- transformation (`ocr`, `transcribe`, `parse`, or custom)
+- transformation (`ocr`, `transcribe`, `parse`, `structured_extract`, or custom)
 - SHA-256 `content_hash` of extracted text
-- provenance copied from the parent KnowledgeObject (tenant/silo/source)
+- SHA-256 `source_hash` of the source file bytes (empty if unreadable) and `source_size`
+- provenance copied from the parent KnowledgeObject, plus `attachment_lineage` (processor, version, transformation, both hashes, engine)
+- `structured_extraction` and `metadata` when the processor returns them
 
-Extracted attachment text stays on the attachment record. Promotion into a KnowledgeObject requires a later compilation/validation contract.
+Extracted attachment text and structured extraction stay on the attachment record. Promotion into a KnowledgeObject requires a later compilation/validation contract. CSV text attachments receive a deterministic header/row summary in `structured_extraction`; that summary is not a knowledge object.
 
 ## Extension
 

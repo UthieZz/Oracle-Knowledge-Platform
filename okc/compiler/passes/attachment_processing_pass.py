@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from okc.models.knowledge_package import KnowledgePackage
-from okc.compiler.processors.attachment_processor import content_hash
+from okc.compiler.processors.attachment_processor import content_hash, source_file_hash, source_file_size
 from okc.plugins.registry import PluginRegistry, default_attachment_registry
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,17 @@ class AttachmentProcessingPass:
                 processor = spec.plugin
                 result: Dict[str, Any] = processor.process(file_path)
                 extracted = result.get("extracted_text", "") or ""
+                source_hash = source_file_hash(file_path)
+                extracted_hash = content_hash(extracted)
+                provenance = obj.provenance.model_dump()
+                provenance["attachment_lineage"] = {
+                    "processor": spec.name,
+                    "processor_version": spec.version,
+                    "transformation": getattr(processor, "transformation", spec.kind),
+                    "source_hash": source_hash,
+                    "content_hash": extracted_hash,
+                    "engine": result.get("engine"),
+                }
                 attachment.update({
                     "status": result.get("status", "processed"),
                     "extracted_text": extracted,
@@ -48,11 +59,17 @@ class AttachmentProcessingPass:
                     "processor": spec.name,
                     "processor_version": spec.version,
                     "transformation": getattr(processor, "transformation", spec.kind),
-                    "content_hash": content_hash(extracted),
-                    "provenance": obj.provenance.model_dump(),
+                    "content_hash": extracted_hash,
+                    "source_hash": source_hash,
+                    "source_size": source_file_size(file_path),
+                    "provenance": provenance,
                 })
                 if "error" in result:
                     attachment["error"] = result["error"]
+                if "structured_extraction" in result:
+                    attachment["structured_extraction"] = result["structured_extraction"]
+                if "metadata" in result:
+                    attachment["metadata"] = result["metadata"]
                 updated_attachments.append(attachment)
 
             obj.attachments = updated_attachments
