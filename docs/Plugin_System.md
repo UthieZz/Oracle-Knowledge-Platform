@@ -31,8 +31,9 @@ Each processed attachment record receives:
 - SHA-256 `source_hash` of the source file bytes (empty if unreadable) and `source_size`
 - provenance copied from the parent KnowledgeObject, plus `attachment_lineage` (processor, version, transformation, both hashes, engine)
 - `structured_extraction` and `metadata` when the processor returns them
+- SHA-256 `structured_extraction_hash` when structured extraction is present, also copied into `attachment_lineage`
 
-Extracted attachment text and structured extraction stay on the attachment record. Promotion into a KnowledgeObject requires a later compilation/validation contract. CSV text attachments receive a deterministic header/row summary in `structured_extraction`; that summary is not a knowledge object.
+Extracted attachment text and structured extraction stay on the attachment record. Promotion into a KnowledgeObject requires a later compilation/validation contract. CSV text attachments receive a deterministic header/row summary in `structured_extraction`; that summary is not a knowledge object. PDF attachments receive `format`, `engine`, `page_count`, and `page_char_counts` only. Page count is null when the parser is unavailable. No headings or claims are invented.
 
 ## Extension
 

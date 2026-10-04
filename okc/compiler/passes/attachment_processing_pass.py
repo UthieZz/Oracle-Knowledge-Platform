@@ -2,7 +2,12 @@ import logging
 from typing import Any, Dict, Optional
 
 from okc.models.knowledge_package import KnowledgePackage
-from okc.compiler.processors.attachment_processor import content_hash, source_file_hash, source_file_size
+from okc.compiler.processors.attachment_processor import (
+    content_hash,
+    source_file_hash,
+    source_file_size,
+    structured_extraction_hash,
+)
 from okc.plugins.registry import PluginRegistry, default_attachment_registry
 
 logger = logging.getLogger(__name__)
@@ -68,6 +73,9 @@ class AttachmentProcessingPass:
                     attachment["error"] = result["error"]
                 if "structured_extraction" in result:
                     attachment["structured_extraction"] = result["structured_extraction"]
+                    structure_hash = structured_extraction_hash(result["structured_extraction"])
+                    attachment["structured_extraction_hash"] = structure_hash
+                    provenance["attachment_lineage"]["structured_extraction_hash"] = structure_hash
                 if "metadata" in result:
                     attachment["metadata"] = result["metadata"]
                 updated_attachments.append(attachment)

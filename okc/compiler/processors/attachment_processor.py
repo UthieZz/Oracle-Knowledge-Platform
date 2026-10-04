@@ -1,8 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Any
 import hashlib
-import os
+import json
 import logging
+import os
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -104,19 +105,29 @@ class PDFProcessor(BaseAttachmentProcessor):
 
         extracted_text = ""
         engine = "stub"
+        page_count = None
+        page_char_counts = []
+        title = None
         try:
             from pypdf import PdfReader  # type: ignore
 
             reader = PdfReader(file_path)
             parts = []
             for page in reader.pages:
-                parts.append(page.extract_text() or "")
+                page_text = page.extract_text() or ""
+                parts.append(page_text)
+                page_char_counts.append(len(page_text))
             extracted_text = "\n".join(parts).strip()
+            page_count = len(reader.pages)
             engine = "pypdf"
+            meta = reader.metadata
+            if meta is not None:
+                title = getattr(meta, "title", None)
         except Exception:
             probe = _basic_text_probe(file_path)
             extracted_text = probe if probe.strip() else f"[PDF text unavailable — install pypdf for {os.path.basename(file_path)}]"
 
+        metadata = {"page_count": page_count, "title": title}
         return {
             "status": "processed",
             "extracted_text": extracted_text,
@@ -124,6 +135,13 @@ class PDFProcessor(BaseAttachmentProcessor):
             "confidence": 0.95 if engine == "pypdf" else 0.25,
             "media_type": "pdf",
             "engine": engine,
+            "metadata": metadata,
+            "structured_extraction": {
+                "format": "pdf",
+                "engine": engine,
+                "page_count": page_count,
+                "page_char_counts": page_char_counts,
+            },
         }
 
 
@@ -175,6 +193,12 @@ def _csv_structure(text: str) -> Dict[str, Any]:
 
 def content_hash(text: str) -> str:
     return hashlib.sha256((text or "").encode("utf-8", errors="ignore")).hexdigest()
+
+
+def structured_extraction_hash(value: Any) -> str:
+    """Stable hash of processor-returned structure. Not a knowledge identity."""
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def source_file_hash(file_path: str) -> str:

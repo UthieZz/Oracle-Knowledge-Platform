@@ -164,6 +164,46 @@ def test_csv_structured_extraction_stays_on_attachment(tmp_path: Path):
     }
     assert pkg.objects[0].content == "body"
     assert len(pkg.objects) == 1
+    assert att["structured_extraction_hash"] == lineage_hash(att["structured_extraction"])
+    assert att["provenance"]["attachment_lineage"]["structured_extraction_hash"] == att["structured_extraction_hash"]
+
+
+def test_pdf_structured_extraction_stays_on_attachment(tmp_path: Path):
+    path = tmp_path / "note.pdf"
+    path.write_bytes(b"%PDF-1.1\nnot a parseable pdf")
+    prov = Provenance(
+        source_platform="local_file",
+        source_file="note.pdf",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass().execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    assert att["processor"] == "pdf_parse"
+    assert att["media_type"] == "pdf"
+    assert att["structured_extraction"]["format"] == "pdf"
+    assert att["structured_extraction"]["engine"] in {"stub", "pypdf"}
+    assert "page_count" in att["structured_extraction"]
+    assert att["structured_extraction_hash"]
+    assert att["provenance"]["attachment_lineage"]["structured_extraction_hash"] == att["structured_extraction_hash"]
+    assert "headings" not in att["structured_extraction"]
+    assert pkg.objects[0].content == "body"
+    assert len(pkg.objects) == 1
+
+
+def lineage_hash(value):
+    import json
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+    ).hexdigest()
 
 
 def test_default_okc_registry_contains_runtime_components():
