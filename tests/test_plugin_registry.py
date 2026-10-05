@@ -199,6 +199,50 @@ def test_pdf_structured_extraction_stays_on_attachment(tmp_path: Path):
     assert len(pkg.objects) == 1
 
 
+def test_image_structured_extraction_stays_on_attachment(tmp_path: Path):
+    path = tmp_path / "pixel.png"
+    try:
+        from PIL import Image
+
+        Image.new("RGB", (2, 3), color=(1, 2, 3)).save(path)
+    except Exception:
+        path.write_bytes(b"\x89PNG\r\nnot a parseable image")
+    prov = Provenance(
+        source_platform="local_file",
+        source_file="pixel.png",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass().execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    structure = att["structured_extraction"]
+    assert att["processor"] == "image_ocr"
+    assert att["media_type"] == "image"
+    assert structure["format"] == "image"
+    assert structure["engine"] in {"stub", "pytesseract"}
+    assert structure["image_parser"] in {"stub", "pillow"}
+    assert "width" in structure and "height" in structure
+    assert att["structured_extraction_hash"]
+    assert att["provenance"]["attachment_lineage"]["structured_extraction_hash"] == att["structured_extraction_hash"]
+    assert "labels" not in structure
+    assert "claims" not in structure
+    assert pkg.objects[0].content == "body"
+    assert len(pkg.objects) == 1
+    if structure["image_parser"] == "pillow":
+        assert structure["width"] == 2
+        assert structure["height"] == 3
+        assert structure["mode"] == "RGB"
+        assert att["metadata"]["width"] == 2
+
+
 def lineage_hash(value):
     import json
     return hashlib.sha256(

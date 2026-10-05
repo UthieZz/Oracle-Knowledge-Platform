@@ -49,15 +49,42 @@ class ImageOCRProcessor(BaseAttachmentProcessor):
 
         extracted_text = ""
         engine = "stub"
+        image_parser = "stub"
+        width = None
+        height = None
+        mode = None
+        image_format = None
         try:
             from PIL import Image  # type: ignore
-            import pytesseract  # type: ignore
 
-            extracted_text = pytesseract.image_to_string(Image.open(file_path)) or ""
-            engine = "pytesseract"
+            with Image.open(file_path) as img:
+                width, height = img.size
+                mode = img.mode
+                image_format = img.format
+            image_parser = "pillow"
+            try:
+                import pytesseract  # type: ignore
+
+                extracted_text = pytesseract.image_to_string(Image.open(file_path)) or ""
+                engine = "pytesseract"
+            except Exception:
+                extracted_text = (
+                    f"[OCR unavailable — install pytesseract for {os.path.basename(file_path)}]"
+                )
         except Exception:
-            extracted_text = f"[OCR unavailable — install pillow+pytesseract for {os.path.basename(file_path)}]"
+            extracted_text = (
+                f"[OCR unavailable — install pillow+pytesseract for {os.path.basename(file_path)}]"
+            )
 
+        structure = {
+            "format": "image",
+            "engine": engine,
+            "image_parser": image_parser,
+            "width": width,
+            "height": height,
+            "mode": mode,
+            "image_format": image_format,
+        }
         return {
             "status": "processed",
             "extracted_text": extracted_text.strip(),
@@ -65,6 +92,13 @@ class ImageOCRProcessor(BaseAttachmentProcessor):
             "confidence": 0.9 if engine == "pytesseract" else 0.2,
             "media_type": "image",
             "engine": engine,
+            "metadata": {
+                "width": width,
+                "height": height,
+                "mode": mode,
+                "image_format": image_format,
+            },
+            "structured_extraction": structure,
         }
 
 
