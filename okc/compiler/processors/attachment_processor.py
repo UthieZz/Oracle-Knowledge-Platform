@@ -103,10 +103,10 @@ class ImageOCRProcessor(BaseAttachmentProcessor):
 
 
 class AudioTranscriptProcessor(BaseAttachmentProcessor):
-    """Speech-to-text path. Placeholder until a local STT backend is configured."""
+    """Speech-to-text path. Records container facts; does not invent a transcript."""
 
     name = "audio_transcript"
-    version = "1.0.0"
+    version = "1.1.0"
     transformation = "transcribe"
 
     def process(self, file_path: str) -> Dict[str, Any]:
@@ -115,6 +115,14 @@ class AudioTranscriptProcessor(BaseAttachmentProcessor):
             return {"status": "failed", "error": "File not found"}
 
         size = os.path.getsize(file_path)
+        container = os.path.splitext(file_path)[1].lower().lstrip(".") or None
+        structure = {
+            "format": "audio",
+            "engine": "stub",
+            "container": container,
+            "byte_size": size,
+            "transcript_state": "pending",
+        }
         return {
             "status": "processed",
             "extracted_text": f"[Audio transcript pending — {os.path.basename(file_path)} ({size} bytes)]",
@@ -122,6 +130,12 @@ class AudioTranscriptProcessor(BaseAttachmentProcessor):
             "confidence": 0.15,
             "media_type": "audio",
             "engine": "stub",
+            "metadata": {
+                "byte_size": size,
+                "container": container,
+                "transcript_state": "pending",
+            },
+            "structured_extraction": structure,
         }
 
 

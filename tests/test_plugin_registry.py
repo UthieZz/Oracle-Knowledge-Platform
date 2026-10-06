@@ -243,6 +243,52 @@ def test_image_structured_extraction_stays_on_attachment(tmp_path: Path):
         assert att["metadata"]["width"] == 2
 
 
+def test_audio_structured_extraction_stays_on_attachment(tmp_path: Path):
+    path = tmp_path / "clip.mp3"
+    path.write_bytes(b"ID3not-a-real-frame")
+    prov = Provenance(
+        source_platform="local_file",
+        source_file="clip.mp3",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass().execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    structure = att["structured_extraction"]
+    assert att["processor"] == "audio_transcript"
+    assert att["processor_version"] == "1.1.0"
+    assert att["transformation"] == "transcribe"
+    assert att["media_type"] == "audio"
+    assert att["engine"] == "stub"
+    assert structure == {
+        "format": "audio",
+        "engine": "stub",
+        "container": "mp3",
+        "byte_size": path.stat().st_size,
+        "transcript_state": "pending",
+    }
+    assert att["metadata"]["transcript_state"] == "pending"
+    assert att["source_hash"] == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert att["source_size"] == path.stat().st_size
+    assert att["structured_extraction_hash"] == lineage_hash(structure)
+    assert att["provenance"]["attachment_lineage"]["structured_extraction_hash"] == att["structured_extraction_hash"]
+    assert att["provenance"]["tenant_id"] == "t"
+    assert att["provenance"]["silo_id"] == "s"
+    assert "duration" not in structure
+    assert "language" not in structure
+    assert "transcript" not in structure
+    assert pkg.objects[0].content == "body"
+    assert len(pkg.objects) == 1
+
+
 def lineage_hash(value):
     import json
     return hashlib.sha256(
