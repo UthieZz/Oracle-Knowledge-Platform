@@ -146,3 +146,34 @@ def test_sqlite_feedback_rejects_duplicate_request_id(tmp_path):
         assert len(ledger.list_for("acme", "finance")) == 1
         return
     raise AssertionError("Duplicate feedback request was stored.")
+
+def test_package_retriever_rejects_cross_tenant_matches():
+    package = KnowledgePackage(
+        package_id="pkg_tenant_boundary",
+        objects=[
+            _obj(
+                "ko_acme",
+                "Transfer policy",
+                "International transfers require verification.",
+                tenant="acme",
+            ),
+            _obj(
+                "ko_other",
+                "Transfer policy",
+                "International transfers require verification.",
+                tenant="other_customer",
+            ),
+        ],
+    )
+    request = AgentContextRequest(
+        request_id="req_tenant_boundary",
+        tenant_id="acme",
+        silo_id="finance",
+        agent_id="agent_1",
+        task="Explain international transfers",
+    )
+
+    retrieved = KnowledgePackageRetriever(package).retrieve(request)
+
+    assert [obj.object_id for obj in retrieved] == ["ko_acme"]
+    assert all(obj.provenance.tenant_id == "acme" for obj in retrieved)
