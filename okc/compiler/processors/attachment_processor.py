@@ -193,6 +193,106 @@ class PDFProcessor(BaseAttachmentProcessor):
         }
 
 
+class OfficeContainerProcessor(BaseAttachmentProcessor):
+    """OOXML container facts. Does not invent body text or promote knowledge objects."""
+
+    name = "office_container"
+    version = "1.0.0"
+    transformation = "structured_extract"
+
+    def process(self, file_path: str) -> Dict[str, Any]:
+        if not os.path.exists(file_path):
+            logger.warning("Office file not found: %s", file_path)
+            return {"status": "failed", "error": "File not found"}
+
+        size = os.path.getsize(file_path)
+        container = os.path.splitext(file_path)[1].lower().lstrip(".") or None
+        structure = _office_structure(file_path, container, size)
+        name = os.path.basename(file_path)
+        if structure["parser_state"] == "parsed":
+            extracted = (
+                f"[Office structure only — {name} "
+                f"({structure['part_count']} parts, {size} bytes)]"
+            )
+            confidence = 0.6
+        else:
+            extracted = (
+                f"[Office structure pending — {name} ({size} bytes); container not parsed]"
+            )
+            confidence = 0.15
+        return {
+            "status": "processed",
+            "extracted_text": extracted,
+            "keywords": ["office", "structured"],
+            "confidence": confidence,
+            "media_type": "office",
+            "engine": structure["engine"],
+            "metadata": {
+                "byte_size": size,
+                "container": container,
+                "parser_state": structure["parser_state"],
+            },
+            "structured_extraction": structure,
+        }
+
+
+def _office_structure(file_path: str, container: Optional[str], size: int) -> Dict[str, Any]:
+    """Deterministic zip/OOXML facts. No cell values, slide narrative, or claims."""
+    import zipfile
+
+    structure: Dict[str, Any] = {
+        "format": "office",
+        "engine": "stub",
+        "container": container,
+        "byte_size": size,
+        "parser_state": "unavailable",
+        "part_count": None,
+        "has_content_types": None,
+    }
+    if not zipfile.is_zipfile(file_path):
+        return structure
+    try:
+        with zipfile.ZipFile(file_path) as zf:
+            names = zf.namelist()
+            structure["engine"] = "zip_container"
+            structure["parser_state"] = "parsed"
+            structure["part_count"] = len(names)
+            structure["has_content_types"] = "[Content_Types].xml" in names
+            if container == "xlsx":
+                structure["sheet_names"] = _xlsx_sheet_names(zf, names)
+                structure["sheet_count"] = len(structure["sheet_names"])
+            elif container == "pptx":
+                slides = [
+                    name for name in names
+                    if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+                ]
+                structure["slide_count"] = len(slides)
+            elif container == "docx":
+                structure["has_document_part"] = "word/document.xml" in names
+    except (zipfile.BadZipFile, OSError) as exc:
+        logger.warning("Failed reading office container %s: %s", file_path, exc)
+        structure["parser_state"] = "unavailable"
+    return structure
+
+
+def _xlsx_sheet_names(zf, names) -> list:
+    import xml.etree.ElementTree as ET
+
+    if "xl/workbook.xml" not in names:
+        return []
+    try:
+        root = ET.fromstring(zf.read("xl/workbook.xml"))
+    except ET.ParseError:
+        return []
+    sheets = []
+    for elem in root.iter():
+        if elem.tag.endswith("}sheet") or elem.tag == "sheet":
+            name = elem.attrib.get("name")
+            if name:
+                sheets.append(name)
+    return sheets
+
+
 class TextParseProcessor(BaseAttachmentProcessor):
     """Parse text-like attachments without promoting them to KnowledgeObjects."""
 

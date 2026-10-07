@@ -136,6 +136,7 @@ def default_attachment_registry(
     from okc.compiler.processors.attachment_processor import (
         AudioTranscriptProcessor,
         ImageOCRProcessor,
+        OfficeContainerProcessor,
         PDFProcessor,
         TextParseProcessor,
     )
@@ -172,6 +173,14 @@ def default_attachment_registry(
         version=TextParseProcessor.version,
         extensions=(".txt", ".md", ".csv", ".json", ".xml", ".html"),
         description="Plain/structured text parse",
+    )
+    registry.register(
+        OfficeContainerProcessor(),
+        name="office_container",
+        kind="attachment_processor",
+        version=OfficeContainerProcessor.version,
+        extensions=(".docx", ".xlsx", ".pptx"),
+        description="OOXML container structure; does not promote body text",
     )
     return registry
 

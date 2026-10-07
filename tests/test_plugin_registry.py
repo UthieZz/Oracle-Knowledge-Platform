@@ -48,6 +48,7 @@ def test_default_attachment_registry_resolves_extensions():
     assert reg.attachment_processor_for("/tmp/notes.mp3").name == "audio_transcript"
     assert reg.attachment_processor_for("doc.pdf").name == "pdf_parse"
     assert reg.attachment_processor_for("readme.md").name == "text_parse"
+    assert reg.attachment_processor_for("book.xlsx").name == "office_container"
     assert reg.attachment_processor_for("bin.xyz") is None
 
 
@@ -286,6 +287,104 @@ def test_audio_structured_extraction_stays_on_attachment(tmp_path: Path):
     assert "language" not in structure
     assert "transcript" not in structure
     assert pkg.objects[0].content == "body"
+    assert len(pkg.objects) == 1
+
+
+def _minimal_ooxml(path: Path, parts: dict) -> None:
+    import zipfile
+
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("[Content_Types].xml", "<Types/>")
+        for name, payload in parts.items():
+            zf.writestr(name, payload)
+
+
+def test_office_structured_extraction_stays_on_attachment(tmp_path: Path):
+    path = tmp_path / "book.xlsx"
+    workbook = (
+        '<?xml version="1.0"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        '<sheets><sheet name="Facts" sheetId="1"/>'
+        '<sheet name="Sources" sheetId="2"/></sheets></workbook>'
+    )
+    _minimal_ooxml(path, {"xl/workbook.xml": workbook})
+    prov = Provenance(
+        source_platform="local_file",
+        source_file="book.xlsx",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass().execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    structure = att["structured_extraction"]
+    assert att["processor"] == "office_container"
+    assert att["processor_version"] == "1.0.0"
+    assert att["transformation"] == "structured_extract"
+    assert att["media_type"] == "office"
+    assert att["engine"] == "zip_container"
+    assert structure["format"] == "office"
+    assert structure["container"] == "xlsx"
+    assert structure["parser_state"] == "parsed"
+    assert structure["sheet_names"] == ["Facts", "Sources"]
+    assert structure["sheet_count"] == 2
+    assert structure["has_content_types"] is True
+    assert "cell_values" not in structure
+    assert "claims" not in structure
+    assert att["source_hash"] == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert att["structured_extraction_hash"] == lineage_hash(structure)
+    assert att["provenance"]["tenant_id"] == "t"
+    assert att["provenance"]["silo_id"] == "s"
+    assert pkg.objects[0].content == "body"
+    assert len(pkg.objects) == 1
+
+    broken = tmp_path / "notes.docx"
+    broken.write_bytes(b"not-a-zip")
+    obj.attachments = [{"file_path": str(broken)}]
+    pkg = AttachmentProcessingPass().execute(pkg)
+    bad = pkg.objects[0].attachments[0]
+    assert bad["structured_extraction"]["parser_state"] == "unavailable"
+    assert bad["structured_extraction"]["engine"] == "stub"
+    assert "sheet_names" not in bad["structured_extraction"]
+    assert pkg.objects[0].content == "body"
+
+
+def test_pptx_slide_count_does_not_extract_narrative(tmp_path: Path):
+    path = tmp_path / "deck.pptx"
+    _minimal_ooxml(
+        path,
+        {
+            "ppt/slides/slide1.xml": "<p:sld>secret narrative</p:sld>",
+            "ppt/slides/slide2.xml": "<p:sld/>",
+        },
+    )
+    prov = Provenance(
+        source_platform="local_file",
+        source_file="deck.pptx",
+        tenant_id="t",
+        silo_id="s",
+    )
+    obj = KnowledgeObject(
+        object_id="o1",
+        title="T",
+        provenance=prov,
+        content="body",
+        attachments=[{"file_path": str(path)}],
+    )
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    pkg = AttachmentProcessingPass().execute(pkg)
+    att = pkg.objects[0].attachments[0]
+    structure = att["structured_extraction"]
+    assert structure["slide_count"] == 2
+    assert "secret narrative" not in att["extracted_text"]
+    assert "narrative" not in structure
     assert len(pkg.objects) == 1
 
 
