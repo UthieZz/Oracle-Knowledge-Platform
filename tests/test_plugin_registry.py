@@ -453,6 +453,16 @@ def test_package_compiler_stamps_without_rewriting_content():
     assert package.metadata.get("compilation") is None
 
 
+def test_package_compiler_rejects_mixed_tenant():
+    package = _package()
+    other = package.objects[0].model_copy(deep=True)
+    other.object_id = "o2"
+    other.provenance.tenant_id = "other_customer"
+    package.objects.append(other)
+    with pytest.raises(PackageCompileError):
+        PackageCompiler().compile(package)
+
+
 def test_package_compiler_rejects_mixed_silo():
     package = _package()
     other = package.objects[0].model_copy(deep=True)
