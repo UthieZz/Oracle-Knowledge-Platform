@@ -10,7 +10,7 @@ import pytest
 
 from okc.analyzers.entity_extractor import EntityExtractor
 from okc.compiler.passes.attachment_processing_pass import AttachmentProcessingPass
-from okc.exporters.sqlite_exporter import SQLiteExporter
+from okc.exporters.sqlite_exporter import SQLiteExportError, SQLiteExporter
 from okc.importers.json_importer import JsonToV2Importer
 from okc.models.knowledge_package import (
     EvidenceSpan,
@@ -137,6 +137,52 @@ def test_sqlite_export_roundtrip(tmp_path: Path):
     c.execute("SELECT content FROM evidence_spans")
     assert c.fetchone()[0] == "evidence"
     conn.close()
+
+
+def test_sqlite_export_rejects_cross_tenant_relabel(tmp_path: Path):
+    db = tmp_path / "isolated.db"
+    prov = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        tenant_id="tenant_a",
+        silo_id="silo_1",
+    )
+    obj = KnowledgeObject(object_id="o1", title="Secret", provenance=prov, content="private")
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    exporter = SQLiteExporter(db_path=str(db))
+
+    with pytest.raises(SQLiteExportError):
+        exporter.export(pkg, tenant_id="tenant_b", silo_id="silo_1")
+
+    conn = sqlite3.connect(db)
+    count = conn.execute("SELECT COUNT(*) FROM knowledge_objects").fetchone()[0]
+    conn.close()
+    assert count == 0
+    assert obj.provenance.tenant_id == "tenant_a"
+    assert obj.content == "private"
+
+
+def test_sqlite_export_rejects_cross_silo_and_empty_target(tmp_path: Path):
+    db = tmp_path / "isolated.db"
+    prov = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        tenant_id="tenant_a",
+        silo_id="silo_1",
+    )
+    obj = KnowledgeObject(object_id="o1", title="Secret", provenance=prov, content="private")
+    pkg = KnowledgePackage(package_id="p1", objects=[obj])
+    exporter = SQLiteExporter(db_path=str(db))
+
+    with pytest.raises(SQLiteExportError):
+        exporter.export(pkg, tenant_id="tenant_a", silo_id="other")
+    with pytest.raises(SQLiteExportError):
+        exporter.export(pkg, tenant_id="", silo_id="silo_1")
+
+    conn = sqlite3.connect(db)
+    count = conn.execute("SELECT COUNT(*) FROM knowledge_objects").fetchone()[0]
+    conn.close()
+    assert count == 0
 
 
 def test_attachment_pass_marks_missing_file():
