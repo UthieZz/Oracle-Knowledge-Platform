@@ -19,9 +19,9 @@ Format per entry:
 
 ---
 
-## 2026-10-12 — (this commit)
+## 2026-10-12 — a6e7399
 - **Message:** Add AGENT_COMMIT_LOG: living record updated on every intentional agent commit.
-- **Files:** `docs/AGENT_COMMIT_LOG.md`
+- **Files:** `docs/AGENT_COMMIT_LOG.md`, `docs/STAGE.md`
 - **Tests:** none (docs-only convention)
 - **Why:** Operators and daily agents need a single append-only evidence trail of what landed on main without reading full git history each session.
 - **Next:** Implement persistent sync engine (cursor, durable queue, retry/idempotency) consuming `SyncEvent` into existing okc importer/compiler path.
