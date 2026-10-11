@@ -19,6 +19,33 @@ Format per entry:
 
 ---
 
+## Session progress — 2026-10-12 automation (daily agent)
+
+**Inspected:** `main` tree, ROADMAP.md, B2B_Product_Architecture, STAGE, KnowledgePackage (okc + src), PluginRegistry, PackageCompiler, Connect search (absent before this session), core tests.
+
+**Landed this session:**
+1. **df0a148** — OKP Connect contract (`okc/connect/`, SyncEvent, Connector ABC, contract test, `docs/OKP_Connect_Contract.md`). Tests: 30 passed.
+2. **a6e7399** — Introduced this log + STAGE.md refresh (Connect status + agent-trail pointer).
+3. **a3abd71 / 5774902** — SHA hygiene on log entries.
+4. **(this commit)** — Session progress summary written into the log.
+
+**Architecture status after session:**
+- Knowledge Core: unchanged, stable IR.
+- OKP Connect: contract only; no sync engine, no real connector, no queue.
+- Dual `src/` vs `okc/` still present; not merged.
+- B2B gaps unchanged: pilot/ROI, commercial packaging, security/governance still open.
+
+**Highest-leverage next:** persistent sync engine (cursor store, durable job queue, retry + idempotency, audit events) consuming `SyncEvent` → existing okc importer/compiler path, with isolation tests.
+
+---
+
+## 2026-10-12 — 5774902
+- **Message:** AGENT_COMMIT_LOG: append stamp commit a3abd71.
+- **Files:** `docs/AGENT_COMMIT_LOG.md`
+- **Tests:** none
+- **Why:** Keep log append-only and SHA-complete after introduction.
+- **Next:** Session progress entry + then sync engine implementation.
+
 ## 2026-10-12 — a3abd71
 - **Message:** AGENT_COMMIT_LOG: stamp verified SHA a6e7399 for log introduction commit.
 - **Files:** `docs/AGENT_COMMIT_LOG.md`
