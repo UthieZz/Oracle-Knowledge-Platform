@@ -19,6 +19,13 @@ Format per entry:
 
 ---
 
+## 2026-10-12 — a3abd71
+- **Message:** AGENT_COMMIT_LOG: stamp verified SHA a6e7399 for log introduction commit.
+- **Files:** `docs/AGENT_COMMIT_LOG.md`
+- **Tests:** none
+- **Why:** Close the self-reference gap so the log only lists verified SHAs.
+- **Next:** Persistent sync engine (cursor, durable queue, retry/idempotency) on top of Connect contract.
+
 ## 2026-10-12 — a6e7399
 - **Message:** Add AGENT_COMMIT_LOG: living record updated on every intentional agent commit.
 - **Files:** `docs/AGENT_COMMIT_LOG.md`, `docs/STAGE.md`
