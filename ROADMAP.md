@@ -1,224 +1,216 @@
-# OKP Roadmap — Post-Beta B2B / IP Readiness
+# OKP Roadmap — B2B Productization, OKP Connect, and IP Readiness
 
-Status captured 2026-10-03 against current `main` runtime evidence.
+Status captured 2026-10-12 against repository files and recorded agent/test evidence. This roadmap separates implemented code, verified behavior, operator/runtime verification, and future work. Roadmap status is not a substitute for tests or production evidence.
 
 ## Mission
 
-OKP Closed Beta is complete. The next objective is not another architecture rewrite or feature accumulation.
+OKP's next milestone is a deployable B2B knowledge infrastructure product: a business installs or deploys it, signs in, connects approved knowledge sources, and then OKP maintains governed knowledge in the background without repeated manual import/export.
 
-The target is to make OKP a technically credible, commercially packaged, diligence-ready B2B knowledge infrastructure asset that can be piloted, licensed, partnered, or evaluated for acquisition.
+The user experience should feel like a local business system or intranet integration: configure access once, then background synchronization does the routine work while administrators can inspect sync health, permissions, failures, and provenance.
 
-**Closed Beta:** 100% complete  
-**B2B / IP sale-readiness:** approximately 60% engineering assessment
+Commercial objective: demonstrate that OKP can be piloted, licensed, partnered, or evaluated for acquisition. Prioritize a narrow end-to-end business workflow and measurable value over feature accumulation.
 
-The B2B percentage is a planning assessment, not a measured KPI.
+**Closed Beta:** previously recorded as complete.  
+**B2B / IP readiness:** previous estimate was approximately 60% engineering assessment; reassess only against explicit evidence. This is a planning estimate, not a measured KPI.
 
 ## Architectural invariants
 
-- KnowledgePackage remains the sole canonical intermediate representation.
-- Canonical knowledge is distinct from agent feedback and memory candidates.
-- Memory candidates are never promoted at the feedback gateway.
-- Tenant / silo isolation is enforced at every relevant boundary.
-- Provenance must survive every transformation and export boundary.
-- PluginRegistry is discovery / dispatch infrastructure, not a second IR.
-- Deterministic processing is preferred whenever sufficient.
-- AI enriches knowledge but does not replace source traceability.
-- Do not rewrite the compiler or IR to solve persistence, UX, or commercial concerns.
-- External AI providers remain optional integrations, not the knowledge store.
+- `KnowledgePackage` remains the sole canonical intermediate representation (IR).
+- Connectors and the sync engine must not write KnowledgePackage directly; they feed the existing importer/compiler pipeline.
+- Canonical knowledge stays distinct from agent feedback, audit events, and memory candidates.
+- Memory candidates must never be promoted automatically at the feedback gateway.
+- Tenant and silo isolation is enforced before ingestion and at every relevant read/write boundary.
+- Source identity and provenance must survive normalization, compilation, storage, retrieval, and export.
+- Permission changes and deletions must propagate; inaccessible source content must not remain retrievable.
+- Sync delivery is durable, retryable, and idempotent. A retry must not create duplicate knowledge.
+- PluginRegistry remains discovery/dispatch infrastructure, not a second IR.
+- Deterministic processing is preferred where sufficient. AI enriches knowledge but does not replace source traceability.
+- Model providers and agent frameworks remain replaceable, optional integrations.
+- Do not rewrite the compiler/IR to solve persistence, connector, UX, or commercial concerns.
+- Keep cloud/local storage and deployment adapters separable from Knowledge Core.
+- Do not claim silent background operation, SSO, production security, or real-source integration until end-to-end behavior has been verified.
 
-## Current runtime state — 2026-10-03
+## Verified repository state — 2026-10-12
 
-Recent verified implementation work on `main`:
+### Knowledge Core and existing pipeline
 
-- PluginRegistry is the runtime dispatch layer.
-- Importers resolve by extension; no silent JSON fallback.
-- `.json` uses `json_v2_importer`.
-- `.txt` / `.md` use `plain_text_importer`.
-- PackageCompiler is registered and performs structural identity/provenance validation.
-- SQLiteFeedbackLedger persists AgentFeedbackPackage outside canonical knowledge.
-- KnowledgePackageRetriever provides tenant/silo-scoped retrieval.
-- AgentFeedbackPackage explicitly separates citations, tool events, memory candidates, and audit records.
-- Memory candidates cannot be accepted directly at the gateway.
-- Attachment processors remain registry-driven.
-- PDF/image/audio do not yet have package importers.
-- Firestore export still has an operator tenant/silo setup gate.
-- Existing Studio / cloud runtime remains part of the current product surface while the local-first direction is evaluated and implemented incrementally.
+The repository records the following implementation state:
 
-Recent commits include:
+- PluginRegistry provides runtime dispatch; importers resolve by extension rather than silently falling back to JSON.
+- `.json` uses `json_v2_importer`; `.txt` and `.md` use `plain_text_importer`.
+- PackageCompiler is registered as the compile orchestrator and validates structure/provenance.
+- KnowledgePackageRetriever is tenant/silo scoped.
+- Feedback and memory candidates remain outside canonical knowledge.
+- SQLite feedback persistence exists in the code history; do not treat an open PR's status as proof that its branch is merged.
+- Attachment processing is registry-driven. PDF/image/audio package importers and richer source handling must be tracked against actual code/tests rather than assumed complete.
+- The repository has both legacy `src/` and newer `okc/` paths. Migration/reconciliation is an explicit maintenance concern; avoid creating new duplicate implementations.
 
-- `41f6c864` — extension-resolved plain-text importer.
-- `00fb3e96` — registered structural PackageCompiler.
-- `6e07c191` / `37d08582` — SQLite feedback ledger and isolation tests.
-- `8cd5f1b6` — feedback ledger / compiler-contract documentation.
+### OKP Connect — current maturity
 
-## Current maturity bar
+Repository files and the 2026-10-12 agent log record:
 
-| Area | Current assessment | Target |
-|---|---:|---:|
-| Core IP / architecture | 95% | 100% |
-| Working product / Studio | 90% | 100% |
-| Compiler / ingestion | 92% | 100% |
-| Knowledge quality / evidence | 72% | 100% |
-| Retrieval / grounded intelligence | 78% | 100% |
-| Production hardening | 65% | 100% |
-| Security / governance | 40% | 100% |
-| Scale / deployment | 50% | 100% |
-| Commercial packaging | 35% | 100% |
-| IP / technical diligence | 35% | 100% |
-| Customer pilot / ROI proof | 15% | 100% |
+1. **Connector contract landed:** authentication, initial/incremental sync, deletion handling, permissions, and health interfaces; a `SyncEvent` includes event ID, source, event kind, cursor/payload, tenant, and silo.
+2. **Persistent SyncEngine landed:** SQLite-backed durable queue, cursor handling, retries/backoff, idempotency, and attempt tracking.
+3. **Stub end-to-end path landed:** a test proves stub authentication → initial sync → SyncEngine → PlainTextImporter → KnowledgePackage with tenant/silo provenance.
+4. **Tests recorded by the agent:** SyncEngine + Connect contract + OKC v2 + PluginRegistry, 31 passed; stub e2e + SyncEngine + contract, 4 passed. These are recorded test results, not a claim that the full suite or production deployment passes.
+5. **Not yet proven:** a real business-system connector, unattended background service lifecycle, install/sign-in onboarding, SSO, permission/deletion propagation from a real source, admin health UX, and a production pilot.
 
-## Priority order — post-beta
+Reference contract: `docs/OKP_Connect_Contract.md`. Stage summary: `docs/STAGE.md`. Agent evidence log: `docs/AGENT_COMMIT_LOG.md`.
 
-### P0 — Protect the core
+## Product target: install once, sync continuously
 
-1. Keep KnowledgePackage, provenance, tenant/silo isolation, and canonical-knowledge boundaries stable.
-2. Continue deterministic tests around PluginRegistry, importers, compiler, retrieval, feedback, and exports.
-3. Close the Firestore tenant/silo operator gate where that path remains active.
-4. Do not introduce architectural abstractions without measurable value.
+Target journey:
 
-### P1 — Make the knowledge product trustworthy
+`Install / deploy → sign in → create or select tenant and silo → authorize approved sources → initial sync → background incremental sync → governed search/context → inspect evidence and sync health`
 
-1. Improve provenance visibility from knowledge object to exact source.
-2. Improve evidence and citation quality.
-3. Test conflict handling and source attribution.
-4. Improve retrieval relevance without weakening tenant/silo isolation.
-5. Establish repeatable quality fixtures and regression datasets.
-6. Preserve source integrity through every compiler/export path.
+The ordinary user should not have to export from a business application and manually import into OKP every time information changes. Manual import remains a supported fallback, not the primary enterprise integration story.
 
-### P2 — Productize the intelligence surface
+### Required behavior
 
-1. Make the core user journey obvious: import → compile → search / ask → inspect evidence → export.
-2. Make evidence inspection a first-class UX capability.
-3. Make grounded Ask visibly distinguish evidence from synthesis.
-4. Reduce friction in import and compilation.
-5. Keep Studio focused on demonstrating the knowledge system rather than becoming a second knowledge engine.
+- A repeatable install/deploy and upgrade path, with configuration separated from application code.
+- Authentication and authorization suitable for the selected deployment; support enterprise SSO only after the identity model and threat boundaries are defined.
+- A connector onboarding flow that makes source, account, scopes, tenant, and silo explicit.
+- A background worker/service with durable queue and cursor state that survives restart.
+- Initial sync followed by incremental sync or polling/webhook delivery, according to connector capabilities.
+- Idempotent create/update/delete/permission-change handling.
+- Fail-closed behavior when tenant/silo, credentials, or source permissions cannot be verified.
+- Visible sync status: last successful sync, lag, queue depth, failures, retry state, and connector health.
+- Audit trail for authorization, sync, permission, deletion, and administrative actions.
+- A recovery/re-authentication path that does not silently discard queued events or cursor state.
+- Clear source-to-KnowledgeObject provenance and evidence inspection after sync.
+- A narrow, demonstrable pilot connector before building a broad connector marketplace.
 
-### P3 — Enterprise trust layer
+## Priority roadmap
 
-Add only controls justified by real B2B use:
+### P0 — Protect the core and reconcile repository state
 
-1. Identity and access model.
-2. Tenant / silo authorization.
-3. Auditability.
-4. Data retention and deletion controls.
-5. Secret and credential handling.
-6. Backup / recovery.
-7. Deployment and environment separation.
-8. Security review and threat-model evidence.
+1. Keep KnowledgePackage, provenance, tenant/silo isolation, and feedback boundaries stable.
+2. Run targeted tests for Connect, compiler/importers, retrieval, feedback, and export after every relevant change; record full-suite status separately.
+3. Reconcile open PRs #12 (SQLite feedback store) and #13 (PackageCompiler) against current `main`: compare diffs and tests, identify already-landed or superseded changes, then merge, close, or rebase deliberately. Do not blindly merge stale branches or duplicate changes.
+4. Audit the remaining `src/` versus `okc/` split and document which path is canonical for each runtime entry point. Remove legacy paths only after references, deployment paths, and tests prove they are safe to retire.
+5. Recheck the Firestore tenant/silo operator gate wherever that deployment path remains active.
+6. Keep `docs/AGENT_COMMIT_LOG.md` and `docs/STAGE.md` aligned with verified repository changes; do not inflate maturity estimates.
 
-Do not build a full enterprise control plane prematurely.
+**Exit evidence:** clean, explainable mainline; relevant tests recorded; no unresolved duplicate implementation or merge ambiguity hidden by roadmap wording.
 
-### P4 — Commercial proof
+### P1 — Finish the Connect execution loop
 
-Create a controlled pilot path that can demonstrate measurable value.
+1. Preserve the existing connector contract and SyncEngine; do not introduce a parallel IR or direct connector-to-KnowledgePackage writes.
+2. Add a first real connector or local-folder connector using the same SyncEvent → durable SyncEngine → existing importer/compiler path.
+3. Prove restart recovery, cursor continuity, duplicate-event idempotency, retry/backoff, and dead-letter/manual-recovery behavior.
+4. Add explicit tests for delete events, permission changes, revoked credentials, partial failures, and tenant/silo isolation.
+5. Add a managed background worker lifecycle: start/stop, restart, configuration, health reporting, and graceful shutdown.
+6. Ensure sync events cannot be acknowledged as processed until the configured processor has completed successfully and durable state is consistent.
 
-Candidate metrics:
+**Exit evidence:** a real source can be connected and synchronized repeatedly without manual export/import; restart and failure tests pass; provenance and isolation survive the full path.
 
-- time to locate supporting evidence;
-- time to reconstruct project knowledge;
+### P2 — Deliver the business onboarding experience
+
+1. Define the first deployment target and supported operating environment before choosing installer/runtime details.
+2. Implement a minimal install/deploy → sign-in → tenant/silo setup → connector authorization journey.
+3. Store secrets through an appropriate credential mechanism; never commit credentials or customer data.
+4. Keep onboarding configuration separate from Knowledge Core and connector implementations.
+5. Make first sync progress, errors, re-authentication, and last-sync status visible.
+6. Establish least-privilege scopes and explain exactly which source data OKP can read, update, or delete.
+7. Add SSO only after the deployment and identity requirements are explicit; do not confuse application sign-in with source-connector authorization.
+
+**Exit evidence:** a new pilot customer can set up OKP from documented instructions without founder-only intervention, and can tell whether sources are connected and current.
+
+### P3 — Trustworthy background operations and governance
+
+1. Propagate source permission changes and deletions end-to-end; retrieval must re-check the applicable access policy.
+2. Establish audit events for connection changes, sync actions, permission changes, deletions, and administrative access.
+3. Define retention, deletion, backup/restore, migration, and tenant offboarding behavior.
+4. Separate development, test, and production configuration; define upgrade/rollback behavior.
+5. Test credential expiry, network loss, rate limits, malformed source data, queue growth, and source outages.
+6. Add operational alerts and safe recovery procedures based on measured needs.
+7. Threat-model connector credentials, local service boundaries, tenant isolation, data exfiltration, and logs.
+
+**Exit evidence:** a documented threat model, tested access boundaries, recoverable sync state, and operator-visible failures. Do not claim enterprise-grade security solely because controls are documented.
+
+### P4 — Evidence quality and grounded intelligence
+
+1. Make provenance navigable from a retrieved answer/object to the exact source and source version where available.
+2. Separate direct evidence, derived/enriched fields, and model-generated synthesis in the user experience.
+3. Build repeatable fixtures for source conflicts, stale content, duplicate content, missing citations, and permission-filtered retrieval.
+4. Measure retrieval precision, citation correctness, sync/compile reliability, and stale-data behavior.
+5. Improve PDF, image/OCR, audio, and office-document handling only against concrete fixtures and verified provenance requirements.
+6. Preserve a clear user journey: connect/import → compile → search/ask → inspect evidence → export.
+
+**Exit evidence:** regression data and acceptance criteria demonstrate that source grounding and access controls have not weakened.
+
+### P5 — One measurable B2B pilot
+
+Choose one customer workflow and one source integration. Do not build a broad connector catalogue before validating value.
+
+Measure a baseline and post-OKP result for:
+- time to find supporting evidence;
+- time to reconstruct project/business knowledge;
 - duplicate research avoided;
-- retrieval precision / citation correctness;
-- compilation reliability;
-- onboarding time;
-- knowledge reuse across AI systems.
+- retrieval and citation correctness;
+- sync and compilation reliability;
+- onboarding time and ongoing operator effort;
+- useful knowledge reuse across approved AI systems.
 
-The goal is evidence of customer value, not vanity usage metrics.
+Define pilot success thresholds with the customer before the pilot. Capture limitations and failures, not just successful demonstrations.
 
-### P5 — IP / diligence package
+**Exit evidence:** a repeatable demonstration, customer-confirmed baseline/results, documented operating cost, and a clear decision on what to productize next.
 
-Prepare a buyer-readable technical package containing:
+### P6 — Commercial packaging and IP diligence
 
-- system architecture;
-- compiler / KnowledgePackage explanation;
-- provenance model;
-- plugin model;
-- retrieval and feedback boundaries;
-- dependency inventory;
-- third-party / open-source inventory;
-- deployment model;
-- security model;
-- test and verification evidence;
-- known limitations;
-- roadmap;
-- ownership / licensing documentation.
+Prepare a buyer/customer-readable package containing:
+- architecture and data-flow diagrams;
+- KnowledgePackage, compiler, provenance, and Connect contracts;
+- supported deployment and connector matrix;
+- security/threat model and tenant isolation evidence;
+- install, upgrade, backup, recovery, and operations guides;
+- dependency and third-party/open-source inventory;
+- test reports, known limitations, and reproducible pilot results;
+- ownership, contribution, and licensing documentation.
 
-Clearly separate implemented functionality, verified behavior, planned work, and experimental concepts.
+Keep implemented behavior, test-verified behavior, operator-verified runtime behavior, planned work, and experimental concepts explicitly distinct. Decide licensing deliberately before distributing commercial artifacts.
 
-### P6 — Sale / licensing readiness
+### P7 — Scale only after the pilot proves the need
 
-The system is ready for serious B2B evaluation when:
+Consider hosted multi-tenant SaaS, customer-controlled private deployment, hybrid mode, broader connector coverage, advanced identity/policy controls, metering, and larger-scale operations only when pilot evidence justifies them. Keep the same KnowledgePackage and connector contracts across deployment shapes.
 
-- the core workflow is repeatable;
-- evidence and provenance are demonstrable;
-- security boundaries are documented;
-- deployment is reproducible;
-- a pilot can measure ROI;
-- IP ownership and dependencies are clear;
-- the architecture can be explained without founder-only knowledge;
-- the buyer can understand what they are acquiring and how it integrates.
+## Local-first and cloud direction
 
-Possible commercial forms remain open: license, strategic partnership, acquisition, or managed B2B deployment.
+The long-term product should support installable/customer-controlled deployments and should not make the knowledge core dependent on Firebase/Firestore. Cloud sync may remain an optional adapter where useful. Existing cloud/Studio paths must remain stable until the local-first migration is implemented and verified incrementally.
 
-## Local-first direction
+Preserve the existing pipeline:
 
-The previous roadmap decision remains valid as a migration target:
+`Source / Connector → SyncEvent → SyncEngine → Importer / Processor → KnowledgePackage → Compiler / Analysis → Storage / Retrieval / Context`
 
-OKP should evolve toward an installable, local-first application where the core knowledge system does not require Firebase / Firestore.
+This is an integration and persistence evolution, not a compiler rewrite.
 
-However:
+## Explicit non-goals unless evidence changes
 
-- this is a migration boundary, not a compiler rewrite;
-- preserve Importers → KnowledgePackage → Analyzers → Compiler → Exporters;
-- local persistence should be introduced incrementally;
-- cloud sync may remain optional;
-- do not destabilize the currently working product merely to accelerate the migration.
-
-The local-first target remains:
-
-`Download → Install → Import → Compile → Search / Ask → Export`
-
-## Explicit non-goals until justified
-
-Do not add merely because they sound enterprise-grade:
-
-- knowledge graphs;
-- vector databases;
-- premature enterprise RBAC;
-- Cloud Run;
-- analytics cockpits;
-- wholesale Studio rewrites;
-- agent SDK lock-in;
-- autonomous memory promotion;
-- unnecessary microservices;
-- duplicate knowledge representations.
+- No parallel canonical IR.
+- No knowledge graph, vector database, Cloud Run migration, microservices split, or analytics cockpit merely for appearance.
+- No premature full enterprise control plane.
+- No agent SDK or model-provider lock-in.
+- No autonomous promotion of agent memory into canonical knowledge.
+- No wholesale Studio rewrite.
+- No broad connector marketplace before one connector and one pilot work reliably.
+- No claims of automatic background sync, SSO, or production readiness without end-to-end evidence.
 
 ## Daily agent operating rule
 
-Every daily agent session must begin by inspecting:
-
-1. current `main` state;
-2. recent commits;
-3. this roadmap;
-4. relevant tests;
-5. the actual runtime state when available.
+Every implementation session must inspect current `main`, recent commits, this roadmap, relevant docs, tests, and runtime state where available.
 
 Then:
+1. Select the highest-value unfinished dependency in the priority order.
+2. Verify current code and branch/PR state before editing.
+3. Make the smallest coherent change.
+4. Test the affected boundary and report exact commands/results.
+5. Update roadmap/stage/log only when the evidence changes.
+6. Report what changed, what was tested, what remains unverified, and the next highest-leverage action.
 
-- identify the highest-value unfinished item;
-- verify before editing;
-- make the smallest coherent change;
-- test the affected boundary;
-- update documentation only when implementation evidence warrants it;
-- report what changed, what was verified, what remains uncertain, and the recommended next action.
-
-Never treat an old conversation, generated plan, or AI suggestion as stronger evidence than current repository/runtime evidence.
+Conversation history and AI-generated plans are context, not stronger evidence than current repository/runtime evidence.
 
 ## Definition of success
 
-OKP is not finished when every conceivable feature exists.
+OKP is ready for serious B2B/IP evaluation when a customer can install or deploy it, authorize a source, and rely on background sync to keep governed knowledge current; source permissions and provenance remain intact; failures are visible and recoverable; the core workflow is reproducible; and a pilot demonstrates measurable value.
 
-OKP is ready for B2B/IP commercialization when the existing core is:
-
-**Useful + trustworthy + reproducible + secure enough for the target buyer + commercially legible + technically defensible.**
-
-The compiler and knowledge architecture should become increasingly stable while the remaining effort moves toward evidence quality, product experience, operational trust, customer proof, and diligence readiness.
+**Useful + grounded + isolated + recoverable + easy to onboard + measurable + commercially legible.**
