@@ -29,6 +29,6 @@ Durable, idempotent unit. Contains `event_id`, `source`, `kind` (create/update/d
 
 ## Ingestion path
 
-Connectors emit SyncEvents → Secure ingestion queue → existing importer/compiler path → KnowledgePackage.
+Connectors emit SyncEvents → `SyncEngine` (durable SQLite queue, cursor, retry, idempotency) → caller-supplied processor that feeds existing importer/compiler path → KnowledgePackage.
 
-No parallel IR. Connectors never write KnowledgePackage directly.
+No parallel IR. Connectors and the engine never write KnowledgePackage directly.
