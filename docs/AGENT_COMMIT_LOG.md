@@ -15,11 +15,75 @@ Append-only record of intentional agent commits on `main`.
 - **Next:** <single highest-leverage follow-up>
 ```
 
-**Current head:** `6f0152c`
+**Current head:** `b06e3bf` (log finalize). Product tip includes Connect contract `df0a148`.
+
+---
+
+## Automation runs (verified via Automations API 2026-10-12)
+
+### A) Automation `OKP` (`555060cf-805a-421c-8c11-3c7198a54a36`)
+
+**Prompt class:** daily audit of `UthieZz/Oracle-Knowledge-Platform` (requested name was misspelled Orackle-…); fix weaknesses outside established OKC; ensure KnowledgeObject provenance.
+
+**Schedule:** daily 12:05 Africa/Johannesburg — **currently disabled** (`isEnabled: false`). Last recorded success window ends 2026-09-20/21.
+
+| When (UTC create) | Title / outcome | Notes |
+|---|---|---|
+| 2026-09-20 10:23 | Provenance tightened, export defaulted strict | PR #9 path: field sync + default-strict ExportService; later merged to main as `ddb0545` |
+| 2026-09-19 10:22 | Provenance sync fixed, no OKC edits | PR #8 (later closed superseded) |
+| 2026-09-18 10:22 | Provenance contract now enforced | Audit doc + strict Firestore gate lineage |
+| 2026-09-17 10:23 | Provenance sync & Firestore fail-closed | PR #7 (later closed superseded) |
+| 2026-09-16 10:20 | Provenance strict gate added | |
+| 2026-09-15 10:20 | Provenance fields now in KO docs | |
+| 2026-09-14 10:21 | Provenance audit & fixes complete | |
+| 2026-09-13 10:20 | Provenance ledger exporter added | PR #3 content; later landed via PR #10 |
+| 2026-09-12 10:18 | Provenance validators & export hygiene | |
+| 2026-09-11 10:19 | KO provenance audit complete | |
+
+**Interactive follow-through (same prompt lineage, human-driven 2026-09-21):**
+1. Confirmed PR #9 not on main.
+2. Merged PR #9 → `ddb0545`.
+3. Closed conflicted #7/#8 as superseded.
+4. Rebased unique #1/#2/#3 content → PR #10 → merged `e1baa9e` (ledger, KnowledgePackage id maps, Flask `api_server`, Vite `/api` proxy).
+5. Closed #1/#2/#3.
+
+**Constraint honored across runs:** no established OKC compiler rewrite under `okc/` for those audit PRs (Connect later added under `okc/connect/` by daily agent).
+
+### B) Automation `OKP 2` (`fa866f53-29dc-4dc4-a0b3-12d8f8ea1f55`)
+
+**Prompt class:** autonomous implementation agent — inspect repo/tests, advance B2B/Connect/Core, push intentional changes to main, end-report required.
+
+**Schedule:** daily 02:25 Africa/Johannesburg — **active**.
+
+| When (UTC create) | Title / outcome | Status |
+|---|---|---|
+| 2026-10-11 23:26 | OKP Connect Spec and Sync Engine Build | SUCCESS — Connect contract on main (`df0a148`); log hygiene |
+| 2026-10-11 00:25 | Gemini importer ordered-list fix | SUCCESS |
+| 2026-10-10 00:25 | JSON structure on attachments | SUCCESS |
+| 2026-10-09 00:25 | SQLite export provenance fix | SUCCESS |
+| 2026-10-08 00:28 | Pipeline tenant isolation fixed | SUCCESS |
+| 2026-10-08 00:25 | OKP 2 | incomplete/empty result (`execTime: -1`) |
+| 2026-10-07 00:28 | Office attachments now record OOXML structure | SUCCESS |
+| 2026-10-07 00:25 | OKP 2 | incomplete/empty result (`execTime: -1`) |
+| 2026-10-06 00:25 | Audio provenance extended on main | SUCCESS |
+| 2026-10-05 00:28 | Image OCR structure added to attachments | SUCCESS |
+
+**Maturity signal from latest successful OKP 2 run:** Connect = contract only (interfaces + test + doc). No durable queue/cursor/real connector yet. Next lever: persistent sync engine.
+
+### C) Automation `Daily Mindset Briefing - 3-Day Conversations` (`cdcf034b-ee7d-446d-b102-fda96f85d3f6`)
+
+**Not OKP code.** Persona briefing over recent chat. Recent SUCCESS titles: Baseline briefing seeded / ready (2026-10-07 → 2026-10-11). No repo commits from this task.
 
 ---
 
 ## Entries
+
+## 2026-10-12 — (this log update)
+- **Message:** AGENT_COMMIT_LOG: record OKP automation run history (audit + daily agent).
+- **Files:** `docs/AGENT_COMMIT_LOG.md`
+- **Tests:** none (docs)
+- **Why:** Operator requested detailed automation run accounting + agent trail update.
+- **Next:** Persistent sync engine (cursor, durable queue, retry/idempotency, audit) feeding existing importer/compiler path.
 
 ## 2026-10-12 — 6f0152c / d95aaf2
 - **Message:** Rewrite log as clean verified-SHA record; append cleanup entry; finalize head.
