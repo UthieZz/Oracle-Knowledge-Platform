@@ -1,64 +1,39 @@
 # AGENT_COMMIT_LOG
 
-Living record of intentional agent commits on `main`.
+Append-only record of intentional agent commits on `main`.
 
-**Rule:** Every successful intentional code/test/docs commit by an OKP agent MUST append one entry here in the same push (or the immediate follow-up push if the log was omitted). Newest entries at the top.
+**Rule:** On every successful intentional code/test/docs commit, append one entry at the top of the Entries section. Use the verified short SHA after push. Do not invent commits. Docs-only hygiene commits may be collapsed into a single entry when they only maintain this file.
 
-Do not invent commits. Record only verified SHAs after push verification.
-
-Format per entry:
+**Entry format:**
 
 ```
 ## YYYY-MM-DD — <short-sha>
 - **Message:** <commit subject>
 - **Files:** <paths>
-- **Tests:** <what ran + result>
-- **Why:** <one-line mechanism / roadmap link>
+- **Tests:** <what ran + result, or none>
+- **Why:** <mechanism / roadmap link>
 - **Next:** <single highest-leverage follow-up>
 ```
 
----
-
-## Session progress — 2026-10-12 automation (daily agent)
-
-**Inspected:** `main` tree, ROADMAP.md, B2B_Product_Architecture, STAGE, KnowledgePackage (okc + src), PluginRegistry, PackageCompiler, Connect search (absent before this session), core tests.
-
-**Landed this session:**
-1. **df0a148** — OKP Connect contract (`okc/connect/`, SyncEvent, Connector ABC, contract test, `docs/OKP_Connect_Contract.md`). Tests: 30 passed.
-2. **a6e7399** — Introduced this log + STAGE.md refresh (Connect status + agent-trail pointer).
-3. **a3abd71 / 5774902** — SHA hygiene on log entries.
-4. **(this commit)** — Session progress summary written into the log.
-
-**Architecture status after session:**
-- Knowledge Core: unchanged, stable IR.
-- OKP Connect: contract only; no sync engine, no real connector, no queue.
-- Dual `src/` vs `okc/` still present; not merged.
-- B2B gaps unchanged: pilot/ROI, commercial packaging, security/governance still open.
-
-**Highest-leverage next:** persistent sync engine (cursor store, durable job queue, retry + idempotency, audit events) consuming `SyncEvent` → existing okc importer/compiler path, with isolation tests.
+**Current head (as of last log update):** see newest entry below.
 
 ---
 
-## 2026-10-12 — 5774902
-- **Message:** AGENT_COMMIT_LOG: append stamp commit a3abd71.
+## Entries
+
+## 2026-10-12 — 0680811
+- **Message:** AGENT_COMMIT_LOG: record automation session progress (Connect + log convention).
 - **Files:** `docs/AGENT_COMMIT_LOG.md`
 - **Tests:** none
-- **Why:** Keep log append-only and SHA-complete after introduction.
-- **Next:** Session progress entry + then sync engine implementation.
+- **Why:** Capture daily-agent session outcome: inspection complete; Connect contract + log convention landed; Core unchanged; sync engine still missing.
+- **Next:** Persistent sync engine (cursor, durable queue, retry/idempotency, audit) feeding existing okc importer/compiler path.
 
-## 2026-10-12 — a3abd71
-- **Message:** AGENT_COMMIT_LOG: stamp verified SHA a6e7399 for log introduction commit.
-- **Files:** `docs/AGENT_COMMIT_LOG.md`
-- **Tests:** none
-- **Why:** Close the self-reference gap so the log only lists verified SHAs.
-- **Next:** Persistent sync engine (cursor, durable queue, retry/idempotency) on top of Connect contract.
-
-## 2026-10-12 — a6e7399
-- **Message:** Add AGENT_COMMIT_LOG: living record updated on every intentional agent commit.
+## 2026-10-12 — a6e7399 (+ a3abd71, 5774902)
+- **Message:** Add AGENT_COMMIT_LOG + STAGE refresh; SHA stamp follow-ups.
 - **Files:** `docs/AGENT_COMMIT_LOG.md`, `docs/STAGE.md`
-- **Tests:** none (docs-only convention)
-- **Why:** Operators and daily agents need a single append-only evidence trail of what landed on main without reading full git history each session.
-- **Next:** Implement persistent sync engine (cursor, durable queue, retry/idempotency) consuming `SyncEvent` into existing okc importer/compiler path.
+- **Tests:** none (docs-only)
+- **Why:** Establish required post-commit agent trail and point STAGE at Connect contract + log path. Follow-up commits only fixed self-referential SHA placeholders.
+- **Next:** Keep this log SHA-accurate; implement sync engine next.
 
 ## 2026-10-11 — df0a148
 - **Message:** Add minimal OKP Connect contract: interfaces, SyncEvent, and contract test.
@@ -66,3 +41,10 @@ Format per entry:
 - **Tests:** `test_connect_contract.py` + `test_okc_v2.py` + `test_plugin_registry.py` → 30 passed
 - **Why:** Build-order step 1 — single connector contract (auth, initial/incremental sync, deletion, permissions, health) without touching Knowledge Core or creating a parallel IR.
 - **Next:** Persistent sync engine before any real connector.
+
+## Session context (2026-10-12 daily agent)
+
+- **Inspected:** main tree, ROADMAP, B2B_Product_Architecture, STAGE, okc KnowledgePackage / PluginRegistry / PackageCompiler, Connect search (absent pre-session), core tests.
+- **Core:** KnowledgePackage remains sole canonical IR; dual `src/` vs `okc/` still present.
+- **Connect maturity:** contract only — no queue, no cursor store, no real connector.
+- **B2B gaps unchanged:** pilot/ROI, commercial packaging, security/governance still open; no percentage inflation.
