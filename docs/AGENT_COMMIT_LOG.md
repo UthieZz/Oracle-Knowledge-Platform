@@ -15,7 +15,7 @@ Append-only record of intentional agent commits on `main`.
 - **Next:** <single highest-leverage follow-up>
 ```
 
-**Current head:** `b06e3bf` (log finalize). Product tip includes Connect contract `df0a148`.
+**Current head:** `4b81e01` (SyncEngine series; last of 877501e / f26324d / eff8460 / 0dcea71 / 4b81e01). Product tip includes Connect contract + SyncEngine.
 
 ---
 
@@ -23,7 +23,7 @@ Append-only record of intentional agent commits on `main`.
 
 ### A) Automation `OKP` (`555060cf-805a-421c-8c11-3c7198a54a36`)
 
-**Prompt class:** daily audit of `UthieZz/Oracle-Knowledge-Platform` (requested name was misspelled Orackle-…); fix weaknesses outside established OKC; ensure KnowledgeObject provenance.
+**Prompt class:** daily audit of `UthieZz/Oracle-Knowledge-Platform` (requested name was misspelled Orackle…); fix weaknesses outside established OKC; ensure KnowledgeObject provenance.
 
 **Schedule:** daily 12:05 Africa/Johannesburg — **currently disabled** (`isEnabled: false`). Last recorded success window ends 2026-09-20/21.
 
@@ -57,6 +57,7 @@ Append-only record of intentional agent commits on `main`.
 
 | When (UTC create) | Title / outcome | Status |
 |---|---|---|
+| 2026-10-12 00:26 | SyncEngine (cursor, durable queue, retry/idempotency) | SUCCESS — landed on main (series ending `4b81e01`) |
 | 2026-10-11 23:26 | OKP Connect Spec and Sync Engine Build | SUCCESS — Connect contract on main (`df0a148`); log hygiene |
 | 2026-10-11 00:25 | Gemini importer ordered-list fix | SUCCESS |
 | 2026-10-10 00:25 | JSON structure on attachments | SUCCESS |
@@ -68,7 +69,7 @@ Append-only record of intentional agent commits on `main`.
 | 2026-10-06 00:25 | Audio provenance extended on main | SUCCESS |
 | 2026-10-05 00:28 | Image OCR structure added to attachments | SUCCESS |
 
-**Maturity signal from latest successful OKP 2 run:** Connect = contract only (interfaces + test + doc). No durable queue/cursor/real connector yet. Next lever: persistent sync engine.
+**Maturity signal from latest successful OKP 2 run:** Connect = contract + persistent SyncEngine (SQLite queue, cursor, event_id idempotency, attempt tracking, caller-supplied processor). No real connector or end-to-end ingestion yet. Next lever: one minimal connector that enqueues into the engine and feeds the existing importer path.
 
 ### C) Automation `Daily Mindset Briefing - 3-Day Conversations` (`cdcf034b-ee7d-446d-b102-fda96f85d3f6`)
 
@@ -77,6 +78,13 @@ Append-only record of intentional agent commits on `main`.
 ---
 
 ## Entries
+
+## 2026-10-12 — 4b81e01 (series: 877501e / f26324d / eff8460 / 0dcea71 / 4b81e01)
+- **Message:** Add persistent SyncEngine for OKP Connect: durable SQLite queue, cursor, idempotency, and retry.
+- **Files:** `okc/connect/sync_engine.py`, `okc/connect/__init__.py`, `tests/test_sync_engine.py`, `docs/OKP_Connect_Contract.md`, `docs/STAGE.md`
+- **Tests:** `test_sync_engine.py` + `test_connect_contract.py` + `test_okc_v2.py` + `test_plugin_registry.py` → 31 passed
+- **Why:** Build-order step 2 — durable queue/cursor/retry without touching Knowledge Core or creating a parallel IR. Processor is caller-supplied so ingestion stays on the existing path.
+- **Next:** One minimal end-to-end connector (e.g. local-file or stub) that authenticates, emits SyncEvents into SyncEngine, and a processor that feeds PlainTextImporter / existing compiler path. Prove install→auth→initial sync→background update→permission-aware retrieval.
 
 ## 2026-10-12 — (this log update)
 - **Message:** AGENT_COMMIT_LOG: record OKP automation run history (audit + daily agent).
