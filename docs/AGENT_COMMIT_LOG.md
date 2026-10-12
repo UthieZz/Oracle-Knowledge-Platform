@@ -15,11 +15,18 @@ Append-only record of intentional agent commits on `main`.
 - **Next:** <single highest-leverage follow-up>
 ```
 
-**Current head (as of last log update):** see newest entry below.
+**Current head (as of last log update):** d95aaf2
 
 ---
 
 ## Entries
+
+## 2026-10-12 — d95aaf2
+- **Message:** AGENT_COMMIT_LOG: rewrite as clean verified-SHA append-only record.
+- **Files:** `docs/AGENT_COMMIT_LOG.md`
+- **Tests:** none
+- **Why:** Replace placeholders, duplicate stamp noise, and free-form session block with uniform verified-SHA entries.
+- **Next:** Persistent sync engine (cursor, durable queue, retry/idempotency, audit) feeding existing okc importer/compiler path.
 
 ## 2026-10-12 — 0680811
 - **Message:** AGENT_COMMIT_LOG: record automation session progress (Connect + log convention).
