@@ -15,7 +15,7 @@ Append-only record of intentional agent commits on `main`.
 - **Next:** <single highest-leverage follow-up>
 ```
 
-**Current head:** `4b81e01` (SyncEngine series; last of 877501e / f26324d / eff8460 / 0dcea71 / 4b81e01). Product tip includes Connect contract + SyncEngine.
+**Current head:** `371418a` (stub connector + e2e). Product tip includes Connect contract + SyncEngine + stub e2e.
 
 ---
 
@@ -78,6 +78,13 @@ Append-only record of intentional agent commits on `main`.
 ---
 
 ## Entries
+
+## 2026-10-12 — 371418a
+- **Message:** Add stub connector and e2e test: auth→sync→SyncEngine→PlainTextImporter→KnowledgePackage.
+- **Files:** `okc/connect/stub_connector.py`, `tests/test_connect_e2e.py`, `docs/STAGE.md`
+- **Tests:** `test_connect_e2e.py` + `test_sync_engine.py` + `test_connect_contract.py` → 4 passed (local clone)
+- **Why:** Build-order step 3 — minimal end-to-end proves connector contract → durable engine → existing PlainTextImporter path with tenant/silo provenance. No parallel IR.
+- **Next:** Real connector (or local-file agent) that uses the same engine + processor pattern; admin health visibility; deletion/permission propagation tests.
 
 ## 2026-10-12 — 4b81e01 (series: 877501e / f26324d / eff8460 / 0dcea71 / 4b81e01)
 - **Message:** Add persistent SyncEngine for OKP Connect: durable SQLite queue, cursor, idempotency, and retry.
