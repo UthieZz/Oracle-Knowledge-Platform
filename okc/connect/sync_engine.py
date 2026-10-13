@@ -222,3 +222,52 @@ class SyncEngine:
             "processed": processed,
             "db_path": self.db_path,
         }
+
+
+class SyncWorker:
+    """Minimal background lifecycle for the sync engine.
+
+    Runs process_next in a loop until stop(). Survives restart because the
+    engine state is durable SQLite. Does not write KnowledgePackage.
+    """
+
+    def __init__(
+        self,
+        engine: SyncEngine,
+        processor: Callable[[SyncEvent], None],
+        poll_interval: float = 0.5,
+        max_attempts: int = 5,
+    ) -> None:
+        self.engine = engine
+        self.processor = processor
+        self.poll_interval = poll_interval
+        self.max_attempts = max_attempts
+        self._stop = False
+        self._running = False
+
+    def start(self, max_iterations: Optional[int] = None) -> None:
+        """Blocking loop. Optional max_iterations for tests."""
+        import time
+        self._stop = False
+        self._running = True
+        iterations = 0
+        while not self._stop:
+            try:
+                eid = self.engine.process_next(self.processor, max_attempts=self.max_attempts)
+                if eid is None:
+                    time.sleep(self.poll_interval)
+            except Exception:
+                # Failure already recorded by engine; continue.
+                time.sleep(self.poll_interval)
+            iterations += 1
+            if max_iterations is not None and iterations >= max_iterations:
+                break
+        self._running = False
+
+    def stop(self) -> None:
+        self._stop = True
+
+    def health(self) -> dict:
+        h = self.engine.health()
+        h["running"] = self._running
+        return h
