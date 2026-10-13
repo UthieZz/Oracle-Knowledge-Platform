@@ -15,9 +15,17 @@ Append-only record of intentional agent commits on `main`.
 - **Next:** <single highest-leverage follow-up>
 ```
 
-**Current head:** `371418a` (stub connector + e2e). Product tip includes Connect contract + SyncEngine + stub e2e.
+**Current head:** `7fd0e85` (SyncWorker + restart/delete tests). Product tip includes Connect contract + SyncEngine + stub e2e + worker lifecycle.
 
 ---
+
+## 2026-10-13 — 7fd0e85
+- **Message:** Add SyncWorker and restart/delete tests for OKP Connect.
+- **Files:** okc/connect/sync_engine.py, tests/test_sync_engine.py, docs/STAGE.md
+- **Tests:** tests/test_sync_engine.py + connect e2e + contract: 7 passed
+- **Why:** Prove restart recovery and delete-event path; add minimal background lifecycle (start/stop) without new IR.
+- **Next:** Local-folder or first real connector using same SyncEvent→engine→importer path; admin health surface.
+
 
 ## Automation runs (verified via Automations API 2026-10-12)
 
