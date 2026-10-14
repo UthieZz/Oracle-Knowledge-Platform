@@ -7,6 +7,13 @@ Append-only record of intentional agent commits on `main`.
 **Entry format:**
 
 ```
+## 2026-10-14 — 55af39b
+- **Message:** Add LocalFolderConnector for OKP Connect: poll-based .txt/.md sync with incremental/delete.
+- **Files:** okc/connect/local_folder_connector.py, okc/connect/__init__.py, tests/test_local_folder_connector.py, docs/STAGE.md
+- **Tests:** tests/test_local_folder_connector.py + connect e2e + sync_engine + contract: 9 passed
+- **Why:** Advance build-order step 3 with a real local source (not only stub) using existing SyncEvent→engine→importer path; no parallel IR.
+- **Next:** Admin health surface or permission-change event tests; first non-local pilot connector when credentials available.
+
 ## YYYY-MM-DD — <short-sha>
 - **Message:** <commit subject>
 - **Files:** <paths>
@@ -15,7 +22,7 @@ Append-only record of intentional agent commits on `main`.
 - **Next:** <single highest-leverage follow-up>
 ```
 
-**Current head:** `7fd0e85` (SyncWorker + restart/delete tests). Product tip includes Connect contract + SyncEngine + stub e2e + worker lifecycle.
+**Current head:** `55af39b` (LocalFolderConnector). Product tip includes Connect contract + SyncEngine + stub + local-folder e2e + worker lifecycle.
 
 ---
 
