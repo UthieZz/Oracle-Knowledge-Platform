@@ -6,6 +6,7 @@ the stable IR.
 """
 from .interfaces import Connector, SyncEvent, HealthStatus
 from .sync_engine import SyncEngine
+from .sync_worker import SyncWorker
 from .stub_connector import StubConnector
 from .local_folder_connector import LocalFolderConnector
 
@@ -14,6 +15,7 @@ __all__ = [
     "SyncEvent",
     "HealthStatus",
     "SyncEngine",
+    "SyncWorker",
     "StubConnector",
     "LocalFolderConnector",
 ]
