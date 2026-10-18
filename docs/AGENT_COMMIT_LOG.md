@@ -13,3 +13,13 @@
 - Added tests/test_sync_worker.py covering poll/process, restart survival, delete event path, health.
 - Verified: tests/test_sync_worker.py + test_sync_engine.py + test_connect_e2e.py + test_local_folder_connector.py → 8 passed.
 - Knowledge Core untouched. Connect now has a managed background lifecycle on the durable engine.
+
+## 2026-10-18
+- Added okc/connect/knowledge_accumulator.py: processes SyncEvents into a living KnowledgePackage.
+  - create/update: PlainTextImporter path, injects "src:<object_id>" into provenance.source_record_ids, upserts by source id.
+  - delete: removes matching object so subsequent retrieval no longer returns it.
+  - permission_change: recorded in package.metadata["permissions"] (enforcement later).
+- Exported from okc.connect.
+- Added tests/test_knowledge_accumulator.py proving create→retrieve, delete→absent, update→new content.
+- Verified: tests/test_knowledge_accumulator.py + test_connect_e2e.py + test_sync_worker.py + test_local_folder_connector.py + test_sync_engine.py → 10 passed.
+- Knowledge Core IR unchanged. Connect now has a processor that makes deletion visible to retrieval.

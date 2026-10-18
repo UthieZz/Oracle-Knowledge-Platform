@@ -9,6 +9,7 @@ from .sync_engine import SyncEngine
 from .sync_worker import SyncWorker
 from .stub_connector import StubConnector
 from .local_folder_connector import LocalFolderConnector
+from .knowledge_accumulator import KnowledgeAccumulator
 
 __all__ = [
     "Connector",
@@ -18,4 +19,5 @@ __all__ = [
     "SyncWorker",
     "StubConnector",
     "LocalFolderConnector",
+    "KnowledgeAccumulator",
 ]
