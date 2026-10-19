@@ -42,11 +42,26 @@ class KnowledgePackageRetriever:
         self.min_score = min_score
 
     def retrieve(self, request: AgentContextRequest) -> Sequence[KnowledgeObject]:
+        permissions = self.package.metadata.get("permissions", {})
         scoped: list[tuple[float, KnowledgeObject]] = []
         for obj in self.package.objects:
             if obj.provenance.tenant_id != request.tenant_id:
                 continue
             if obj.provenance.silo_id != request.silo_id:
+                continue
+            # Fail-closed Connect permission filter: if source object has an
+            # explicit permission entry with read=False, exclude it.
+            src_ids = [
+                rid[4:] for rid in obj.provenance.source_record_ids
+                if rid.startswith("src:")
+            ]
+            forbidden = False
+            for src_id in src_ids:
+                perm = permissions.get(src_id)
+                if perm is not None and perm.get("read") is False:
+                    forbidden = True
+                    break
+            if forbidden:
                 continue
             score = _score(request, obj)
             if score < self.min_score:
