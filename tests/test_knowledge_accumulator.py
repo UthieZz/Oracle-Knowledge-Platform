@@ -75,3 +75,54 @@ def test_permission_change_recorded(tmp_path):
     )
     acc.process(ev)
     assert acc.package.metadata["permissions"]["note.txt"]["read"] is False
+
+
+def test_permission_change_excludes_object_from_retrieval(tmp_path):
+    """Fail-closed: permission_change with read=False removes object from retrieval."""
+    from okc.connect.interfaces import SyncEvent
+
+    acc = KnowledgeAccumulator()
+    create = SyncEvent(
+        event_id="c1",
+        source="local_folder",
+        kind="create",
+        payload={"object_id": "secret.txt", "text": "Confidential source knowledge."},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(create)
+    assert len(acc.package.objects) == 1
+
+    req = AgentContextRequest(
+        request_id="r", agent_id="a", task="confidential", tenant_id="t1", silo_id="s1"
+    )
+    retrieved = list(KnowledgePackageRetriever(acc.package).retrieve(req))
+    assert len(retrieved) == 1
+    assert "Confidential" in retrieved[0].content
+
+    # Deny read
+    deny = SyncEvent(
+        event_id="p1",
+        source="local_folder",
+        kind="permission_change",
+        payload={"object_id": "secret.txt", "read": False},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(deny)
+    retrieved_after = list(KnowledgePackageRetriever(acc.package).retrieve(req))
+    assert len(retrieved_after) == 0
+
+    # Explicit allow restores it
+    allow = SyncEvent(
+        event_id="p2",
+        source="local_folder",
+        kind="permission_change",
+        payload={"object_id": "secret.txt", "read": True},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(allow)
+    retrieved_allow = list(KnowledgePackageRetriever(acc.package).retrieve(req))
+    assert len(retrieved_allow) == 1
+    assert "Confidential" in retrieved_allow[0].content
