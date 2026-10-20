@@ -9,6 +9,7 @@
 - End-to-end stub → engine → PlainTextImporter → KnowledgePackage with tenant/silo — tested.
 - Delete events process cleanly through engine and accumulator so objects leave the package.
 - Permission_change with read=False is now enforced fail-closed in KnowledgePackageRetriever: objects whose source id has an explicit permission entry denying read are excluded from retrieval. Explicit read=True restores them. Objects without a permission entry remain visible (no silent breakage of packages that have not received permission events).
-- Not yet: production SSO/onboarding, real business-system connector beyond local folder, full permission enforcement beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and scripts/connect_health.py CLI, unattended service packaging.
+- Background SyncWorker + LocalFolderConnector + KnowledgeAccumulator closed loop: worker polls, enqueues, processes via accumulator; file create/update/delete become visible to KnowledgePackageRetriever without manual process_next. Tested (test_sync_worker_local_folder_accumulator_background_updates).
+- Not yet: production SSO/onboarding, real business-system connector beyond local folder, full permission enforcement beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and scripts/connect_health.py CLI, unattended service packaging / installer.
 
-Next highest-leverage: production identity/SSO boundary or a second real connector that emits permission_change events from an external system.
+Next highest-leverage: production identity/SSO boundary or a second real connector that emits permission_change events from an external system; or minimal installer + secrets handling for the local-folder pilot path.

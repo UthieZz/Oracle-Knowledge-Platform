@@ -126,3 +126,59 @@ def test_permission_change_excludes_object_from_retrieval(tmp_path):
     retrieved_allow = list(KnowledgePackageRetriever(acc.package).retrieve(req))
     assert len(retrieved_allow) == 1
     assert "Confidential" in retrieved_allow[0].content
+
+
+def test_sync_worker_local_folder_accumulator_background_updates(tmp_path):
+    """Background SyncWorker + LocalFolderConnector + KnowledgeAccumulator:
+    initial sync, then file update and delete are reflected in retrieval
+    without manual process_next calls.
+    """
+    import time
+    from okc.connect.sync_worker import SyncWorker
+
+    root = tmp_path / "watched"
+    root.mkdir()
+    (root / "alive.txt").write_text("Initial living knowledge.", encoding="utf-8")
+
+    conn = LocalFolderConnector(str(root))
+    assert conn.authenticate({})
+
+    acc = KnowledgeAccumulator()
+    db = str(tmp_path / "worker_acc.db")
+    eng = SyncEngine(db)
+
+    worker = SyncWorker(
+        eng, conn, "tenant-w", "silo-w", acc.process, poll_interval=0.3
+    )
+    worker.start()
+    time.sleep(0.8)  # allow initial poll + process
+    worker.stop()
+
+    assert len(acc.package.objects) == 1
+    req = AgentContextRequest(
+        request_id="rw", agent_id="test", task="living",
+        tenant_id="tenant-w", silo_id="silo-w", max_context_items=5,
+    )
+    retrieved = list(KnowledgePackageRetriever(acc.package).retrieve(req))
+    assert len(retrieved) == 1
+    assert "Initial living" in retrieved[0].content
+
+    # Background update
+    (root / "alive.txt").write_text("Initial living knowledge — updated by worker.", encoding="utf-8")
+    worker.start()
+    time.sleep(0.8)
+    worker.stop()
+
+    retrieved = list(KnowledgePackageRetriever(acc.package).retrieve(req))
+    assert len(retrieved) == 1
+    assert "updated by worker" in retrieved[0].content
+
+    # Background delete
+    (root / "alive.txt").unlink()
+    worker.start()
+    time.sleep(0.8)
+    worker.stop()
+
+    retrieved = list(KnowledgePackageRetriever(acc.package).retrieve(req))
+    assert len(retrieved) == 0
+    assert len(acc.package.objects) == 0
