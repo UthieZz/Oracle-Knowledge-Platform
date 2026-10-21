@@ -182,3 +182,51 @@ def test_sync_worker_local_folder_accumulator_background_updates(tmp_path):
     retrieved = list(KnowledgePackageRetriever(acc.package).retrieve(req))
     assert len(retrieved) == 0
     assert len(acc.package.objects) == 0
+
+
+def test_knowledge_accumulator_package_path_survives_restart(tmp_path):
+    """Optional package_path makes the living package durable: process events,
+    drop the accumulator, reload from the same path, retrieval reflects the state.
+    """
+    from okc.connect.interfaces import SyncEvent
+
+    pkg_file = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_file)
+
+    create = SyncEvent(
+        event_id="e1",
+        source="test",
+        kind="create",
+        payload={"object_id": "doc1", "text": "Durable living knowledge."},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(create)
+    assert Path(pkg_file).exists()
+    assert len(acc.package.objects) == 1
+
+    # Simulate process restart: new accumulator loads the file
+    acc2 = KnowledgeAccumulator(package_path=pkg_file)
+    assert len(acc2.package.objects) == 1
+    req = AgentContextRequest(
+        request_id="r", agent_id="test", task="durable",
+        tenant_id="t1", silo_id="s1", max_context_items=5,
+    )
+    retrieved = list(KnowledgePackageRetriever(acc2.package).retrieve(req))
+    assert len(retrieved) == 1
+    assert "Durable living" in retrieved[0].content
+
+    # Delete persists
+    delete = SyncEvent(
+        event_id="e2",
+        source="test",
+        kind="delete",
+        payload={"object_id": "doc1"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc2.process(delete)
+    acc3 = KnowledgeAccumulator(package_path=pkg_file)
+    assert len(acc3.package.objects) == 0
+    retrieved = list(KnowledgePackageRetriever(acc3.package).retrieve(req))
+    assert len(retrieved) == 0
