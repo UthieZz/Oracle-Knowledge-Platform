@@ -23,3 +23,11 @@
 - Added tests/test_knowledge_accumulator.py proving create→retrieve, delete→absent, update→new content.
 - Verified: tests/test_knowledge_accumulator.py + test_connect_e2e.py + test_sync_worker.py + test_local_folder_connector.py + test_sync_engine.py → 10 passed.
 - Knowledge Core IR unchanged. Connect now has a processor that makes deletion visible to retrieval.
+
+## 2026-10-21
+- KnowledgeAccumulator now accepts optional package_path. Loads existing canonical JSON on init; writes after every process. Living KnowledgePackage survives process restarts without changing the IR or Connect contract.
+- Added KnowledgePackage.from_json classmethod.
+- Added scripts/run_connect_worker.py: minimal durable runner for LocalFolderConnector + SyncWorker + KnowledgeAccumulator. Ctrl-C clean stop. Suitable for local-folder pilot path.
+- Added test_knowledge_accumulator_package_path_survives_restart.
+- Verified: targeted Connect tests (accumulator, worker, local folder, engine, e2e, contract) pass.
+- Knowledge Core IR unchanged. Connect pilot path now has durable living knowledge.
