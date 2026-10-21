@@ -55,3 +55,8 @@ class KnowledgePackage(BaseModel):
     def to_json(self) -> str:
         """Outputs a standard JSON string payload for downstream exporters."""
         return self.model_dump_json(indent=2)
+
+    @classmethod
+    def from_json(cls, data: str) -> "KnowledgePackage":
+        """Rehydrate a package from its canonical JSON."""
+        return cls.model_validate_json(data)
