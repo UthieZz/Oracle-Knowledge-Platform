@@ -7,6 +7,8 @@ or removes objects so that retrieval reflects deletions and updates.
 Source object identity is preserved in provenance.source_record_ids as
 "src:<object_id>" so deletes can locate the corresponding KnowledgeObject
 without inventing a parallel IR.
+
+Optional package_path makes the living package durable across process restarts.
 """
 from __future__ import annotations
 
@@ -27,14 +29,28 @@ class KnowledgeAccumulator:
     Delete: remove the object whose source_record_ids contain the source id.
     Permission_change: recorded in package.metadata["permissions"] for now;
     retrieval can consult it later. Does not alter object content.
+
+    If package_path is provided, the package is loaded on init (if the file
+    exists) and written after every successful process. This makes the
+    living knowledge durable without changing the IR or Connect contract.
     """
 
-    def __init__(self, package: Optional[KnowledgePackage] = None) -> None:
-        self.package = package or KnowledgePackage(
-            package_id="accumulator",
-            objects=[],
-            metadata={"accumulator": "okp_connect"},
-        )
+    def __init__(
+        self,
+        package: Optional[KnowledgePackage] = None,
+        package_path: Optional[str] = None,
+    ) -> None:
+        self.package_path = package_path
+        if package is not None:
+            self.package = package
+        elif package_path and Path(package_path).exists():
+            self.package = KnowledgePackage.from_json(Path(package_path).read_text(encoding="utf-8"))
+        else:
+            self.package = KnowledgePackage(
+                package_id="accumulator",
+                objects=[],
+                metadata={"accumulator": "okp_connect"},
+            )
         self._src_to_obj: dict[str, str] = {}
         self._rebuild_index()
 
@@ -44,6 +60,13 @@ class KnowledgeAccumulator:
             for rid in obj.provenance.source_record_ids:
                 if rid.startswith("src:"):
                     self._src_to_obj[rid[4:]] = obj.object_id
+
+    def _persist(self) -> None:
+        if not self.package_path:
+            return
+        path = Path(self.package_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(self.package.to_json(), encoding="utf-8")
 
     def process(self, event: SyncEvent) -> None:
         src_id = event.payload.get("object_id")
@@ -59,6 +82,7 @@ class KnowledgeAccumulator:
             if src_id:
                 perms = self.package.metadata.setdefault("permissions", {})
                 perms[src_id] = event.payload
+        self._persist()
 
     def _upsert_from_text(self, event: SyncEvent, text: str, src_id: str) -> None:
         with tempfile.NamedTemporaryFile(
