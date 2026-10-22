@@ -1,6 +1,6 @@
 # STAGE
 
-## Connect (as of 2026-10-21)
+## Connect (as of 2026-10-22)
 - Contract: interfaces.py (Connector, SyncEvent, HealthStatus) — present.
 - StubConnector, LocalFolderConnector — present and tested.
 - SyncEngine: SQLite durable queue, cursor, idempotency, process_next — implemented and tested.
@@ -13,4 +13,4 @@
 - Minimal durable runner: scripts/run_connect_worker.py starts the worker against a watched folder, persists the living package, and stops cleanly on signal. Suitable for a local-folder pilot path without SSO.
 - Not yet: production SSO/onboarding, real business-system connector beyond local folder, full permission enforcement beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and scripts/connect_health.py CLI, unattended service packaging / installer beyond the runner script.
 
-Next highest-leverage: production identity/SSO boundary or a second real connector that emits permission_change events from an external system; or package the local-folder runner as a simple service/installer with secrets handling.
+Next highest-leverage: package the local-folder runner as a simple service (systemd unit or container entrypoint) with config/secrets separation; or add a second connector that emits real permission_change events; or identity/SSO boundary for pilot onboarding. Health CLI now reports package freshness.

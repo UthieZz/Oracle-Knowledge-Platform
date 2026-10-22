@@ -31,3 +31,7 @@
 - Added test_knowledge_accumulator_package_path_survives_restart.
 - Verified: targeted Connect tests (accumulator, worker, local folder, engine, e2e, contract) pass.
 - Knowledge Core IR unchanged. Connect pilot path now has durable living knowledge.
+
+## 2026-10-22
+- Extended scripts/connect_health.py to optionally accept a living package JSON path and report exists/mtime/object count alongside SyncEngine queue health. Improves operator visibility for the local-folder pilot runner without changing Connect contract or Knowledge Core.
+- Verified: script runs, reports queue counts and package status correctly when package is supplied.
