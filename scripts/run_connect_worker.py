@@ -4,7 +4,8 @@
 Starts a SyncWorker that polls a LocalFolderConnector and processes events
 through KnowledgeAccumulator. The living KnowledgePackage is persisted to
 a JSON file so it survives process restarts. Queue and cursor remain in the
-SyncEngine SQLite DB.
+SyncEngine SQLite DB. Connector snapshot is also persisted so deletions that
+occur while the worker is stopped are detected on restart.
 
 Usage:
   python scripts/run_connect_worker.py \\
@@ -22,6 +23,7 @@ import argparse
 import signal
 import sys
 import time
+from pathlib import Path
 
 from okc.connect.knowledge_accumulator import KnowledgeAccumulator
 from okc.connect.local_folder_connector import LocalFolderConnector
@@ -36,10 +38,13 @@ def main() -> None:
     parser.add_argument("--silo", required=True, help="Silo id")
     parser.add_argument("--db", required=True, help="SQLite path for SyncEngine queue/cursor")
     parser.add_argument("--package", required=True, help="JSON path for durable KnowledgePackage")
+    parser.add_argument("--snapshot", help="JSON path for connector snapshot (default: <db>.snapshot.json)")
     parser.add_argument("--poll", type=float, default=5.0, help="Poll interval seconds")
     args = parser.parse_args()
 
-    connector = LocalFolderConnector(args.folder)
+    snapshot_path = args.snapshot or str(Path(args.db).with_suffix(".snapshot.json"))
+
+    connector = LocalFolderConnector(args.folder, snapshot_path=snapshot_path)
     if not connector.authenticate({}):
         print("LocalFolderConnector authentication failed", file=sys.stderr)
         sys.exit(1)
@@ -67,14 +72,14 @@ def main() -> None:
     worker.start()
     print(
         f"Connect worker running: folder={args.folder} tenant={args.tenant} "
-        f"silo={args.silo} db={args.db} package={args.package}"
+        f"silo={args.silo} db={args.db} package={args.package} snapshot={snapshot_path}"
     )
     try:
         while not stop:
             time.sleep(0.5)
     finally:
         worker.stop()
-        print("Worker stopped. Package persisted.")
+        print("Worker stopped. Package and snapshot persisted.")
 
 
 if __name__ == "__main__":

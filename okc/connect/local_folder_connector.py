@@ -3,10 +3,15 @@
 Polls a directory for .txt/.md files. Emits SyncEvents with file content or
 deletion markers. Uses content hash + mtime for stable event_ids and cursor.
 Never writes KnowledgePackage; feeds SyncEngine → existing importer path.
+
+Optional snapshot_path makes the in-memory change-detection map durable so
+files deleted while the process is stopped are detected on the next incremental
+sync after restart.
 """
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,12 +24,25 @@ class LocalFolderConnector(Connector):
     """Replaceable local-folder source. Outbound-only, poll-based."""
 
     name = "local_folder"
-    version = "0.1.0"
+    version = "0.1.1"
 
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: str, snapshot_path: Optional[str] = None) -> None:
         self.root = Path(root).resolve()
+        self.snapshot_path = snapshot_path
         self._authenticated = False
         self._last_snapshot: Dict[str, str] = {}  # rel_path -> content_hash
+        if snapshot_path and Path(snapshot_path).exists():
+            try:
+                self._last_snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                self._last_snapshot = {}
+
+    def _persist_snapshot(self) -> None:
+        if not self.snapshot_path:
+            return
+        path = Path(self.snapshot_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(self._last_snapshot, indent=2), encoding="utf-8")
 
     def authenticate(self, credentials: Dict[str, Any]) -> bool:
         # No credentials required for local path; verify readable.
@@ -79,6 +97,7 @@ class LocalFolderConnector(Connector):
                 )
             )
         self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+        self._persist_snapshot()
         return events
 
     def incremental_sync(self, cursor: str, tenant_id: str, silo_id: str) -> List[SyncEvent]:
@@ -123,6 +142,7 @@ class LocalFolderConnector(Connector):
                     )
                 )
         self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+        self._persist_snapshot()
         return events
 
     def handle_deletion(self, object_id: str, tenant_id: str, silo_id: str) -> SyncEvent:

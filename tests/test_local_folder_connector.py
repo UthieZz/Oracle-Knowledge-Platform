@@ -1,4 +1,5 @@
 """Tests for LocalFolderConnector: initial/incremental, delete, e2e to KnowledgePackage."""
+import json
 import tempfile
 from pathlib import Path
 
@@ -42,6 +43,39 @@ def test_local_folder_initial_and_incremental(tmp_path):
     assert len(deletes) == 1
     assert deletes[0].kind == "delete"
     assert deletes[0].payload["object_id"] == "b.md"
+
+
+def test_local_folder_snapshot_survives_restart_and_detects_delete(tmp_path):
+    """Deletions that occur while the process is stopped are emitted after restart."""
+    root = tmp_path / "watched"
+    root.mkdir()
+    (root / "keep.txt").write_text("Keep this.", encoding="utf-8")
+    (root / "gone.txt").write_text("This will be deleted while stopped.", encoding="utf-8")
+
+    snap_path = str(tmp_path / "snapshot.json")
+    conn1 = LocalFolderConnector(str(root), snapshot_path=snap_path)
+    assert conn1.authenticate({})
+    events = conn1.initial_sync("t", "s")
+    assert len(events) == 2
+    assert Path(snap_path).exists()
+    saved = json.loads(Path(snap_path).read_text(encoding="utf-8"))
+    assert set(saved) == {"keep.txt", "gone.txt"}
+
+    # Simulate stop: delete a file while no process is running
+    (root / "gone.txt").unlink()
+
+    # Restart: new connector instance loads the snapshot
+    conn2 = LocalFolderConnector(str(root), snapshot_path=snap_path)
+    assert conn2.authenticate({})
+    assert conn2._last_snapshot == saved
+    deltas = conn2.incremental_sync("0", "t", "s")
+    assert len(deltas) == 1
+    assert deltas[0].kind == "delete"
+    assert deltas[0].payload["object_id"] == "gone.txt"
+
+    # Snapshot now reflects the reduced set
+    after = json.loads(Path(snap_path).read_text(encoding="utf-8"))
+    assert set(after) == {"keep.txt"}
 
 
 def test_local_folder_to_knowledge_package(tmp_path):

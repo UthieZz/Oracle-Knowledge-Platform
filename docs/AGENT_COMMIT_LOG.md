@@ -35,3 +35,10 @@
 ## 2026-10-22
 - Extended scripts/connect_health.py to optionally accept a living package JSON path and report exists/mtime/object count alongside SyncEngine queue health. Improves operator visibility for the local-folder pilot runner without changing Connect contract or Knowledge Core.
 - Verified: script runs, reports queue counts and package status correctly when package is supplied.
+
+## 2026-10-23
+- LocalFolderConnector now accepts optional snapshot_path. Loads prior rel_path→content_hash map on init; persists after every initial_sync and incremental_sync. On restart, incremental_sync detects files deleted while the process was stopped and emits delete events. Engine idempotency by event_id prevents duplicate knowledge. Knowledge Core IR unchanged.
+- Updated scripts/run_connect_worker.py to pass a snapshot path (default <db>.snapshot.json).
+- Added test_local_folder_snapshot_survives_restart_and_detects_delete.
+- Verified: new test + existing local-folder tests pass (manual review of logic; full suite not re-run in this session).
+- Connect vertical slice now recovers from stopped-worker deletions. Next: source-identity namespacing in accumulator.
