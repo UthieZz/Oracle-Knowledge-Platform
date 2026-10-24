@@ -42,3 +42,9 @@
 - Added test_local_folder_snapshot_survives_restart_and_detects_delete.
 - Verified: new test + existing local-folder tests pass (manual review of logic; full suite not re-run in this session).
 - Connect vertical slice now recovers from stopped-worker deletions. Next: source-identity namespacing in accumulator.
+
+## 2026-10-24
+- Namespaced source identity in KnowledgeAccumulator: index and provenance markers now use source|tenant_id|silo_id|object_id. Identical object_ids (relative paths) no longer collide across connectors, tenants or silos. Legacy unscoped "src:object_id" markers remain readable. Permission metadata also keyed by scoped id.
+- Added test_source_identity_namespaced_across_scopes covering create/delete isolation across tenant/silo/source.
+- Updated STAGE.md.
+- Knowledge Core IR unchanged. Connect P0 source-identity isolation item advanced.
