@@ -9,6 +9,7 @@ from okc.connect.local_folder_connector import LocalFolderConnector
 from okc.connect.sync_engine import SyncEngine
 from okc.agent.retrievers import KnowledgePackageRetriever
 from okc.agent.models import AgentContextRequest
+from okc.connect.interfaces import SyncEvent
 
 
 def test_accumulator_create_update_delete_reflected_in_retrieval(tmp_path):
@@ -63,7 +64,6 @@ def test_accumulator_create_update_delete_reflected_in_retrieval(tmp_path):
 
 
 def test_permission_change_recorded(tmp_path):
-    from okc.connect.interfaces import SyncEvent
     acc = KnowledgeAccumulator()
     ev = SyncEvent(
         event_id="perm1",
@@ -74,13 +74,12 @@ def test_permission_change_recorded(tmp_path):
         silo_id="s",
     )
     acc.process(ev)
-    assert acc.package.metadata["permissions"]["note.txt"]["read"] is False
+    scoped = "local_folder|t|s|note.txt"
+    assert acc.package.metadata["permissions"][scoped]["read"] is False
 
 
 def test_permission_change_excludes_object_from_retrieval(tmp_path):
     """Fail-closed: permission_change with read=False removes object from retrieval."""
-    from okc.connect.interfaces import SyncEvent
-
     acc = KnowledgeAccumulator()
     create = SyncEvent(
         event_id="c1",
@@ -188,8 +187,6 @@ def test_knowledge_accumulator_package_path_survives_restart(tmp_path):
     """Optional package_path makes the living package durable: process events,
     drop the accumulator, reload from the same path, retrieval reflects the state.
     """
-    from okc.connect.interfaces import SyncEvent
-
     pkg_file = str(tmp_path / "living.json")
     acc = KnowledgeAccumulator(package_path=pkg_file)
 
@@ -230,3 +227,65 @@ def test_knowledge_accumulator_package_path_survives_restart(tmp_path):
     assert len(acc3.package.objects) == 0
     retrieved = list(KnowledgePackageRetriever(acc3.package).retrieve(req))
     assert len(retrieved) == 0
+
+
+def test_source_identity_namespaced_across_scopes(tmp_path):
+    """Identical object_id (path) in different tenants/silos/sources must not collide.
+    Each scoped identity keeps its own object.
+    """
+    acc = KnowledgeAccumulator()
+
+    # Same path, different tenant
+    e1 = SyncEvent(
+        event_id="e1", source="local_folder", kind="create",
+        payload={"object_id": "note.txt", "text": "Tenant A knowledge."},
+        tenant_id="tenantA", silo_id="silo1",
+    )
+    e2 = SyncEvent(
+        event_id="e2", source="local_folder", kind="create",
+        payload={"object_id": "note.txt", "text": "Tenant B knowledge."},
+        tenant_id="tenantB", silo_id="silo1",
+    )
+    # Same path, different silo
+    e3 = SyncEvent(
+        event_id="e3", source="local_folder", kind="create",
+        payload={"object_id": "note.txt", "text": "Silo X knowledge."},
+        tenant_id="tenantA", silo_id="siloX",
+    )
+    # Same path, different source
+    e4 = SyncEvent(
+        event_id="e4", source="other_source", kind="create",
+        payload={"object_id": "note.txt", "text": "Other source knowledge."},
+        tenant_id="tenantA", silo_id="silo1",
+    )
+
+    for e in (e1, e2, e3, e4):
+        acc.process(e)
+
+    assert len(acc.package.objects) == 4
+
+    # Retrieval by tenant/silo sees only its own
+    req_a = AgentContextRequest(request_id="ra", agent_id="t", task="a", tenant_id="tenantA", silo_id="silo1")
+    got_a = list(KnowledgePackageRetriever(acc.package).retrieve(req_a))
+    contents_a = {o.content for o in got_a}
+    assert any("Tenant A" in c for c in contents_a)
+    assert not any("Tenant B" in c for c in contents_a)
+    assert any("Other source" in c for c in contents_a)  # different source, same tenant/silo
+
+    req_b = AgentContextRequest(request_id="rb", agent_id="t", task="b", tenant_id="tenantB", silo_id="silo1")
+    got_b = list(KnowledgePackageRetriever(acc.package).retrieve(req_b))
+    assert len(got_b) == 1
+    assert "Tenant B" in got_b[0].content
+
+    # Delete only one scope
+    del_a = SyncEvent(
+        event_id="d1", source="local_folder", kind="delete",
+        payload={"object_id": "note.txt"},
+        tenant_id="tenantA", silo_id="silo1",
+    )
+    acc.process(del_a)
+    assert len(acc.package.objects) == 3
+    got_a_after = list(KnowledgePackageRetriever(acc.package).retrieve(req_a))
+    assert not any("Tenant A knowledge" in o.content for o in got_a_after)
+    # others remain
+    assert len(list(KnowledgePackageRetriever(acc.package).retrieve(req_b))) == 1
