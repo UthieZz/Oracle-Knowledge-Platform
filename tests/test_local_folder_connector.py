@@ -59,7 +59,8 @@ def test_local_folder_snapshot_survives_restart_and_detects_delete(tmp_path):
     assert len(events) == 2
     assert Path(snap_path).exists()
     saved = json.loads(Path(snap_path).read_text(encoding="utf-8"))
-    assert set(saved) == {"keep.txt", "gone.txt"}
+    assert saved.get("version") == 1
+    assert set(saved.get("snapshot", {})) == {"keep.txt", "gone.txt"}
 
     # Simulate stop: delete a file while no process is running
     (root / "gone.txt").unlink()
@@ -67,7 +68,7 @@ def test_local_folder_snapshot_survives_restart_and_detects_delete(tmp_path):
     # Restart: new connector instance loads the snapshot
     conn2 = LocalFolderConnector(str(root), snapshot_path=snap_path)
     assert conn2.authenticate({})
-    assert conn2._last_snapshot == saved
+    assert conn2._last_snapshot == saved["snapshot"]
     deltas = conn2.incremental_sync("0", "t", "s")
     assert len(deltas) == 1
     assert deltas[0].kind == "delete"
@@ -75,7 +76,40 @@ def test_local_folder_snapshot_survives_restart_and_detects_delete(tmp_path):
 
     # Snapshot now reflects the reduced set
     after = json.loads(Path(snap_path).read_text(encoding="utf-8"))
-    assert set(after) == {"keep.txt"}
+    assert set(after.get("snapshot", {})) == {"keep.txt"}
+
+
+def test_local_folder_delete_recreate_same_content_gets_new_event_id(tmp_path):
+    """Delete then recreate identical content must produce a distinct event_id so the engine re-processes it."""
+    root = tmp_path / "docs"
+    root.mkdir()
+    content = "Identical content across lifecycle."
+    (root / "note.txt").write_text(content, encoding="utf-8")
+
+    snap = str(tmp_path / "snap.json")
+    conn = LocalFolderConnector(str(root), snapshot_path=snap)
+    assert conn.authenticate({})
+    creates = conn.initial_sync("t", "s")
+    assert len(creates) == 1
+    first_id = creates[0].event_id
+
+    # Delete
+    (root / "note.txt").unlink()
+    dels = conn.incremental_sync("0", "t", "s")
+    assert len(dels) == 1
+    assert dels[0].kind == "delete"
+
+    # Recreate identical content
+    (root / "note.txt").write_text(content, encoding="utf-8")
+    recreates = conn.incremental_sync("0", "t", "s")
+    assert len(recreates) == 1
+    assert recreates[0].kind == "create"
+    assert recreates[0].payload["text"] == content
+    assert recreates[0].event_id != first_id  # new lifecycle generation
+
+    # Re-poll with no change must not emit
+    again = conn.incremental_sync("0", "t", "s")
+    assert again == []
 
 
 def test_local_folder_to_knowledge_package(tmp_path):

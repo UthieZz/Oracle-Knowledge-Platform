@@ -48,3 +48,9 @@
 - Added test_source_identity_namespaced_across_scopes covering create/delete isolation across tenant/silo/source.
 - Updated STAGE.md.
 - Knowledge Core IR unchanged. Connect P0 source-identity isolation item advanced.
+
+## 2026-10-25
+- LocalFolderConnector event_ids now incorporate a persistent monotonic sequence stored in the snapshot JSON (versioned format; legacy flat {rel:hash} still loads). Same logical change re-emitted on crash/retry keeps the same id; delete then recreate of identical path+content receives a new id so the engine processes the new lifecycle. Snapshot still detects stopped-worker deletions.
+- Added test_local_folder_delete_recreate_same_content_gets_new_event_id.
+- Updated STAGE.md.
+- Knowledge Core IR unchanged. Connect P0 event-lifecycle item advanced.

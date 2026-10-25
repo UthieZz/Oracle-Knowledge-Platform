@@ -1,10 +1,11 @@
 """Local folder connector for OKP Connect.
 
 Polls a directory for .txt/.md files. Emits SyncEvents with file content or
-deletion markers. Uses content hash + mtime for stable event_ids and cursor.
-Never writes KnowledgePackage; feeds SyncEngine → existing importer path.
+deletion markers. Uses a persistent sequence number in the snapshot so that
+event_ids remain stable for retries of the same logical change while allowing
+legitimate delete/recreate of the same path and content to receive a new id.
 
-Optional snapshot_path makes the in-memory change-detection map durable so
+Optional snapshot_path makes the change-detection map and sequence durable so
 files deleted while the process is stopped are detected on the next incremental
 sync after restart.
 """
@@ -12,8 +13,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -24,25 +23,35 @@ class LocalFolderConnector(Connector):
     """Replaceable local-folder source. Outbound-only, poll-based."""
 
     name = "local_folder"
-    version = "0.1.1"
+    version = "0.1.2"
 
     def __init__(self, root: str, snapshot_path: Optional[str] = None) -> None:
         self.root = Path(root).resolve()
         self.snapshot_path = snapshot_path
         self._authenticated = False
         self._last_snapshot: Dict[str, str] = {}  # rel_path -> content_hash
+        self._seq: int = 0
         if snapshot_path and Path(snapshot_path).exists():
             try:
-                self._last_snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
+                raw = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
+                if isinstance(raw, dict) and "snapshot" in raw and "seq" in raw:
+                    self._last_snapshot = raw.get("snapshot") or {}
+                    self._seq = int(raw.get("seq") or 0)
+                elif isinstance(raw, dict):
+                    # Legacy flat {rel: hash} format
+                    self._last_snapshot = raw
+                    self._seq = 0
+            except (json.JSONDecodeError, OSError, ValueError, TypeError):
                 self._last_snapshot = {}
+                self._seq = 0
 
     def _persist_snapshot(self) -> None:
         if not self.snapshot_path:
             return
         path = Path(self.snapshot_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self._last_snapshot, indent=2), encoding="utf-8")
+        payload = {"version": 1, "seq": self._seq, "snapshot": self._last_snapshot}
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     def authenticate(self, credentials: Dict[str, Any]) -> bool:
         # No credentials required for local path; verify readable.
@@ -73,13 +82,22 @@ class LocalFolderConnector(Connector):
             snapshot[rel] = {"text": text, "hash": content_hash, "mtime": mtime, "abs": str(p)}
         return snapshot
 
+    def _make_event_id(self, kind: str, rel: str, content_hash: Optional[str] = None) -> str:
+        """Stable within one emission batch; sequence advances after persist."""
+        base = f"lf-{self._seq}"
+        if kind == "delete":
+            return f"{base}-del-{hashlib.sha256(rel.encode()).hexdigest()[:12]}"
+        h = (content_hash or "")[:12]
+        return f"{base}-{h}-{rel}"
+
     def initial_sync(self, tenant_id: str, silo_id: str) -> List[SyncEvent]:
         if not self._authenticated:
             raise RuntimeError("not authenticated")
         snap = self._scan()
         events: List[SyncEvent] = []
+        start_seq = self._seq
         for rel, info in sorted(snap.items()):
-            event_id = f"lf-{info['hash'][:16]}-{rel}"
+            event_id = self._make_event_id("create", rel, info["hash"])
             events.append(
                 SyncEvent(
                     event_id=event_id,
@@ -96,6 +114,7 @@ class LocalFolderConnector(Connector):
                     silo_id=silo_id,
                 )
             )
+            self._seq += 1
         self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
         self._persist_snapshot()
         return events
@@ -107,10 +126,10 @@ class LocalFolderConnector(Connector):
         events: List[SyncEvent] = []
         prev = self._last_snapshot
         # Creates / updates
-        for rel, info in snap.items():
+        for rel, info in sorted(snap.items()):
             if rel not in prev or prev[rel] != info["hash"]:
                 kind = "update" if rel in prev else "create"
-                event_id = f"lf-{info['hash'][:16]}-{rel}"
+                event_id = self._make_event_id(kind, rel, info["hash"])
                 events.append(
                     SyncEvent(
                         event_id=event_id,
@@ -127,10 +146,11 @@ class LocalFolderConnector(Connector):
                         silo_id=silo_id,
                     )
                 )
+                self._seq += 1
         # Deletes
-        for rel in prev:
+        for rel in sorted(prev):
             if rel not in snap:
-                event_id = f"lf-del-{hashlib.sha256(rel.encode()).hexdigest()[:16]}"
+                event_id = self._make_event_id("delete", rel)
                 events.append(
                     SyncEvent(
                         event_id=event_id,
@@ -141,12 +161,15 @@ class LocalFolderConnector(Connector):
                         silo_id=silo_id,
                     )
                 )
+                self._seq += 1
         self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
         self._persist_snapshot()
         return events
 
     def handle_deletion(self, object_id: str, tenant_id: str, silo_id: str) -> SyncEvent:
-        event_id = f"lf-del-{hashlib.sha256(object_id.encode()).hexdigest()[:16]}"
+        event_id = self._make_event_id("delete", object_id)
+        self._seq += 1
+        # Note: does not update snapshot; caller normally uses incremental path.
         return SyncEvent(
             event_id=event_id,
             source=self.name,
