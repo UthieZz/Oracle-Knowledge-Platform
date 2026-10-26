@@ -54,3 +54,8 @@
 - Added test_local_folder_delete_recreate_same_content_gets_new_event_id.
 - Updated STAGE.md.
 - Knowledge Core IR unchanged. Connect P0 event-lifecycle item advanced.
+
+## 2026-10-26
+- KnowledgeAccumulator._persist now writes to a temporary file then os.replace for atomic package persistence. Prevents partial JSON on crash during write.
+- Added test_reprocess_after_simulated_crash_before_status_update_is_idempotent proving reprocessing after package persist (simulating crash before engine status update) does not duplicate objects or leave inconsistent state for create and delete.
+- Knowledge Core IR unchanged. Connect P0 crash-boundary item advanced: replay of applied events is safe; package write is now atomic.
