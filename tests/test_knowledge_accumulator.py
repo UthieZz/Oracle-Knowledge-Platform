@@ -289,3 +289,53 @@ def test_source_identity_namespaced_across_scopes(tmp_path):
     assert not any("Tenant A knowledge" in o.content for o in got_a_after)
     # others remain
     assert len(list(KnowledgePackageRetriever(acc.package).retrieve(req_b))) == 1
+
+
+def test_reprocess_after_simulated_crash_before_status_update_is_idempotent(tmp_path):
+    """Reprocessing an already-applied event (crash after package persist,
+    before SyncEngine marks processed) must not duplicate objects or leave
+    inconsistent state. Package write is atomic.
+    """
+    pkg_file = str(tmp_path / "crash.json")
+    acc = KnowledgeAccumulator(package_path=pkg_file)
+
+    create = SyncEvent(
+        event_id="crash-create",
+        source="test",
+        kind="create",
+        payload={"object_id": "doc1", "text": "Knowledge that must not duplicate."},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    # First process (simulates success path up to persist)
+    acc.process(create)
+    assert len(acc.package.objects) == 1
+    assert Path(pkg_file).exists()
+
+    # Simulate crash: new process loads the persisted package, re-processes same event
+    acc_re = KnowledgeAccumulator(package_path=pkg_file)
+    acc_re.process(create)
+    assert len(acc_re.package.objects) == 1
+    contents = {o.content for o in acc_re.package.objects}
+    assert "must not duplicate" in next(iter(contents))
+
+    # Delete then reprocess delete
+    delete = SyncEvent(
+        event_id="crash-delete",
+        source="test",
+        kind="delete",
+        payload={"object_id": "doc1"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc_re.process(delete)
+    assert len(acc_re.package.objects) == 0
+
+    acc_re2 = KnowledgeAccumulator(package_path=pkg_file)
+    acc_re2.process(delete)  # reprocess delete after persist
+    assert len(acc_re2.package.objects) == 0
+
+    # Atomicity smoke: package file is valid JSON after operations
+    import json
+    data = json.loads(Path(pkg_file).read_text(encoding="utf-8"))
+    assert isinstance(data, dict)

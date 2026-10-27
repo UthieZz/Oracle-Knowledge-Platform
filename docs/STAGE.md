@@ -15,4 +15,6 @@
 - LocalFolderConnector snapshot persistence: optional snapshot_path loads prior state on restart so files deleted while the worker is stopped generate delete events on the next incremental_sync. Snapshot now also stores a monotonic sequence; event_ids incorporate the sequence so delete/recreate of identical content receives a new id (legacy flat snapshots still load). Tested (test_local_folder_snapshot_survives_restart_and_detects_delete, test_local_folder_delete_recreate_same_content_gets_new_event_id).
 - Not yet: production SSO/onboarding, real business-system connector beyond local folder, full permission enforcement beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and scripts/connect_health.py CLI, unattended service packaging / installer beyond the runner script.
 
-Next highest-leverage: prove remaining crash boundaries (processor exception after partial package mutation, cursor advance timing) with explicit recovery semantics; or package the local-folder runner as a simple service; or implement one real business-system connector.
+Next highest-leverage: prove remaining crash boundaries (processor exception after partial package mutation before persist, cursor advance timing) with explicit recovery semantics; or package the local-folder runner as a simple service; or implement one real business-system connector.
+
+(2026-10-27) test_reprocess_after_simulated_crash_before_status_update_is_idempotent now present and passing: reprocessing after package persist is idempotent for create/delete.

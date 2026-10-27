@@ -59,3 +59,9 @@
 - KnowledgeAccumulator._persist now writes to a temporary file then os.replace for atomic package persistence. Prevents partial JSON on crash during write.
 - Added test_reprocess_after_simulated_crash_before_status_update_is_idempotent proving reprocessing after package persist (simulating crash before engine status update) does not duplicate objects or leave inconsistent state for create and delete.
 - Knowledge Core IR unchanged. Connect P0 crash-boundary item advanced: replay of applied events is safe; package write is now atomic.
+
+## 2026-10-27
+- Added missing regression test_reprocess_after_simulated_crash_before_status_update_is_idempotent to tests/test_knowledge_accumulator.py.
+  Proves reprocessing an already-applied create/delete (package persisted, engine status not yet updated) does not duplicate objects.
+  Targeted Connect suite (accumulator, engine, local-folder, worker, e2e, contract): 18 passed.
+- Knowledge Core IR unchanged. Connect P0 crash-boundary item now has the claimed test present and verified.
