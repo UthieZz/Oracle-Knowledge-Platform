@@ -17,8 +17,9 @@ from okc.connect.interfaces import SyncEvent
 class SyncEngine:
     """Durable, idempotent sync queue and cursor store."""
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(self, db_path: str, max_attempts: int = 5) -> None:
         self.db_path = db_path
+        self.max_attempts = max_attempts
         self._init_db()
 
     def _conn(self) -> sqlite3.Connection:
@@ -86,7 +87,9 @@ class SyncEngine:
         """Process the oldest queued event. Returns event_id or None if empty.
 
         On processor exception, increments attempts and leaves status queued
-        (simple retry). Marks processed only on success.
+        for retry (until max_attempts). Marks processed only on success.
+        After max_attempts the event is marked 'failed' and no longer retried.
+        Cursor is advanced only on success.
         """
         with self._conn() as conn:
             row = conn.execute(
@@ -135,15 +138,17 @@ class SyncEngine:
                     )
                 return event.event_id
             except Exception as exc:  # noqa: BLE001
+                attempts = row["attempts"] + 1
+                new_status = "failed" if attempts >= self.max_attempts else "queued"
                 conn.execute(
                     """
                     UPDATE events
-                    SET attempts = attempts + 1, last_error = ?
+                    SET attempts = ?, last_error = ?, status = ?
                     WHERE event_id = ?
                     """,
-                    (str(exc)[:500], event.event_id),
+                    (attempts, str(exc)[:500], new_status, event.event_id),
                 )
-                return None  # leave queued for retry
+                return None  # leave queued (or failed) for retry/manual recovery
 
     def get_cursor(self, source: str, tenant_id: str, silo_id: str) -> Optional[str]:
         with self._conn() as conn:
@@ -157,7 +162,7 @@ class SyncEngine:
         with self._conn() as conn:
             queued = conn.execute("SELECT COUNT(*) AS n FROM events WHERE status = 'queued'").fetchone()["n"]
             processed = conn.execute("SELECT COUNT(*) AS n FROM events WHERE status = 'processed'").fetchone()["n"]
-            failed = conn.execute("SELECT COUNT(*) AS n FROM events WHERE attempts > 3 AND status = 'queued'").fetchone()["n"]
+            failed = conn.execute("SELECT COUNT(*) AS n FROM events WHERE status = 'failed' OR (attempts >= ? AND status = 'queued')", (self.max_attempts,)).fetchone()["n"]
         return {
             "queued": queued,
             "processed": processed,

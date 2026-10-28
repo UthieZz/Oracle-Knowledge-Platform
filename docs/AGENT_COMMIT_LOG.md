@@ -65,3 +65,9 @@
   Proves reprocessing an already-applied create/delete (package persisted, engine status not yet updated) does not duplicate objects.
   Targeted Connect suite (accumulator, engine, local-folder, worker, e2e, contract): 18 passed.
 - Knowledge Core IR unchanged. Connect P0 crash-boundary item now has the claimed test present and verified.
+
+## 2026-10-28
+- SyncEngine.process_next now respects max_attempts (default 5). On exception, increments attempts; if attempts >= max_attempts sets status='failed' instead of leaving queued. Cursor advanced only on success. Health counts failed events.
+- Added tests: test_retry_until_success_then_advances_cursor, test_retry_exhaustion_marks_failed_no_cursor.
+- Verified: targeted Connect suite (engine, worker, accumulator, local-folder, e2e, contract): 20 passed.
+- Knowledge Core IR unchanged. Connect P0 retry/recovery policy item advanced.
