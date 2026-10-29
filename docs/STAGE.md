@@ -16,6 +16,8 @@
 - LocalFolderConnector snapshot persistence: optional snapshot_path loads prior state on restart so files deleted while the worker is stopped generate delete events on the next incremental_sync. Snapshot now also stores a monotonic sequence; event_ids incorporate the sequence so delete/recreate of identical content receives a new id (legacy flat snapshots still load). Tested (test_local_folder_snapshot_survives_restart_and_detects_delete, test_local_folder_delete_recreate_same_content_gets_new_event_id).
 - Not yet: production SSO/onboarding, real business-system connector beyond local folder, full permission enforcement beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and scripts/connect_health.py CLI, unattended service packaging / installer beyond the runner script.
 
+(2026-10-29) GeminiImporter restored from last good commit; ordered-list fix re-applied; test suite valid and 31 passed. Core Gemini import path functional again.
+
 Next highest-leverage: prove remaining crash boundaries (processor exception after partial package mutation before persist) with explicit recovery semantics; or package the local-folder runner as a simple service; or implement one real business-system connector.
 
 (2026-10-28) SyncEngine now supports max_attempts; events that fail repeatedly are marked failed and no longer auto-retried. Cursor still advances only on success. Tests: retry-until-success and exhaustion.

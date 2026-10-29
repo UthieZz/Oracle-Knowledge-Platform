@@ -71,3 +71,9 @@
 - Added tests: test_retry_until_success_then_advances_cursor, test_retry_exhaustion_marks_failed_no_cursor.
 - Verified: targeted Connect suite (engine, worker, accumulator, local-folder, e2e, contract): 20 passed.
 - Knowledge Core IR unchanged. Connect P0 retry/recovery policy item advanced.
+
+## 2026-10-29
+- Restored GeminiImporter (src/importers/gemini_importer.py) from last good full source at 3194129. Main had been left as a recovery stub that raised ImportError; tests/test_gemini_importer.py was the invalid string "see-file".
+- Re-applied ordered-list numbering fix: unordered lists use None sentinel, ordered counters start at 0 so first item is 1.
+- Restored valid test suite (31 tests) with pytest import. Tests pass: 31 passed.
+- Knowledge Core IR unchanged. Core import path for Gemini Takeout JSON is again functional.
