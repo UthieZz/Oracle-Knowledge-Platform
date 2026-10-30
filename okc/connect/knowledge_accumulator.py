@@ -80,21 +80,42 @@ class KnowledgeAccumulator:
         os.replace(tmp, path)
 
     def process(self, event: SyncEvent) -> None:
+        """Apply event transactionally relative to the living package.
+
+        Mutations are applied, then persisted. On any exception the in-memory
+        package and source index are restored to their pre-process state so a
+        subsequent retry (same long-lived accumulator) starts from a consistent
+        package. Persistence remains atomic via temp+replace.
+        """
         src_id = event.payload.get("object_id")
         if not src_id:
             return
         scoped = _scoped_source_id(event.source, event.tenant_id, event.silo_id, src_id)
-        if event.kind in ("create", "update"):
-            text = event.payload.get("text")
-            if not text:
-                return
-            self._upsert_from_text(event, text, scoped)
-        elif event.kind == "delete":
-            self._remove(scoped)
-        elif event.kind == "permission_change":
-            perms = self.package.metadata.setdefault("permissions", {})
-            perms[scoped] = event.payload
-        self._persist()
+
+        # Snapshot for rollback if mutation or persist fails
+        old_objects = list(self.package.objects)
+        old_src = dict(self._src_to_obj)
+        old_meta = dict(self.package.metadata)
+
+        try:
+            if event.kind in ("create", "update"):
+                text = event.payload.get("text")
+                if not text:
+                    return
+                self._upsert_from_text(event, text, scoped)
+            elif event.kind == "delete":
+                self._remove(scoped)
+            elif event.kind == "permission_change":
+                perms = self.package.metadata.setdefault("permissions", {})
+                perms[scoped] = event.payload
+            self._persist()
+        except Exception:
+            # Restore pre-process state so retry is safe
+            self.package.objects = old_objects
+            self._src_to_obj = old_src
+            self.package.metadata.clear()
+            self.package.metadata.update(old_meta)
+            raise
 
     def _upsert_from_text(self, event: SyncEvent, text: str, scoped_id: str) -> None:
         with tempfile.NamedTemporaryFile(

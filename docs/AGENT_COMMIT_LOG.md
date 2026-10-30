@@ -1,3 +1,9 @@
+
+## 2026-10-30
+- KnowledgeAccumulator.process now snapshots package state and rolls back objects, source index and metadata on any exception during mutation or persist. Makes retry safe on a long-lived accumulator when a processor exception occurs after partial mutation. Persistence remains atomic (temp+replace).
+- Added test_process_exception_mid_mutation_rolls_back_and_retry_succeeds.
+- Verified: targeted Connect suite (accumulator, engine, local-folder, worker, e2e, contract): 21 passed.
+- Knowledge Core IR unchanged. Connect P0 crash-boundary item advanced.
 # Agent Commit Log
 
 ## 2026-10-16

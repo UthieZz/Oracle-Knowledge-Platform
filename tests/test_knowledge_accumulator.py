@@ -339,3 +339,65 @@ def test_reprocess_after_simulated_crash_before_status_update_is_idempotent(tmp_
     import json
     data = json.loads(Path(pkg_file).read_text(encoding="utf-8"))
     assert isinstance(data, dict)
+
+
+def test_process_exception_mid_mutation_rolls_back_and_retry_succeeds(tmp_path, monkeypatch):
+    """If process raises after partial mutation (before persist), in-memory
+    state is restored. Subsequent retry on the same accumulator succeeds
+    cleanly without duplicates or lost objects.
+    """
+    pkg_file = str(tmp_path / "rollback.json")
+    acc = KnowledgeAccumulator(package_path=pkg_file)
+
+    # Seed one object so we can observe preservation on failure
+    seed = SyncEvent(
+        event_id="seed",
+        source="test",
+        kind="create",
+        payload={"object_id": "seed", "text": "seed content"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(seed)
+    assert len(acc.package.objects) == 1
+
+    # Force exception inside _upsert_from_text after mutation would have started
+    original_upsert = acc._upsert_from_text
+
+    def boom(*args, **kwargs):
+        # Mutate something visible then raise
+        acc.package.objects.append(type(acc.package.objects[0])(**acc.package.objects[0].model_dump()))
+        acc._src_to_obj["bad"] = "bad"
+        raise RuntimeError("simulated mid-process failure")
+
+    monkeypatch.setattr(acc, "_upsert_from_text", boom)
+
+    failing = SyncEvent(
+        event_id="fail",
+        source="test",
+        kind="create",
+        payload={"object_id": "fail", "text": "should not stick"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    try:
+        acc.process(failing)
+        assert False, "expected exception"
+    except RuntimeError:
+        pass
+
+    # Rolled back: still only the seed
+    assert len(acc.package.objects) == 1
+    assert "bad" not in acc._src_to_obj
+    assert not Path(pkg_file).exists() or "seed content" in Path(pkg_file).read_text()
+
+    # Restore real method and retry successfully
+    monkeypatch.setattr(acc, "_upsert_from_text", original_upsert)
+    acc.process(failing)
+    assert len(acc.package.objects) == 2
+    contents = {o.content for o in acc.package.objects}
+    assert any("should not stick" in c for c in contents)
+    assert any("seed content" in c for c in contents)
+    # Persisted and reloadable
+    acc2 = KnowledgeAccumulator(package_path=pkg_file)
+    assert len(acc2.package.objects) == 2
