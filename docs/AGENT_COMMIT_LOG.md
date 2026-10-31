@@ -1,4 +1,8 @@
 
+## 2026-10-31
+- SyncEngine.process_next now respects next_retry_at for exponential backoff (2^attempts s, max 300s). On failure sets next_retry_at; selection skips events not yet due. Existing DBs auto-migrated via ALTER. Cursor advanced only on success. Existing retry tests updated to sleep past delays. Targeted Connect suite: 21 passed.
+- Knowledge Core IR unchanged. Connect P0 retry/backoff policy item advanced.
+
 ## 2026-10-30
 - KnowledgeAccumulator.process now snapshots package state and rolls back objects, source index and metadata on any exception during mutation or persist. Makes retry safe on a long-lived accumulator when a processor exception occurs after partial mutation. Persistence remains atomic (temp+replace).
 - Added test_process_exception_mid_mutation_rolls_back_and_retry_succeeds.

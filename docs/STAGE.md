@@ -24,3 +24,5 @@
 Next highest-leverage: package the local-folder runner as a simple service; or implement one real business-system connector; or further crash-boundary cases (e.g. persist failure after successful mutation).
 
 (2026-10-28) SyncEngine now supports max_attempts; events that fail repeatedly are marked failed and no longer auto-retried. Cursor still advances only on success. Tests: retry-until-success and exhaustion.
+
+(2026-10-31) SyncEngine now applies exponential backoff on processor failures. Events remain queued but are not selected for process_next until next_retry_at (2^attempts seconds, cap 300s). Schema migrates existing DBs by adding next_retry_at. Cursor still advances only on success; max_attempts still marks failed. Tested (existing retry tests updated to wait past delays). Connect P0 retry/backoff item advanced.

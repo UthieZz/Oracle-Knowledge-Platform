@@ -72,9 +72,12 @@ def test_retry_until_success_then_advances_cursor(tmp_path):
     assert h["queued"] == 1
     assert h["failed_or_stuck"] == 0
 
+    import time
+    time.sleep(2.1)  # wait past first backoff
     assert eng.process_next(proc) is None
     assert eng.list_queued() == ["retry1"]
 
+    time.sleep(4.1)  # wait past second backoff (4s)
     eid = eng.process_next(proc)
     assert eid == "retry1"
     assert eng.list_queued() == []
@@ -104,6 +107,8 @@ def test_retry_exhaustion_marks_failed_no_cursor(tmp_path):
     assert eng.list_queued() == ["fail1"]
     assert eng.get_cursor("stub", "t", "s") is None
 
+    import time
+    time.sleep(2.1)  # wait past backoff before second attempt
     assert eng.process_next(proc) is None
     # Now failed, no longer queued
     assert eng.list_queued() == []
