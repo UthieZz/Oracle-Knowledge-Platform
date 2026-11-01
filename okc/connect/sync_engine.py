@@ -192,3 +192,28 @@ class SyncEngine:
                 "SELECT event_id FROM events WHERE status = 'queued' ORDER BY enqueued_at"
             ).fetchall()
             return [r["event_id"] for r in rows]
+
+    def list_failed(self) -> List[str]:
+        """Return event_ids currently in failed status (exhausted retries)."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT event_id FROM events WHERE status = 'failed' ORDER BY enqueued_at"
+            ).fetchall()
+            return [r["event_id"] for r in rows]
+
+    def reset_failed(self, event_id: str) -> bool:
+        """Reset a failed event back to queued with attempts=0 and next_retry_at=NULL
+        so it can be manually recovered. Returns True if the event was reset.
+        Cursor is not advanced; reprocessing remains the caller's responsibility.
+        """
+        with self._conn() as conn:
+            cur = conn.execute(
+                """
+                UPDATE events
+                SET status = 'queued', attempts = 0, last_error = NULL, next_retry_at = NULL
+                WHERE event_id = ? AND status = 'failed'
+                """,
+                (event_id,),
+            )
+            return cur.rowcount > 0
+

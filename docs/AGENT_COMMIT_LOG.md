@@ -1,4 +1,9 @@
 
+## 2026-11-01
+- SyncEngine now provides list_failed() and reset_failed(event_id) for manual recovery of events that exhausted max_attempts. reset_failed sets status='queued', attempts=0, last_error=NULL, next_retry_at=NULL so the event is eligible for process_next again. Cursor still advances only on success. Added test_reset_failed_allows_manual_recovery.
+- Targeted SyncEngine tests: 5 passed.
+- Knowledge Core IR unchanged. Connect P0 retry/recovery policy item advanced (manual recovery path).
+
 ## 2026-10-31
 - SyncEngine.process_next now respects next_retry_at for exponential backoff (2^attempts s, max 300s). On failure sets next_retry_at; selection skips events not yet due. Existing DBs auto-migrated via ALTER. Cursor advanced only on success. Existing retry tests updated to sleep past delays. Targeted Connect suite: 21 passed.
 - Knowledge Core IR unchanged. Connect P0 retry/backoff policy item advanced.
@@ -32,7 +37,7 @@
 - Exported from okc.connect.
 - Added tests/test_knowledge_accumulator.py proving create→retrieve, delete→absent, update→new content.
 - Verified: tests/test_knowledge_accumulator.py + test_connect_e2e.py + test_sync_worker.py + test_local_folder_connector.py + test_sync_engine.py → 10 passed.
-- Knowledge Core IR unchanged. Connect now has a processor that makes deletion visible to retrieval.
+- Knowledge Core untouched. Connect now has a processor that makes deletion visible to retrieval.
 
 ## 2026-10-21
 - KnowledgeAccumulator now accepts optional package_path. Loads existing canonical JSON on init; writes after every process. Living KnowledgePackage survives process restarts without changing the IR or Connect contract.

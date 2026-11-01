@@ -117,3 +117,42 @@ def test_retry_exhaustion_marks_failed_no_cursor(tmp_path):
     assert h["failed_or_stuck"] >= 1
     assert h["queued"] == 0
     assert h["processed"] == 0
+
+
+def test_reset_failed_allows_manual_recovery(tmp_path):
+    """Failed events can be reset to queued for operator-initiated recovery."""
+    db = str(tmp_path / "recover.db")
+    eng = SyncEngine(db, max_attempts=1)
+    ev = SyncEvent(
+        event_id="stuck1",
+        source="stub",
+        kind="create",
+        cursor="c3",
+        payload={"text": "needs recovery"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    eng.enqueue(ev)
+
+    def fail(e):
+        raise RuntimeError("permanent")
+
+    assert eng.process_next(fail) is None
+    assert eng.list_failed() == ["stuck1"]
+    assert eng.list_queued() == []
+    assert eng.get_cursor("stub", "t", "s") is None
+
+    assert eng.reset_failed("stuck1") is True
+    assert eng.list_failed() == []
+    assert eng.list_queued() == ["stuck1"]
+
+    # Now succeeds on recovery
+    def succeed(e):
+        pass
+
+    eid = eng.process_next(succeed)
+    assert eid == "stuck1"
+    assert eng.list_queued() == []
+    assert eng.get_cursor("stub", "t", "s") == "c3"
+    assert eng.reset_failed("nonexistent") is False
+
