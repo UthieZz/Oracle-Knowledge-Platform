@@ -31,3 +31,6 @@ Next highest-leverage: package the local-folder runner as a simple service; or i
 (2026-10-28) SyncEngine now supports max_attempts; events that fail repeatedly are marked failed and no longer auto-retried. Cursor still advances only on success. Tests: retry-until-success and exhaustion.
 
 (2026-10-31) SyncEngine now applies exponential backoff on processor failures. Events remain queued but are not selected for process_next until next_retry_at (2^attempts seconds, cap 300s). Schema migrates existing DBs by adding next_retry_at. Cursor still advances only on success; max_attempts still marks failed. Tested (existing retry tests updated to wait past delays). Connect P0 retry/backoff item advanced.
+
+
+(2026-11-02) SyncEngine.health now returns explicit 'failed' count and 'oldest_queued_age_seconds' for operator visibility. connect_health.py prints both. Existing failed_or_stuck preserved. Tested (test_health_reports_failed_and_queue_age). Connect P3 local-pilot observability advanced.

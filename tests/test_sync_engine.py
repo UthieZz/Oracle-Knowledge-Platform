@@ -156,3 +156,44 @@ def test_reset_failed_allows_manual_recovery(tmp_path):
     assert eng.get_cursor("stub", "t", "s") == "c3"
     assert eng.reset_failed("nonexistent") is False
 
+
+
+def test_health_reports_failed_and_queue_age(tmp_path):
+    """Health includes explicit failed count and oldest queued age."""
+    db = str(tmp_path / "age.db")
+    eng = SyncEngine(db, max_attempts=1)
+    ev = SyncEvent(
+        event_id="aged1",
+        source="stub",
+        kind="create",
+        cursor=None,
+        payload={"text": "old"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    eng.enqueue(ev)
+    # Force failure
+    def fail(e):
+        raise RuntimeError("x")
+    eng.process_next(fail)
+    h = eng.health()
+    assert h["failed"] == 1
+    assert h["queued"] == 0
+    assert h["failed_or_stuck"] >= 1
+    assert h["oldest_queued_age_seconds"] is None
+
+    # Enqueue a live one
+    ev2 = SyncEvent(
+        event_id="live1",
+        source="stub",
+        kind="create",
+        cursor=None,
+        payload={"text": "new"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    eng.enqueue(ev2)
+    h = eng.health()
+    assert h["queued"] == 1
+    assert h["oldest_queued_age_seconds"] is not None
+    assert h["oldest_queued_age_seconds"] >= 0

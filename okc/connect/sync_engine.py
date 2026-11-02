@@ -178,11 +178,28 @@ class SyncEngine:
         with self._conn() as conn:
             queued = conn.execute("SELECT COUNT(*) AS n FROM events WHERE status = 'queued'").fetchone()["n"]
             processed = conn.execute("SELECT COUNT(*) AS n FROM events WHERE status = 'processed'").fetchone()["n"]
-            failed = conn.execute("SELECT COUNT(*) AS n FROM events WHERE status = 'failed' OR (attempts >= ? AND status = 'queued')", (self.max_attempts,)).fetchone()["n"]
+            failed = conn.execute("SELECT COUNT(*) AS n FROM events WHERE status = 'failed'").fetchone()["n"]
+            stuck = conn.execute(
+                "SELECT COUNT(*) AS n FROM events WHERE status = 'queued' AND attempts >= ?",
+                (self.max_attempts,),
+            ).fetchone()["n"]
+            oldest = conn.execute(
+                "SELECT MIN(enqueued_at) AS oldest FROM events WHERE status = 'queued'"
+            ).fetchone()["oldest"]
+        oldest_age = None
+        if oldest:
+            try:
+                from datetime import datetime
+                dt = datetime.fromisoformat(oldest.replace("Z", "+00:00"))
+                oldest_age = (datetime.now(timezone.utc) - dt).total_seconds()
+            except Exception:
+                oldest_age = None
         return {
             "queued": queued,
             "processed": processed,
-            "failed_or_stuck": failed,
+            "failed": failed,
+            "failed_or_stuck": failed + stuck,
+            "oldest_queued_age_seconds": oldest_age,
             "db_path": self.db_path,
         }
 

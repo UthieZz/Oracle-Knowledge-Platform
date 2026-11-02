@@ -22,7 +22,12 @@ def main() -> None:
     db = sys.argv[1]
     eng = SyncEngine(db)
     h = eng.health()
-    print(f"queued={h['queued']} processed={h['processed']} failed_or_stuck={h['failed_or_stuck']} db={h['db_path']}")
+    age = h.get("oldest_queued_age_seconds")
+    age_s = f"{age:.0f}s" if age is not None else "none"
+    print(
+        f"queued={h['queued']} processed={h['processed']} failed={h.get('failed', 0)} "
+        f"failed_or_stuck={h['failed_or_stuck']} oldest_queued={age_s} db={h['db_path']}"
+    )
 
     if len(sys.argv) >= 3:
         pkg_path = Path(sys.argv[2])

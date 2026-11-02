@@ -1,3 +1,8 @@
+## 2026-11-02
+- SyncEngine.health enhanced with explicit failed count and oldest_queued_age_seconds (None when no queued events). failed_or_stuck retained for compatibility. connect_health.py reports the new fields.
+- Added test_health_reports_failed_and_queue_age. Targeted SyncEngine tests: 6 passed.
+- Knowledge Core IR unchanged. Advances Connect local-pilot operational visibility (P3).
+
 
 ## 2026-11-01
 - SyncEngine now provides list_failed() and reset_failed(event_id) for manual recovery of events that exhausted max_attempts. reset_failed sets status='queued', attempts=0, last_error=NULL, next_retry_at=NULL so the event is eligible for process_next again. Cursor still advances only on success. Added test_reset_failed_allows_manual_recovery.
