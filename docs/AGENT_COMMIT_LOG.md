@@ -97,3 +97,11 @@
 - Re-applied ordered-list numbering fix: unordered lists use None sentinel, ordered counters start at 0 so first item is 1.
 - Restored valid test suite (31 tests) with pytest import. Tests pass: 31 passed.
 - Knowledge Core IR unchanged. Core import path for Gemini Takeout JSON is again functional.
+
+## 2026-11-03
+- Removed tracked private source exports and generated knowledge artifacts from the repository index.
+  - git rm -r --cached uploads/ output/ output_split/
+  - These directories contain personal Gemini/ChatGPT/Grok activity exports (MyActivity*.json, conversations-*.json) and compiled outputs derived from them. Total ~390MB of private data previously committed since the initial snapshot.
+  - .gitignore already excludes them for new files; this removes them from current tree and future clones without rewriting history.
+  - No code references the tracked paths for runtime behavior. Local recompilation remains possible from operator-provided inputs.
+- Knowledge Core, Connect, and architecture unchanged. Data protection / repository hygiene priority advanced.
