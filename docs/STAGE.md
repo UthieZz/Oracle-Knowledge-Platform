@@ -34,3 +34,10 @@ Next highest-leverage: package the local-folder runner as a simple service; or i
 
 
 (2026-11-02) SyncEngine.health now returns explicit 'failed' count and 'oldest_queued_age_seconds' for operator visibility. connect_health.py prints both. Existing failed_or_stuck preserved. Tested (test_health_reports_failed_and_queue_age). Connect P3 local-pilot observability advanced.
+
+## Security / Studio (as of 2026-11-03)
+- studio/firestore.rules now matches root firestore.rules: tenant/silo-scoped read via custom claims; no open root collections.
+- AuthGate mounted in App.tsx so Studio requires authenticated session with silo access before rendering.
+- firestorePath.ts now fails closed: throws if VITE_OKP_TENANT_ID / VITE_OKP_SILO_ID unset instead of falling back to root collections.
+- firebase.json still points to local rules file (now secure). Production deployment must use the updated rules.
+- Remaining: confirm live Firebase project rules match, AuthGate runtime with real claims, and that Studio build succeeds with the changes.

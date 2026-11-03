@@ -4,17 +4,22 @@ import { db } from "./firebase";
 const TENANT = (import.meta as any).env?.VITE_OKP_TENANT_ID as string | undefined;
 const SILO = (import.meta as any).env?.VITE_OKP_SILO_ID as string | undefined;
 
-export function siloCollection(name: string): CollectionReference {
-  if (TENANT && SILO) {
-    return collection(db, "tenants", TENANT, "silos", SILO, name);
+function requireTenantSilo(): [string, string] {
+  if (!TENANT || !SILO) {
+    throw new Error(
+      "[FIRESTORE] VITE_OKP_TENANT_ID and VITE_OKP_SILO_ID must be set. " +
+      "Fail-closed: refusing root collection fallback to prevent unauthorised access."
+    );
   }
-  console.warn("[FIRESTORE] VITE_OKP_TENANT_ID / VITE_OKP_SILO_ID unset; falling back to root collections. Rules will deny production reads.");
-  return collection(db, name);
+  return [TENANT, SILO];
+}
+
+export function siloCollection(name: string): CollectionReference {
+  const [tenant, silo] = requireTenantSilo();
+  return collection(db, "tenants", tenant, "silos", silo, name);
 }
 
 export function dashboardDoc(): DocumentReference {
-  if (TENANT && SILO) {
-    return doc(db, "tenants", TENANT, "silos", SILO, "meta", "dashboard");
-  }
-  return doc(db, "meta", "dashboard");
+  const [tenant, silo] = requireTenantSilo();
+  return doc(db, "tenants", tenant, "silos", silo, "meta", "dashboard");
 }

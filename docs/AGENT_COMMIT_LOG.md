@@ -105,3 +105,11 @@
   - .gitignore already excludes them for new files; this removes them from current tree and future clones without rewriting history.
   - No code references the tracked paths for runtime behavior. Local recompilation remains possible from operator-provided inputs.
 - Knowledge Core, Connect, and architecture unchanged. Data protection / repository hygiene priority advanced.
+
+## 2026-11-03 (security)
+- Converged Studio security configuration:
+  - Replaced studio/firestore.rules with the secure tenant/silo rules from root firestore.rules (custom-claim hasSilo, no open root collections).
+  - Mounted AuthGate in studio/src/App.tsx so the UI requires an authorised session before rendering.
+  - Made studio/src/services/firestorePath.ts fail-closed: throws if VITE_OKP_TENANT_ID or VITE_OKP_SILO_ID is unset instead of falling back to root collections.
+- Knowledge Core and Connect unchanged. Advances daily-agent priority for security configuration convergence and tenant isolation.
+- Verification: code inspection only (no Studio build or live Firebase rules deploy in this session). Production rules deployment and AuthGate end-to-end with real claims remain to be confirmed.

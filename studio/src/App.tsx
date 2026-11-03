@@ -10,6 +10,7 @@ import EntitiesBrowser from './components/EntitiesBrowser';
 import KnowledgeObjectsBrowser from './components/KnowledgeObjectsBrowser';
 import PlatformsBrowser from './components/PlatformsBrowser';
 import SettingsModal from './components/SettingsModal';
+import AuthGate from './components/AuthGate';
 import { FirestoreService } from './services/FirestoreService';
 import { CredentialService } from './services/CredentialService';
 
@@ -59,6 +60,7 @@ const App = () => {
   ];
 
   return (
+    <AuthGate>
     <div className="flex h-screen bg-black text-white font-sans selection:bg-blue-500/30 overflow-hidden">
       {mobileMenuOpen && (
         <div
@@ -191,6 +193,7 @@ const App = () => {
         onStatsRefresh={fetchStats}
       />
     </div>
+    </AuthGate>
   );
 };
 
