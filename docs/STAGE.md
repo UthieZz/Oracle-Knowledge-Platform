@@ -25,3 +25,8 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 
 
 - Combined restart path: initial sync + process to package, file deleted while stopped, restart connector+engine+accumulator, process delete, package converges to remaining objects. Tested.
+
+## 2026-11-04 (persist crash boundary)
+- Added regression test_persist_failure_rolls_back_in_memory_and_retry_succeeds proving KnowledgeAccumulator.process rolls back in-memory package, source index and metadata when _persist raises after mutation, leaves the prior on-disk package intact (atomic), and that a subsequent retry succeeds.
+- Targeted Connect suite (local_folder + sync_engine + knowledge_accumulator + sync_worker + e2e): 25 passed.
+- Advances Connect P0 crash consistency evidence for package persistence. Knowledge Core IR unchanged.

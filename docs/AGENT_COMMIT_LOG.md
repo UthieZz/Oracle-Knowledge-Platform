@@ -68,3 +68,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 ## 2026-11-04 (restart package convergence)
 - Added regression test_local_folder_restart_deletion_updates_package proving full connector snapshot + SyncEngine + KnowledgeAccumulator recovery after deletion while stopped; package converges.
 - Targeted new test: 1 passed. Advances Connect P0 crash/restart reliability evidence. Knowledge Core IR unchanged.
+
+## 2026-11-04 (persist crash boundary)
+- Added tests/test_knowledge_accumulator.py::test_persist_failure_rolls_back_in_memory_and_retry_succeeds.
+- Proves rollback of in-memory state + source index + metadata on _persist failure after mutation; prior package file remains; retry succeeds.
+- Targeted Connect suite: 25 passed.
+- Advances P0 crash-boundary evidence. Knowledge Core IR unchanged.

@@ -115,3 +115,52 @@ def test_permission_change_read_false_excludes_from_retrieval(tmp_path):
     acc.process(restore)
     hits_restored = retriever.retrieve(_request("secret"))
     assert len(hits_restored) == 1
+
+
+def test_persist_failure_rolls_back_in_memory_and_retry_succeeds(tmp_path):
+    """Crash boundary: if _persist raises after mutation, in-memory package,
+    source index and metadata are restored. Subsequent retry (same accumulator)
+    succeeds and persists. Atomic write means no partial package file is left.
+    """
+    pkg_path = tmp_path / "living.json"
+    acc = KnowledgeAccumulator(package_path=str(pkg_path))
+
+    # Seed one object so we can observe rollback of a second mutation.
+    seed = SyncEvent(
+        event_id="seed",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc0", "text": "seed knowledge"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(seed)
+    assert len(acc.package.objects) == 1
+    assert pkg_path.exists()
+
+    failing = SyncEvent(
+        event_id="fail",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "should not stick"},
+        tenant_id="t",
+        silo_id="s",
+    )
+
+    with patch.object(KnowledgeAccumulator, "_persist", side_effect=RuntimeError("disk full")):
+        with pytest.raises(RuntimeError, match="disk full"):
+            acc.process(failing)
+
+    # Rolled back: still only the seed object.
+    assert len(acc.package.objects) == 1
+    # Source index restored; the seed marker is still present.
+    assert any("doc0" in rid or "folder|t|s|doc0" in rid for rid in acc.package.objects[0].provenance.source_record_ids)
+    # No partial write: the on-disk package remains the previous good one.
+    on_disk = KnowledgePackage.from_json(pkg_path.read_text(encoding="utf-8"))
+    assert len(on_disk.objects) == 1
+
+    # Retry without the patch succeeds and persists.
+    acc.process(failing)
+    assert len(acc.package.objects) == 2
+    on_disk2 = KnowledgePackage.from_json(pkg_path.read_text(encoding="utf-8"))
+    assert len(on_disk2.objects) == 2
