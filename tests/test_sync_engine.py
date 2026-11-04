@@ -197,3 +197,48 @@ def test_health_reports_failed_and_queue_age(tmp_path):
     assert h["queued"] == 1
     assert h["oldest_queued_age_seconds"] is not None
     assert h["oldest_queued_age_seconds"] >= 0
+
+
+def test_interrupted_after_processor_success_does_not_advance_cursor(tmp_path):
+    """If the processor raises after doing its work, the event stays queued,
+    cursor is not advanced, and a later successful process_next completes
+    and advances the cursor. Models a crash between processor effect and
+    durable mark/cursor update.
+    """
+    db = str(tmp_path / "interrupt.db")
+    eng = SyncEngine(db)
+    ev = SyncEvent(
+        event_id="int1",
+        source="stub",
+        kind="create",
+        cursor="c-int",
+        payload={"text": "interrupt me"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    eng.enqueue(ev)
+
+    calls = []
+
+    def proc(e):
+        calls.append(e.event_id)
+        if len(calls) == 1:
+            # First attempt: do work then fail (crash boundary)
+            raise RuntimeError("simulated crash after processor work")
+        # Second attempt: succeed
+
+    eid = eng.process_next(proc)
+    assert eid is None
+    assert eng.list_queued() == ["int1"]
+    assert eng.get_cursor("stub", "t", "s") is None
+    assert len(calls) == 1
+
+    # Make the event immediately eligible again (ignore backoff for this crash-boundary case)
+    with eng._conn() as conn:
+        conn.execute("UPDATE events SET next_retry_at = NULL WHERE event_id = ?", ("int1",))
+
+    eid2 = eng.process_next(proc)
+    assert eid2 == "int1"
+    assert eng.list_queued() == []
+    assert eng.get_cursor("stub", "t", "s") == "c-int"
+    assert len(calls) == 2

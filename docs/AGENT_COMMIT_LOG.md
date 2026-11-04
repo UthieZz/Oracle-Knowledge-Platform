@@ -19,3 +19,8 @@
 ## 2026-11-04
 - Restored real KnowledgeAccumulator tests (create/update/delete reflected in retrieval; persist-failure rollback + retry succeeds). Fixed import path to okc.agent.retrievers.KnowledgePackageRetriever. Targeted tests: 2 passed.
 - Knowledge Core IR unchanged. Advances Connect P0 verification with current evidence.
+
+## 2026-11-04 (crash-boundary)
+- Added test_interrupted_after_processor_success_does_not_advance_cursor proving that a processor failure after work keeps the event queued, does not advance the cursor, and a subsequent successful process_next completes and advances the cursor.
+- Targeted Connect suite: 17 passed.
+- Knowledge Core IR unchanged. Advances Connect P0 crash-boundary verification (interrupted processing / cursor timing).
