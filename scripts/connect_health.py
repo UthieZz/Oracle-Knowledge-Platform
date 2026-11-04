@@ -25,8 +25,10 @@ def main() -> None:
     age = h.get("oldest_queued_age_seconds")
     age_s = f"{age:.0f}s" if age is not None else "none"
     last_p = h.get("last_processed_at") or "none"
+    ready = h.get("ready_to_process", h["queued"])
+    waiting = h.get("waiting_for_retry", 0)
     print(
-        f"queued={h['queued']} processed={h['processed']} failed={h.get('failed', 0)} "
+        f"queued={h['queued']} ready={ready} waiting_retry={waiting} processed={h['processed']} failed={h.get('failed', 0)} "
         f"failed_or_stuck={h['failed_or_stuck']} oldest_queued={age_s} last_processed={last_p} db={h['db_path']}"
     )
     if h.get("failed", 0) > 0:

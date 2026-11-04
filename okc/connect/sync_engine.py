@@ -189,20 +189,41 @@ class SyncEngine:
         oldest_age = None
         if oldest:
             try:
-                from datetime import datetime
                 dt = datetime.fromisoformat(oldest.replace("Z", "+00:00"))
                 oldest_age = (datetime.now(timezone.utc) - dt).total_seconds()
             except Exception:
                 oldest_age = None
         last_processed = None
+        ready = 0
+        waiting = 0
         with self._conn() as conn:
             row = conn.execute("SELECT MAX(processed_at) AS last FROM events WHERE status = 'processed'").fetchone()
             last_processed = row["last"] if row else None
+            now_iso = datetime.now(timezone.utc).isoformat()
+            ready = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM events
+                WHERE status = 'queued'
+                  AND (next_retry_at IS NULL OR next_retry_at <= ?)
+                """,
+                (now_iso,),
+            ).fetchone()["n"]
+            waiting = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM events
+                WHERE status = 'queued'
+                  AND next_retry_at IS NOT NULL
+                  AND next_retry_at > ?
+                """,
+                (now_iso,),
+            ).fetchone()["n"]
         return {
             "queued": queued,
             "processed": processed,
             "failed": failed,
             "failed_or_stuck": failed + stuck,
+            "ready_to_process": ready,
+            "waiting_for_retry": waiting,
             "oldest_queued_age_seconds": oldest_age,
             "last_processed_at": last_processed,
             "db_path": self.db_path,

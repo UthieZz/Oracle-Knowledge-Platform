@@ -292,3 +292,20 @@ def test_health_last_processed_and_failed_details(tmp_path):
     assert d["attempts"] == eng.max_attempts
     assert "boom" in (d["last_error"] or "")
     assert d["enqueued_at"]
+
+
+def test_health_reports_ready_and_waiting(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    eng = SyncEngine(str(tmp_path / "h.db"), max_attempts=3)
+    # Immediate ready
+    eng.enqueue(SyncEvent(event_id="r1", source="s", kind="create", cursor=None, payload={}, tenant_id="t", silo_id="s"))
+    # Waiting for retry
+    eng.enqueue(SyncEvent(event_id="w1", source="s", kind="create", cursor=None, payload={}, tenant_id="t", silo_id="s"))
+    future = (datetime.now(timezone.utc) + timedelta(seconds=60)).isoformat()
+    with eng._conn() as conn:
+        conn.execute("UPDATE events SET next_retry_at = ?, status = 'queued' WHERE event_id = ?", (future, "w1"))
+    h = eng.health()
+    assert h["queued"] == 2
+    assert h["ready_to_process"] == 1
+    assert h["waiting_for_retry"] == 1
+    assert h["failed"] == 0

@@ -19,3 +19,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_permission_change_read_false_excludes_from_retrieval proving KnowledgePackageRetriever excludes objects after explicit read=False permission_change and restores on read=True.
 - Targeted suite: 15 passed (sync_engine + accumulator + local_folder).
 - Advances P1 authorization evidence for Connect-stored permissions.
+
+## 2026-11-04 (diagnostics)
+- SyncEngine.health() now reports ready_to_process (queued and eligible now) and waiting_for_retry (backoff pending).
+- connect_health.py surfaces both.
+- Added regression test_health_reports_ready_and_waiting. Targeted Connect suite: 15 passed.
+- Advances Connect P3 operator visibility. Knowledge Core IR unchanged.
