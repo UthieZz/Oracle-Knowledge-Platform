@@ -5,6 +5,7 @@ from pathlib import Path
 
 from okc.connect.local_folder_connector import LocalFolderConnector
 from okc.connect.sync_engine import SyncEngine
+from okc.connect.knowledge_accumulator import KnowledgeAccumulator
 from okc.importers.text_importer import PlainTextImporter
 
 
@@ -219,3 +220,45 @@ def test_local_folder_delete_recreate_same_content_new_event_id(tmp_path):
     eid3 = creates[0].event_id
     assert eid1 != eid3
     assert "same.txt" in conn._last_snapshot
+
+
+def test_local_folder_restart_deletion_updates_package(tmp_path):
+    """Full path: initial sync + process, stop, delete file, restart connector+engine+accumulator, process delete, package converges."""
+    root = tmp_path / "watched"
+    root.mkdir()
+    (root / "keep.txt").write_text("Keep.", encoding="utf-8")
+    (root / "gone.txt").write_text("Gone soon.", encoding="utf-8")
+
+    snap = str(tmp_path / "snap.json")
+    db = str(tmp_path / "sync.db")
+    pkg = str(tmp_path / "living.json")
+
+    # First run
+    conn1 = LocalFolderConnector(str(root), snapshot_path=snap)
+    assert conn1.authenticate({})
+    events = conn1.initial_sync("t", "s")
+    eng1 = SyncEngine(db)
+    for e in events:
+        eng1.enqueue(e)
+    acc1 = KnowledgeAccumulator(package_path=pkg)
+    while eng1.process_next(acc1.process):
+        pass
+    assert Path(pkg).exists()
+    assert len(acc1.package.objects) == 2
+
+    # Stop and delete
+    (root / "gone.txt").unlink()
+
+    # Restart
+    conn2 = LocalFolderConnector(str(root), snapshot_path=snap)
+    assert conn2.authenticate({})
+    deltas = conn2.incremental_sync("0", "t", "s")
+    assert len(deltas) == 1 and deltas[0].kind == "delete"
+    eng2 = SyncEngine(db)
+    for e in deltas:
+        eng2.enqueue(e)
+    acc2 = KnowledgeAccumulator(package_path=pkg)
+    while eng2.process_next(acc2.process):
+        pass
+    assert len(acc2.package.objects) == 1
+    assert "gone.txt" not in {o.provenance.source_record_ids[0] for o in acc2.package.objects if o.provenance.source_record_ids}

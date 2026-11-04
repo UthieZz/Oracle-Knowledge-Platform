@@ -22,3 +22,5 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 
 - Event lifecycle: delete/recreate of identical path+content receives new event_id via monotonic sequence (tested).
 
+
+- Combined restart path: initial sync + process to package, file deleted while stopped, restart connector+engine+accumulator, process delete, package converges to remaining objects. Tested.

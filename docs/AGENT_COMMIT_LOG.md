@@ -52,3 +52,7 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Targeted local_folder: 7 passed.
 - Advances Connect P0 event lifecycle idempotency. Knowledge Core IR unchanged.
 
+
+## 2026-11-04 (restart package convergence)
+- Added regression test_local_folder_restart_deletion_updates_package proving full connector snapshot + SyncEngine + KnowledgeAccumulator recovery after deletion while stopped; package converges.
+- Targeted new test: 1 passed. Advances Connect P0 crash/restart reliability evidence. Knowledge Core IR unchanged.
