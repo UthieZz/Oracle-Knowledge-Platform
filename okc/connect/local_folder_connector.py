@@ -51,7 +51,17 @@ class LocalFolderConnector(Connector):
         path = Path(self.snapshot_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = {"version": 1, "seq": self._seq, "snapshot": self._last_snapshot}
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        try:
+            tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            tmp.replace(path)  # atomic on POSIX
+        except Exception:
+            if tmp.exists():
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
+            raise
 
     def authenticate(self, credentials: Dict[str, Any]) -> bool:
         # No credentials required for local path; verify readable.
