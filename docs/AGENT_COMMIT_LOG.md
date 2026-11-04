@@ -34,7 +34,13 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Advances Connect P0 snapshot recovery reliability. Knowledge Core IR unchanged.
 
 
-## 2026-11-04 (tmp cleanup)
+## 2026-11-04 (snapshot health)
+- scripts/connect_health.py now accepts optional third arg [snapshot_json_path].
+- Reports snapshot=OK version/seq/tracked/mtime, or LEGACY/MISSING/UNREADABLE.
+- Does not mutate state. Advances Connect P3 operator visibility for snapshot recovery diagnostics.
+- Knowledge Core IR unchanged.
+
+
 - LocalFolderConnector.__init__ removes any existing snapshot.json.tmp before loading.
 - Prevents accumulation of interrupted-persist artifacts.
 - Added test_local_folder_cleans_stale_tmp_on_init. Targeted local_folder: 6 passed.
