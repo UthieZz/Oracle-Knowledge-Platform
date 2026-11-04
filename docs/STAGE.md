@@ -19,3 +19,6 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 
 
 - LocalFolderConnector init now cleans any leftover snapshot .tmp file from a prior interrupted atomic persist, ensuring no accumulation of temp artifacts and that the last valid snapshot is loaded. Tested.
+
+- Event lifecycle: delete/recreate of identical path+content receives new event_id via monotonic sequence (tested).
+

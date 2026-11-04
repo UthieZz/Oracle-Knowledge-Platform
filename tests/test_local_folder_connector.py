@@ -193,3 +193,29 @@ def test_local_folder_cleans_stale_tmp_on_init(tmp_path):
     assert not tmp.exists()  # cleaned
     assert conn._seq == 3
     assert "a.txt" in conn._last_snapshot
+
+
+def test_local_folder_delete_recreate_same_content_new_event_id(tmp_path):
+    """Delete then recreate identical content receives a new event_id via sequence advance."""
+    root = tmp_path / "docs"
+    root.mkdir()
+    f = root / "same.txt"
+    f.write_text("identical content", encoding="utf-8")
+    snap = str(tmp_path / "snapshot.json")
+    conn = LocalFolderConnector(str(root), snapshot_path=snap)
+    assert conn.authenticate({})
+    events1 = conn.initial_sync("t", "s")
+    assert len(events1) == 1
+    eid1 = events1[0].event_id
+    # Delete
+    f.unlink()
+    events2 = conn.incremental_sync("", "t", "s")
+    assert any(e.kind == "delete" for e in events2)
+    # Recreate identical content
+    f.write_text("identical content", encoding="utf-8")
+    events3 = conn.incremental_sync("", "t", "s")
+    creates = [e for e in events3 if e.kind == "create"]
+    assert len(creates) == 1
+    eid3 = creates[0].event_id
+    assert eid1 != eid3
+    assert "same.txt" in conn._last_snapshot

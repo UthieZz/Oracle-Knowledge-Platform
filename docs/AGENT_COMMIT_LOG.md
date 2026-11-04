@@ -45,3 +45,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Prevents accumulation of interrupted-persist artifacts.
 - Added test_local_folder_cleans_stale_tmp_on_init. Targeted local_folder: 6 passed.
 - Advances Connect P0 snapshot reliability. Knowledge Core IR unchanged.
+
+
+## 2026-11-04 (event lifecycle)
+- Added regression test_local_folder_delete_recreate_same_content_new_event_id confirming delete then recreate of identical content receives a distinct event_id (sequence-based).
+- Targeted local_folder: 7 passed.
+- Advances Connect P0 event lifecycle idempotency. Knowledge Core IR unchanged.
+
