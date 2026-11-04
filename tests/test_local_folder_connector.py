@@ -158,3 +158,22 @@ def test_local_folder_to_knowledge_package(tmp_path):
     assert "Local knowledge evidence" in obj.content
     assert engine.health()["processed"] == 1
     assert engine.list_queued() == []
+
+
+def test_local_folder_corrupt_snapshot_recovers_without_raising(tmp_path):
+    """A truncated/corrupt snapshot file is ignored; connector starts clean and does not raise."""
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "a.txt").write_text("content", encoding="utf-8")
+    snap = tmp_path / "snapshot.json"
+    snap.write_text("{\"version\": 1, \"seq\": 5, \"snapshot\": {", encoding="utf-8")  # truncated
+    conn = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn.authenticate({})
+    assert conn._last_snapshot == {}
+    assert conn._seq == 0
+    events = conn.initial_sync("t", "s")
+    assert len(events) == 1
+    # After successful persist the file is valid
+    loaded = json.loads(snap.read_text(encoding="utf-8"))
+    assert loaded["version"] == 1
+    assert "a.txt" in loaded["snapshot"]
