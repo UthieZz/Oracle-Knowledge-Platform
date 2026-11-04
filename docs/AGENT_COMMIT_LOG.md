@@ -1,5 +1,11 @@
 # AGENT COMMIT LOG
 
+## 2026-11-04 (WAL durability)
+- SyncEngine connections now enable SQLite WAL journal mode and synchronous=NORMAL.
+- Improves crash recovery and concurrent reader safety for the durable queue and cursor store without changing the public contract.
+- Added regression test_sync_engine_uses_wal_journal_mode. Targeted SyncEngine tests: 10 passed.
+- Advances Connect P0 crash recovery reliability. Knowledge Core IR unchanged.
+
 ## 2026-11-04
 - Restored tests/test_sync_engine.py (was truncated to empty by prior commit) and added regression for health().last_processed_at + list_failed_details().
 - Restored docs/STAGE.md and this log (both had been truncated to empty).
@@ -15,10 +21,12 @@
 
 Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and documentation consistency.
 
+
 ## 2026-11-04 (follow-up)
 - Added regression test_permission_change_read_false_excludes_from_retrieval proving KnowledgePackageRetriever excludes objects after explicit read=False permission_change and restores on read=True.
 - Targeted suite: 15 passed (sync_engine + accumulator + local_folder).
 - Advances P1 authorization evidence for Connect-stored permissions.
+
 
 ## 2026-11-04 (diagnostics)
 - SyncEngine.health() now reports ready_to_process (queued and eligible now) and waiting_for_retry (backoff pending).
@@ -26,12 +34,14 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_health_reports_ready_and_waiting. Targeted Connect suite: 15 passed.
 - Advances Connect P3 operator visibility. Knowledge Core IR unchanged.
 
+
 ## 2026-11-04 (snapshot atomicity)
 - LocalFolderConnector._persist_snapshot now writes via temp file + os.replace (atomic on POSIX).
 - Corrupt/truncated snapshot on load is ignored (starts with empty snapshot and seq=0); no raise.
 - Added regression test_local_folder_corrupt_snapshot_recovers_without_raising.
 - Targeted local_folder tests: 5 passed.
 - Advances Connect P0 snapshot recovery reliability. Knowledge Core IR unchanged.
+
 
 
 ## 2026-11-04 (snapshot health)
@@ -47,10 +57,12 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Advances Connect P0 snapshot reliability. Knowledge Core IR unchanged.
 
 
+
 ## 2026-11-04 (event lifecycle)
 - Added regression test_local_folder_delete_recreate_same_content_new_event_id confirming delete then recreate of identical content receives a distinct event_id (sequence-based).
 - Targeted local_folder: 7 passed.
 - Advances Connect P0 event lifecycle idempotency. Knowledge Core IR unchanged.
+
 
 
 ## 2026-11-04 (restart package convergence)

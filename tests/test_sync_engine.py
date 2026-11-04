@@ -309,3 +309,12 @@ def test_health_reports_ready_and_waiting(tmp_path):
     assert h["ready_to_process"] == 1
     assert h["waiting_for_retry"] == 1
     assert h["failed"] == 0
+
+
+def test_sync_engine_uses_wal_journal_mode(tmp_path):
+    """WAL mode improves crash recovery for the durable queue and cursor store."""
+    db = tmp_path / "wal.db"
+    eng = SyncEngine(str(db))
+    with eng._conn() as conn:
+        mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+    assert mode.upper() == "WAL"

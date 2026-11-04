@@ -25,6 +25,10 @@ class SyncEngine:
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
+        # WAL mode improves crash recovery and concurrent reader/writer safety for the durable queue.
+        # synchronous=NORMAL is a reasonable durability/performance tradeoff for this use.
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
         return conn
 
     def _init_db(self) -> None:
