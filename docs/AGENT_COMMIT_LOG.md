@@ -25,3 +25,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - connect_health.py surfaces both.
 - Added regression test_health_reports_ready_and_waiting. Targeted Connect suite: 15 passed.
 - Advances Connect P3 operator visibility. Knowledge Core IR unchanged.
+
+## 2026-11-04 (snapshot atomicity)
+- LocalFolderConnector._persist_snapshot now writes via temp file + os.replace (atomic on POSIX).
+- Corrupt/truncated snapshot on load is ignored (starts with empty snapshot and seq=0); no raise.
+- Added regression test_local_folder_corrupt_snapshot_recovers_without_raising.
+- Targeted local_folder tests: 5 passed.
+- Advances Connect P0 snapshot recovery reliability. Knowledge Core IR unchanged.
