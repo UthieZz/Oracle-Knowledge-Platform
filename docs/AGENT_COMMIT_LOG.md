@@ -15,3 +15,7 @@
 
 ## Prior (2026-10)
 - Durable SyncEngine, SyncWorker, KnowledgeAccumulator with package_path, LocalFolderConnector, runner, and early tests recorded. See git history for full detail.
+
+## 2026-11-04
+- Restored real KnowledgeAccumulator tests (create/update/delete reflected in retrieval; persist-failure rollback + retry succeeds). Fixed import path to okc.agent.retrievers.KnowledgePackageRetriever. Targeted tests: 2 passed.
+- Knowledge Core IR unchanged. Advances Connect P0 verification with current evidence.
