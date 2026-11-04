@@ -16,3 +16,6 @@
 - Not yet: production SSO/onboarding, real business-system connector beyond local folder, complete authorization model beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and CLI, unattended service packaging beyond the runner script, full current-suite verification in this environment.
 
 Next highest-leverage: additional crash-boundary cases or expand operator diagnostics; or implement one real business-system connector once the local path is further hardened. Security/provenance boundary checks remain open.
+
+
+- LocalFolderConnector init now cleans any leftover snapshot .tmp file from a prior interrupted atomic persist, ensuring no accumulation of temp artifacts and that the last valid snapshot is loaded. Tested.

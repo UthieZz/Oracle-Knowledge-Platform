@@ -31,6 +31,14 @@ class LocalFolderConnector(Connector):
         self._authenticated = False
         self._last_snapshot: Dict[str, str] = {}  # rel_path -> content_hash
         self._seq: int = 0
+        # Clean any leftover temp from prior interrupted persist
+        if snapshot_path:
+            tmp = Path(snapshot_path).with_suffix(Path(snapshot_path).suffix + ".tmp")
+            if tmp.exists():
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
         if snapshot_path and Path(snapshot_path).exists():
             try:
                 raw = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))

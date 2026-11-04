@@ -177,3 +177,19 @@ def test_local_folder_corrupt_snapshot_recovers_without_raising(tmp_path):
     loaded = json.loads(snap.read_text(encoding="utf-8"))
     assert loaded["version"] == 1
     assert "a.txt" in loaded["snapshot"]
+
+
+def test_local_folder_cleans_stale_tmp_on_init(tmp_path):
+    """Leftover .tmp from interrupted persist is removed on next connector init; main snapshot is used."""
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "a.txt").write_text("content", encoding="utf-8")
+    snap = tmp_path / "snapshot.json"
+    snap.write_text('{"version": 1, "seq": 3, "snapshot": {"a.txt": "abc"}}', encoding="utf-8")
+    tmp = snap.with_suffix(snap.suffix + ".tmp")
+    tmp.write_text('partial garbage', encoding="utf-8")
+    assert tmp.exists()
+    conn = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert not tmp.exists()  # cleaned
+    assert conn._seq == 3
+    assert "a.txt" in conn._last_snapshot

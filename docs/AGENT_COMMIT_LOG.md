@@ -32,3 +32,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_local_folder_corrupt_snapshot_recovers_without_raising.
 - Targeted local_folder tests: 5 passed.
 - Advances Connect P0 snapshot recovery reliability. Knowledge Core IR unchanged.
+
+
+## 2026-11-04 (tmp cleanup)
+- LocalFolderConnector.__init__ removes any existing snapshot.json.tmp before loading.
+- Prevents accumulation of interrupted-persist artifacts.
+- Added test_local_folder_cleans_stale_tmp_on_init. Targeted local_folder: 6 passed.
+- Advances Connect P0 snapshot reliability. Knowledge Core IR unchanged.
