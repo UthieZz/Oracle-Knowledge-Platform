@@ -164,3 +164,51 @@ def test_persist_failure_rolls_back_in_memory_and_retry_succeeds(tmp_path):
     assert len(acc.package.objects) == 2
     on_disk2 = KnowledgePackage.from_json(pkg_path.read_text(encoding="utf-8"))
     assert len(on_disk2.objects) == 2
+
+
+def test_permission_change_survives_package_reload(tmp_path):
+    """P1 boundary: explicit permission_change (read=False) is persisted in package
+    metadata and remains enforced after process restart / package reload.
+    """
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "secret knowledge"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(create)
+
+    revoke = SyncEvent(
+        event_id="p1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": False},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(revoke)
+
+    # Reload into a fresh accumulator (simulates restart).
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    retriever = KnowledgePackageRetriever(acc2.package)
+    hits = retriever.retrieve(_request("secret"))
+    assert len(hits) == 0
+
+    # Explicit restore also survives reload.
+    restore = SyncEvent(
+        event_id="p2",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": True},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc2.process(restore)
+    acc3 = KnowledgeAccumulator(package_path=pkg_path)
+    hits_restored = KnowledgePackageRetriever(acc3.package).retrieve(_request("secret"))
+    assert len(hits_restored) == 1

@@ -90,3 +90,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Restores pass after fail-closed OKP_TENANT_ID/OKP_SILO_ID enforcement in FirestoreExporter.__init__.
 - Targeted: 2 passed. Full suite previously failed these two tests; Connect suite remains green.
 - Advances security/provenance consistency evidence (P1) without changing production paths. Knowledge Core IR unchanged.
+
+## 2026-11-05 (permission change durability)
+- Added tests/test_knowledge_accumulator.py::test_permission_change_survives_package_reload.
+- Confirms Connect-stored permission metadata survives package persistence and reload; retrieval fail-closed behavior holds across process restart.
+- Targeted: 1 passed. Broader Connect suite remains green (28 passed).
+- Advances P1 security/provenance consistency. Knowledge Core IR unchanged.

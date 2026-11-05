@@ -36,3 +36,8 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 - tests/test_firestore_exporter_batching.py updated to supply tenant_id/silo_id and mock client in setUp.
 - Confirms fail-closed enterprise export path remains enforced while restoring unit test coverage for batching.
 - Targeted: 2 passed. Connect P0 suite still green (22+ targeted). Knowledge Core IR unchanged.
+
+## 2026-11-05 (permission durability across reload)
+- Added regression test_permission_change_survives_package_reload.
+- Proves explicit permission_change (read=False then read=True) is written to package metadata and remains enforced by KnowledgePackageRetriever after package reload (fresh KnowledgeAccumulator).
+- Advances P1 authorization/provenance boundary evidence for durable permissions. Knowledge Core IR unchanged.
