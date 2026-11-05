@@ -41,3 +41,10 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 - Added regression test_permission_change_survives_package_reload.
 - Proves explicit permission_change (read=False then read=True) is written to package metadata and remains enforced by KnowledgePackageRetriever after package reload (fresh KnowledgeAccumulator).
 - Advances P1 authorization/provenance boundary evidence for durable permissions. Knowledge Core IR unchanged.
+
+
+## 2026-11-05 (delete cleans permission metadata)
+- KnowledgeAccumulator._remove now deletes the corresponding entry from package.metadata["permissions"] when an object is removed.
+- Prevents stale permission records after deletion. Added regression test_delete_removes_permission_metadata (create + permission + delete + reload).
+- Targeted Connect suite: 24 passed.
+- Advances P1 security/provenance consistency. Knowledge Core IR unchanged.
