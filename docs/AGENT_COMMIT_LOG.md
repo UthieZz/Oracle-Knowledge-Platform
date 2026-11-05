@@ -36,3 +36,8 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_multi_instance_same_db_enqueue_process_visibility: two SyncEngine instances on the same DB see enqueue, process_next, cursor advance, and health consistently. Sequential multi-instance baseline for multi-process durability.
 - Targeted Connect suite: 32 passed (prior 31 + new test).
 - Knowledge Core IR unchanged. Advances Connect P0 crash/multi-process verification evidence.
+
+## 2026-11-05 (concurrent multi-thread queue writers)
+- Added regression test_concurrent_enqueue_and_process_from_multiple_threads: 4 threads each enqueue 5 unique events and process 3 on the same WAL DB. Final drain yields 20 processed, 0 failed, cursor advanced. No loss or corruption.
+- Targeted Connect suite: 34 passed.
+- Knowledge Core IR unchanged. Advances remaining P0 concurrent failure case under parallel writers.
