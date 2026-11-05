@@ -264,6 +264,27 @@ class SyncEngine:
                 for r in rows
             ]
 
+    def list_cursors(self) -> List[Dict[str, Any]]:
+        """Return current cursor state for all source/tenant/silo combinations.
+
+        Useful for operator diagnostics: shows last successful cursor per scope
+        so operators can verify sync progress without inspecting the DB directly.
+        """
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT source, tenant_id, silo_id, cursor, updated_at FROM cursors ORDER BY source, tenant_id, silo_id"
+            ).fetchall()
+            return [
+                {
+                    "source": r["source"],
+                    "tenant_id": r["tenant_id"],
+                    "silo_id": r["silo_id"],
+                    "cursor": r["cursor"],
+                    "updated_at": r["updated_at"],
+                }
+                for r in rows
+            ]
+
     def reset_failed(self, event_id: str) -> bool:
         """Reset a failed event back to queued with attempts=0 and next_retry_at=NULL
         so it can be manually recovered. Returns True if the event was reset.

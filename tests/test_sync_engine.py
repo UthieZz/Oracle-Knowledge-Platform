@@ -318,3 +318,31 @@ def test_sync_engine_uses_wal_journal_mode(tmp_path):
     with eng._conn() as conn:
         mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
     assert mode.upper() == "WAL"
+
+
+def test_list_cursors_returns_scope_state_after_success(tmp_path):
+    """list_cursors exposes last successful cursor per source/tenant/silo for operator diagnostics."""
+    db = str(tmp_path / "cursors.db")
+    eng = SyncEngine(db)
+    assert eng.list_cursors() == []
+
+    ev = SyncEvent(
+        event_id="cur1",
+        source="folder",
+        kind="create",
+        cursor="seq-42",
+        payload={"text": "ok"},
+        tenant_id="acme",
+        silo_id="eng",
+    )
+    eng.enqueue(ev)
+    eng.process_next(lambda e: None)
+
+    cursors = eng.list_cursors()
+    assert len(cursors) == 1
+    c = cursors[0]
+    assert c["source"] == "folder"
+    assert c["tenant_id"] == "acme"
+    assert c["silo_id"] == "eng"
+    assert c["cursor"] == "seq-42"
+    assert c["updated_at"] is not None

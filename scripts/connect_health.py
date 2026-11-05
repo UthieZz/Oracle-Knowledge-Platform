@@ -67,6 +67,19 @@ def main() -> None:
         if len(details) > 5:
             print(f"  ... and {len(details)-5} more failed")
 
+    cursors = eng.list_cursors()
+    if cursors:
+        print(f"cursors={len(cursors)}")
+        for c in cursors[:10]:  # limit for readability
+            print(
+                f"  cursor source={c['source']} tenant={c['tenant_id']} silo={c['silo_id']} "
+                f"cursor={c['cursor'] or 'none'} updated={c['updated_at'] or 'none'}"
+            )
+        if len(cursors) > 10:
+            print(f"  ... and {len(cursors)-10} more cursors")
+    else:
+        print("cursors=0")
+
     if len(sys.argv) >= 3:
         pkg_path = Path(sys.argv[2])
         if not pkg_path.exists():

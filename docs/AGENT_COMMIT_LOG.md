@@ -24,8 +24,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Snapshot persistence, scoped identity, WAL, retry already present and covered.
 - Knowledge Core IR unchanged. Advances Connect reliability after truncation regression.
 
-## 2026-11-05 (idempotent reprocess after package persist)
-- Added regression test_reprocess_after_package_persist_is_idempotent: after successful package write, re-delivery of the same create event to a reloaded accumulator does not duplicate objects (content-hash object_id + scoped upsert).
-- Targeted Connect suite: 30 passed.
-- Knowledge Core IR unchanged. Advances Connect P0 crash-boundary reliability (partial success between package persist and engine mark-processed).
+## 2026-11-05 (cursor diagnostics in health)
+- Added SyncEngine.list_cursors() returning source/tenant/silo/cursor/updated_at for operator visibility.
+- connect_health.py now prints cursor summary (limited to 10) after failed-event details.
+- Regression: test_list_cursors_returns_scope_state_after_success; connect_health CLI asserts cursors=0 on fresh DB.
+- Targeted Connect suite: 31 passed (prior 30 + new cursor test).
+- Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics without new infrastructure.
 

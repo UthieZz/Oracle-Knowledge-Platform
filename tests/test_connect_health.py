@@ -33,4 +33,5 @@ def test_connect_health_cli_on_fresh_db_reports_zeros_and_exits_zero(tmp_path: P
     assert "failed_or_stuck=0" in out
     assert "oldest_queued=none" in out
     assert "last_processed=none" in out
+    assert "cursors=0" in out
     assert f"db={db}" in out or str(db) in out
