@@ -55,3 +55,11 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 - Added regression test_permission_change_normalizes_non_dict_metadata.
 - Targeted Connect suite: 30 passed.
 - Advances P1 security/provenance consistency. Knowledge Core IR unchanged.
+
+## 2026-11-05 (retriever permissions type guard)
+- KnowledgePackageRetriever now treats a non-dict package.metadata["permissions"] as empty instead of raising.
+- Prevents runtime errors on retrieval if metadata was externally corrupted, while preserving fail-closed behavior for explicit read=False entries.
+- Fixed two accumulator tests that called retrieve() with the outdated keyword signature; they now construct AgentContextRequest.
+- Added regression test_retriever_treats_non_dict_permissions_as_empty.
+- Targeted Connect suite: 26 passed.
+- Advances P1 security/provenance consistency and test reliability. Knowledge Core IR unchanged.

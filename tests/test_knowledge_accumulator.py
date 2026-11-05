@@ -3,6 +3,7 @@ from pathlib import Path
 
 from okc.connect.knowledge_accumulator import KnowledgeAccumulator
 from okc.connect.interfaces import SyncEvent
+from okc.agent.models import AgentContextRequest
 from okc.agent.retrievers import KnowledgePackageRetriever
 
 
@@ -85,7 +86,8 @@ def test_permission_change_read_false_excludes_from_retrieval(tmp_path):
     acc.process(revoke)
 
     retriever = KnowledgePackageRetriever(acc.package)
-    results = retriever.retrieve("Secret", tenant_id="t1", silo_id="s1")
+    req = AgentContextRequest(request_id="r1", tenant_id="t1", silo_id="s1", agent_id="a1", task="Secret")
+    results = retriever.retrieve(req)
     assert len(results) == 0
 
     restore = SyncEvent(
@@ -99,7 +101,8 @@ def test_permission_change_read_false_excludes_from_retrieval(tmp_path):
         silo_id="s1",
     )
     acc.process(restore)
-    results = retriever.retrieve("Secret", tenant_id="t1", silo_id="s1")
+    req = AgentContextRequest(request_id="r1", tenant_id="t1", silo_id="s1", agent_id="a1", task="Secret")
+    results = retriever.retrieve(req)
     assert len(results) == 1
 
 
@@ -173,7 +176,8 @@ def test_permission_change_survives_package_reload(tmp_path):
     # Reload
     acc2 = KnowledgeAccumulator(package_path=pkg_path)
     retriever = KnowledgePackageRetriever(acc2.package)
-    results = retriever.retrieve("content", tenant_id="t1", silo_id="s1")
+    req = AgentContextRequest(request_id="r1", tenant_id="t1", silo_id="s1", agent_id="a1", task="content")
+    results = retriever.retrieve(req)
     assert len(results) == 0
 
 
@@ -253,3 +257,32 @@ def test_permission_change_normalizes_non_dict_metadata(tmp_path):
     # Survives reload
     acc2 = KnowledgeAccumulator(package_path=pkg_path)
     assert scoped in acc2.package.metadata.get("permissions", {})
+
+
+def test_retriever_treats_non_dict_permissions_as_empty(tmp_path):
+    """Corrupted non-dict permissions metadata must not raise on retrieval.
+    Treated as no explicit restrictions (fail-open for missing/corrupt entry).
+    Advances P1 robustness without weakening explicit read=False enforcement.
+    """
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+    create = SyncEvent(
+        event_id="e1",
+        source="local",
+        kind="create",
+        cursor=None,
+        payload={"object_id": "doc1", "text": "visible content"},
+        occurred_at="2026-11-05T00:00:00Z",
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(create)
+    # Corrupt the metadata the way an external writer might.
+    acc.package.metadata["permissions"] = "not-a-dict"
+    retriever = KnowledgePackageRetriever(acc.package)
+    req = AgentContextRequest(
+        request_id="r1", tenant_id="t1", silo_id="s1", agent_id="a1", task="visible"
+    )
+    results = retriever.retrieve(req)
+    assert len(results) == 1
+    assert "visible" in results[0].content

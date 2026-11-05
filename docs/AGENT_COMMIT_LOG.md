@@ -109,3 +109,11 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Ensures robust recording even after external metadata mutation. Regression test confirms persistence across reload.
 - Targeted: 1 passed. Connect suite remains green (30 passed).
 - Advances P1 provenance/authorization consistency. Knowledge Core IR unchanged.
+
+## 2026-11-05 (retriever permissions type guard)
+- KnowledgePackageRetriever normalizes non-dict permissions metadata to empty dict on retrieve.
+- Ensures corrupted metadata cannot crash governed retrieval; explicit read=False still excludes.
+- Corrected test_permission_change_* tests to use AgentContextRequest (prior signature drift).
+- Added regression test_retriever_treats_non_dict_permissions_as_empty.
+- Targeted Connect suite: 26 passed.
+- Advances P1 robustness and test contract alignment. Knowledge Core IR unchanged.

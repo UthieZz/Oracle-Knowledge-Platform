@@ -42,7 +42,8 @@ class KnowledgePackageRetriever:
         self.min_score = min_score
 
     def retrieve(self, request: AgentContextRequest) -> Sequence[KnowledgeObject]:
-        permissions = self.package.metadata.get("permissions", {})
+        raw_permissions = self.package.metadata.get("permissions", {})
+        permissions = raw_permissions if isinstance(raw_permissions, dict) else {}
         scoped: list[tuple[float, KnowledgeObject]] = []
         for obj in self.package.objects:
             if obj.provenance.tenant_id != request.tenant_id:
