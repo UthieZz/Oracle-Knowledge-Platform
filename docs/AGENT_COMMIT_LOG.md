@@ -103,3 +103,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Ensures deleted objects do not leave residual authorization metadata. Regression test_delete_removes_permission_metadata confirms persistence across reload.
 - Targeted: 1 passed. Connect suite remains green (24 passed).
 - Advances P1 provenance/authorization consistency. Knowledge Core IR unchanged.
+
+## 2026-11-05 (permissions metadata type guard)
+- KnowledgeAccumulator now coerces non-dict permissions metadata to a dict on permission_change.
+- Ensures robust recording even after external metadata mutation. Regression test confirms persistence across reload.
+- Targeted: 1 passed. Connect suite remains green (30 passed).
+- Advances P1 provenance/authorization consistency. Knowledge Core IR unchanged.

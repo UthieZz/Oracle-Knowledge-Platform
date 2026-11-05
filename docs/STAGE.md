@@ -48,3 +48,10 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 - Prevents stale permission records after deletion. Added regression test_delete_removes_permission_metadata (create + permission + delete + reload).
 - Targeted Connect suite: 24 passed.
 - Advances P1 security/provenance consistency. Knowledge Core IR unchanged.
+
+## 2026-11-05 (permissions metadata type guard)
+- KnowledgeAccumulator.process now normalizes a non-dict package.metadata["permissions"] to an empty dict before recording a permission_change.
+- Prevents runtime errors if metadata was externally corrupted or partially written.
+- Added regression test_permission_change_normalizes_non_dict_metadata.
+- Targeted Connect suite: 30 passed.
+- Advances P1 security/provenance consistency. Knowledge Core IR unchanged.

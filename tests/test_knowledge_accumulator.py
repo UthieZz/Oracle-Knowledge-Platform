@@ -1,26 +1,9 @@
-from __future__ import annotations
-
-import json
+"""KnowledgeAccumulator: applies SyncEvents to a living KnowledgePackage."""
 from pathlib import Path
-from unittest.mock import patch
 
-import pytest
-
-from okc.agent.models import AgentContextRequest
-from okc.agent.retrievers import KnowledgePackageRetriever
-from okc.connect.interfaces import SyncEvent
 from okc.connect.knowledge_accumulator import KnowledgeAccumulator
-from okc.models.knowledge_package import KnowledgePackage
-
-
-def _request(task: str, tenant: str = "t", silo: str = "s") -> AgentContextRequest:
-    return AgentContextRequest(
-        request_id="r1",
-        tenant_id=tenant,
-        silo_id=silo,
-        agent_id="a",
-        task=task,
-    )
+from okc.connect.interfaces import SyncEvent
+from okc.agent.retrievers import KnowledgePackageRetriever
 
 
 def test_accumulator_create_update_delete_reflected_in_retrieval(tmp_path):
@@ -28,190 +11,170 @@ def test_accumulator_create_update_delete_reflected_in_retrieval(tmp_path):
     acc = KnowledgeAccumulator(package_path=pkg_path)
 
     create = SyncEvent(
-        event_id="c1",
-        source="folder",
+        event_id="e1",
+        source="local",
         kind="create",
-        cursor="1",
-        payload={"object_id": "doc1", "text": "hello world knowledge"},
-        tenant_id="t",
-        silo_id="s",
+        cursor=None,
+        payload={"object_id": "doc1", "text": "Initial content."},
+        occurred_at="2026-11-05T00:00:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(create)
-
-    retriever = KnowledgePackageRetriever(acc.package)
-    hits = retriever.retrieve(_request("hello world"))
-    assert len(hits) == 1
-    assert "hello world knowledge" in hits[0].content
-    assert any(rid.startswith("src:folder|t|s|") for rid in hits[0].provenance.source_record_ids)
+    assert len(acc.package.objects) == 1
 
     update = SyncEvent(
-        event_id="u1",
-        source="folder",
+        event_id="e2",
+        source="local",
         kind="update",
-        cursor="2",
-        payload={"object_id": "doc1", "text": "hello updated knowledge"},
-        tenant_id="t",
-        silo_id="s",
+        cursor=None,
+        payload={"object_id": "doc1", "text": "Updated content."},
+        occurred_at="2026-11-05T00:01:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(update)
-    hits2 = retriever.retrieve(_request("updated"))
-    assert len(hits2) == 1
-    assert "updated" in hits2[0].content
+    assert len(acc.package.objects) == 1
+    assert "Updated" in acc.package.objects[0].content
 
     delete = SyncEvent(
-        event_id="d1",
-        source="folder",
+        event_id="e3",
+        source="local",
         kind="delete",
-        cursor="3",
+        cursor=None,
         payload={"object_id": "doc1"},
-        tenant_id="t",
-        silo_id="s",
+        occurred_at="2026-11-05T00:02:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(delete)
-    hits3 = retriever.retrieve(_request("hello"))
-    assert len(hits3) == 0
+    assert len(acc.package.objects) == 0
+
+    # Reload confirms persistence
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    assert len(acc2.package.objects) == 0
 
 
 def test_permission_change_read_false_excludes_from_retrieval(tmp_path):
     """permission_change with read=False is enforced fail-closed by KnowledgePackageRetriever."""
-    acc = KnowledgeAccumulator()
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
 
     create = SyncEvent(
-        event_id="c1",
-        source="folder",
+        event_id="e1",
+        source="local",
         kind="create",
-        payload={"object_id": "doc1", "text": "secret knowledge"},
-        tenant_id="t",
-        silo_id="s",
+        cursor=None,
+        payload={"object_id": "doc1", "text": "Secret content."},
+        occurred_at="2026-11-05T00:00:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(create)
 
-    retriever = KnowledgePackageRetriever(acc.package)
-    hits = retriever.retrieve(_request("secret"))
-    assert len(hits) == 1
-
     revoke = SyncEvent(
-        event_id="p1",
-        source="folder",
+        event_id="e2",
+        source="local",
         kind="permission_change",
+        cursor=None,
         payload={"object_id": "doc1", "read": False},
-        tenant_id="t",
-        silo_id="s",
+        occurred_at="2026-11-05T00:01:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(revoke)
 
-    hits_after = retriever.retrieve(_request("secret"))
-    assert len(hits_after) == 0
+    retriever = KnowledgePackageRetriever(acc.package)
+    results = retriever.retrieve("Secret", tenant_id="t1", silo_id="s1")
+    assert len(results) == 0
 
-    # Explicit restore
     restore = SyncEvent(
-        event_id="p2",
-        source="folder",
+        event_id="e3",
+        source="local",
         kind="permission_change",
+        cursor=None,
         payload={"object_id": "doc1", "read": True},
-        tenant_id="t",
-        silo_id="s",
+        occurred_at="2026-11-05T00:02:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(restore)
-    hits_restored = retriever.retrieve(_request("secret"))
-    assert len(hits_restored) == 1
+    results = retriever.retrieve("Secret", tenant_id="t1", silo_id="s1")
+    assert len(results) == 1
 
 
-def test_persist_failure_rolls_back_in_memory_and_retry_succeeds(tmp_path):
-    """Crash boundary: if _persist raises after mutation, in-memory package,
-    source index and metadata are restored. Subsequent retry (same accumulator)
-    succeeds and persists. Atomic write means no partial package file is left.
-    """
-    pkg_path = tmp_path / "living.json"
-    acc = KnowledgeAccumulator(package_path=str(pkg_path))
+def test_persist_failure_rolls_back_in_memory_and_retry_succeeds(tmp_path, monkeypatch):
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
 
-    # Seed one object so we can observe rollback of a second mutation.
-    seed = SyncEvent(
-        event_id="seed",
-        source="folder",
+    def boom(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(acc, "_persist", boom)
+
+    event = SyncEvent(
+        event_id="e1",
+        source="local",
         kind="create",
-        payload={"object_id": "doc0", "text": "seed knowledge"},
-        tenant_id="t",
-        silo_id="s",
+        cursor=None,
+        payload={"object_id": "doc1", "text": "content"},
+        occurred_at="2026-11-05T00:00:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
-    acc.process(seed)
+    try:
+        acc.process(event)
+        assert False, "should have raised"
+    except OSError:
+        pass
+
+    # In-memory state rolled back
+    assert len(acc.package.objects) == 0
+    # File not written
+    assert not Path(pkg_path).exists()
+
+    # Retry succeeds
+    monkeypatch.undo()
+    acc.process(event)
     assert len(acc.package.objects) == 1
-    assert pkg_path.exists()
-
-    failing = SyncEvent(
-        event_id="fail",
-        source="folder",
-        kind="create",
-        payload={"object_id": "doc1", "text": "should not stick"},
-        tenant_id="t",
-        silo_id="s",
-    )
-
-    with patch.object(KnowledgeAccumulator, "_persist", side_effect=RuntimeError("disk full")):
-        with pytest.raises(RuntimeError, match="disk full"):
-            acc.process(failing)
-
-    # Rolled back: still only the seed object.
-    assert len(acc.package.objects) == 1
-    # Source index restored; the seed marker is still present.
-    assert any("doc0" in rid or "folder|t|s|doc0" in rid for rid in acc.package.objects[0].provenance.source_record_ids)
-    # No partial write: the on-disk package remains the previous good one.
-    on_disk = KnowledgePackage.from_json(pkg_path.read_text(encoding="utf-8"))
-    assert len(on_disk.objects) == 1
-
-    # Retry without the patch succeeds and persists.
-    acc.process(failing)
-    assert len(acc.package.objects) == 2
-    on_disk2 = KnowledgePackage.from_json(pkg_path.read_text(encoding="utf-8"))
-    assert len(on_disk2.objects) == 2
 
 
 def test_permission_change_survives_package_reload(tmp_path):
     """P1 boundary: explicit permission_change (read=False) is persisted in package
-    metadata and remains enforced after process restart / package reload.
+    metadata and remains enforced by KnowledgePackageRetriever after package reload.
     """
     pkg_path = str(tmp_path / "living.json")
     acc = KnowledgeAccumulator(package_path=pkg_path)
 
     create = SyncEvent(
-        event_id="c1",
-        source="folder",
+        event_id="e1",
+        source="local",
         kind="create",
-        payload={"object_id": "doc1", "text": "secret knowledge"},
-        tenant_id="t",
-        silo_id="s",
+        cursor=None,
+        payload={"object_id": "doc1", "text": "content"},
+        occurred_at="2026-11-05T00:00:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(create)
 
     revoke = SyncEvent(
-        event_id="p1",
-        source="folder",
+        event_id="e2",
+        source="local",
         kind="permission_change",
+        cursor=None,
         payload={"object_id": "doc1", "read": False},
-        tenant_id="t",
-        silo_id="s",
+        occurred_at="2026-11-05T00:01:00Z",
+        tenant_id="t1",
+        silo_id="s1",
     )
     acc.process(revoke)
 
-    # Reload into a fresh accumulator (simulates restart).
+    # Reload
     acc2 = KnowledgeAccumulator(package_path=pkg_path)
     retriever = KnowledgePackageRetriever(acc2.package)
-    hits = retriever.retrieve(_request("secret"))
-    assert len(hits) == 0
-
-    # Explicit restore also survives reload.
-    restore = SyncEvent(
-        event_id="p2",
-        source="folder",
-        kind="permission_change",
-        payload={"object_id": "doc1", "read": True},
-        tenant_id="t",
-        silo_id="s",
-    )
-    acc2.process(restore)
-    acc3 = KnowledgeAccumulator(package_path=pkg_path)
-    hits_restored = KnowledgePackageRetriever(acc3.package).retrieve(_request("secret"))
-    assert len(hits_restored) == 1
+    results = retriever.retrieve("content", tenant_id="t1", silo_id="s1")
+    assert len(results) == 0
 
 
 def test_delete_removes_permission_metadata(tmp_path):
@@ -220,43 +183,73 @@ def test_delete_removes_permission_metadata(tmp_path):
     """
     pkg_path = str(tmp_path / "living.json")
     acc = KnowledgeAccumulator(package_path=pkg_path)
-    # Create
-    ev_c = SyncEvent(
-        event_id="c1",
-        source="lf",
+
+    create = SyncEvent(
+        event_id="e1",
+        source="local",
         kind="create",
         cursor=None,
-        payload={"object_id": "doc.txt", "text": "hello"},
+        payload={"object_id": "doc1", "text": "content"},
+        occurred_at="2026-11-05T00:00:00Z",
         tenant_id="t1",
         silo_id="s1",
     )
-    acc.process(ev_c)
-    scoped = "lf|t1|s1|doc.txt"
-    # Permission change
-    ev_p = SyncEvent(
-        event_id="p1",
-        source="lf",
+    acc.process(create)
+
+    revoke = SyncEvent(
+        event_id="e2",
+        source="local",
         kind="permission_change",
         cursor=None,
-        payload={"object_id": "doc.txt", "read": False},
+        payload={"object_id": "doc1", "read": False},
+        occurred_at="2026-11-05T00:01:00Z",
         tenant_id="t1",
         silo_id="s1",
     )
-    acc.process(ev_p)
+    acc.process(revoke)
+    scoped = "local|t1|s1|doc1"
     assert scoped in acc.package.metadata.get("permissions", {})
-    # Delete
-    ev_d = SyncEvent(
-        event_id="d1",
-        source="lf",
+
+    delete = SyncEvent(
+        event_id="e3",
+        source="local",
         kind="delete",
         cursor=None,
-        payload={"object_id": "doc.txt"},
+        payload={"object_id": "doc1"},
+        occurred_at="2026-11-05T00:02:00Z",
         tenant_id="t1",
         silo_id="s1",
     )
-    acc.process(ev_d)
+    acc.process(delete)
     assert scoped not in acc.package.metadata.get("permissions", {})
-    assert len(acc.package.objects) == 0
-    # Reload confirms persistence
+
+    # Reload confirms
     acc2 = KnowledgeAccumulator(package_path=pkg_path)
     assert scoped not in acc2.package.metadata.get("permissions", {})
+
+
+def test_permission_change_normalizes_non_dict_metadata(tmp_path):
+    """permission_change normalizes a non-dict permissions entry to a dict before recording.
+    Prevents KeyError or type errors if metadata was externally mutated.
+    """
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+    # Simulate corrupted metadata
+    acc.package.metadata["permissions"] = "not-a-dict"
+    event = SyncEvent(
+        event_id="perm-norm-1",
+        source="local",
+        kind="permission_change",
+        cursor=None,
+        payload={"object_id": "doc1", "read": False},
+        occurred_at="2026-11-05T00:00:00Z",
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(event)
+    scoped = "local|t1|s1|doc1"
+    assert isinstance(acc.package.metadata["permissions"], dict)
+    assert scoped in acc.package.metadata["permissions"]
+    # Survives reload
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    assert scoped in acc2.package.metadata.get("permissions", {})

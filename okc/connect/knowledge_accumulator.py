@@ -107,6 +107,9 @@ class KnowledgeAccumulator:
                 self._remove(scoped)
             elif event.kind == "permission_change":
                 perms = self.package.metadata.setdefault("permissions", {})
+                if not isinstance(perms, dict):
+                    perms = {}
+                    self.package.metadata["permissions"] = perms
                 perms[scoped] = event.payload
             self._persist()
         except Exception:
