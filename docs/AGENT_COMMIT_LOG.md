@@ -24,8 +24,8 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Snapshot persistence, scoped identity, WAL, retry already present and covered.
 - Knowledge Core IR unchanged. Advances Connect reliability after truncation regression.
 
-## 2026-11-05 (operator diagnostics + verification)
-- Enhanced scripts/connect_health.py to report whether package.metadata.object_count matches len(objects).
-- Targeted Connect tests: 29 passed.
-- Full suite in this environment: 145 passed, 2 failed (Firestore exporter tests; missing google-cloud-firestore dependency/mocks here; unrelated to Connect).
-- Knowledge Core IR unchanged. Advances Connect P3 operator visibility.
+## 2026-11-05 (idempotent reprocess after package persist)
+- Added regression test_reprocess_after_package_persist_is_idempotent: after successful package write, re-delivery of the same create event to a reloaded accumulator does not duplicate objects (content-hash object_id + scoped upsert).
+- Targeted Connect suite: 30 passed.
+- Knowledge Core IR unchanged. Advances Connect P0 crash-boundary reliability (partial success between package persist and engine mark-processed).
+

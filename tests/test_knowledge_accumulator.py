@@ -260,3 +260,41 @@ def test_delete_removes_permission_metadata(tmp_path):
     # Reload confirms persistence
     acc2 = KnowledgeAccumulator(package_path=pkg_path)
     assert scoped not in acc2.package.metadata.get("permissions", {})
+
+
+def test_reprocess_after_package_persist_is_idempotent(tmp_path):
+    """Crash boundary: package persisted successfully, but engine failed to mark
+    event processed (process killed after _persist, before SQLite UPDATE).
+    On restart, the same event is re-delivered to a fresh accumulator loaded
+    from the living package. Upsert must not duplicate objects or change count.
+    """
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "stable content for idempotency"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(create)
+    assert len(acc.package.objects) == 1
+    original_obj_id = acc.package.objects[0].object_id
+    assert pkg_path and Path(pkg_path).exists()
+
+    # Simulate restart: fresh accumulator loads the persisted package.
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    assert len(acc2.package.objects) == 1
+
+    # Re-deliver the identical event (engine retry after partial success).
+    acc2.process(create)
+    assert len(acc2.package.objects) == 1
+    assert acc2.package.objects[0].object_id == original_obj_id
+    assert "stable content for idempotency" in acc2.package.objects[0].content
+
+    # On-disk package also remains single-object.
+    on_disk = KnowledgePackage.from_json(Path(pkg_path).read_text(encoding="utf-8"))
+    assert len(on_disk.objects) == 1
+    assert on_disk.objects[0].object_id == original_obj_id

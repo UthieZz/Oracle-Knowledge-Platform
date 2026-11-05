@@ -21,8 +21,11 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - LocalFolderConnector snapshot persistence (optional snapshot_path) implemented and tested for restart deletion detection.
 - Source identity namespaced as source|tenant|silo|object_id.
 - SyncEngine: WAL mode, exponential backoff, failed list, reset_failed, health with last_processed_at.
-- KnowledgeAccumulator: scoped upsert/delete, permission recording, persist rollback, permissions normalize + delete cleanup.
+- KnowledgeAccumulator: scoped upsert/delete, permission recording, persist rollback, permissions normalize + delete cleanup. Reprocessing an identical create after successful package persist (simulating engine mark-processed failure) is idempotent: object count and content remain unchanged.
+
 - Runner persists snapshot. connect_health reports package metadata consistency.
-- Targeted Connect suite: 29 passed (sync_engine + accumulator + local_folder + worker + e2e + health).
+- Targeted Connect suite: 30 passed (sync_engine + accumulator + local_folder + worker + e2e + health).
+
 - Full suite (this environment): 145 passed, 2 failed (test_firestore_exporter.py requires google-cloud-firestore / mock setup not present here; not a Connect regression).
-- Remaining P0: more crash-boundary proofs under concurrent failure, runtime verification of living package convergence, full suite in a complete dependency environment.
+- Remaining P0: more crash-boundary proofs under concurrent failure or multi-process, runtime verification of living package convergence under real restarts, full suite in a complete dependency environment.
+
