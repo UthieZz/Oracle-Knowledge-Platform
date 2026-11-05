@@ -1,13 +1,6 @@
 # AGENT COMMIT LOG
 
-## 2026-11-05 (connector snapshot persist rollback)
-- LocalFolderConnector.initial_sync / incremental_sync capture prior seq and snapshot, restore them if _persist_snapshot raises.
-- Ensures in-memory state stays consistent with last successful on-disk snapshot; subsequent retry generates correct events.
-- Added regression test_local_folder_snapshot_persist_failure_rolls_back_seq_and_snapshot.
-- Targeted Connect suite: 26 passed.
-- Advances Connect P0 crash-boundary reliability. Knowledge Core IR unchanged.
-
-## 2026-11-04 (WAL durability)
+## 2026-11-05 (WAL durability)
 - SyncEngine connections now enable SQLite WAL journal mode and synchronous=NORMAL.
 - Improves crash recovery and concurrent reader safety for the durable queue and cursor store without changing the public contract.
 - Added regression test_sync_engine_uses_wal_journal_mode. Targeted SyncEngine tests: 10 passed.
@@ -81,3 +74,16 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Proves rollback of in-memory state + source index + metadata on _persist failure after mutation; prior package file remains; retry succeeds.
 - Targeted Connect suite: 25 passed.
 - Advances P0 crash-boundary evidence. Knowledge Core IR unchanged.
+
+## 2026-11-05 (connector snapshot persist rollback)
+- LocalFolderConnector.initial_sync / incremental_sync capture prior seq and snapshot, restore them if _persist_snapshot raises.
+- Ensures in-memory state stays consistent with last successful on-disk snapshot; subsequent retry generates correct events.
+- Added regression test_local_folder_snapshot_persist_failure_rolls_back_seq_and_snapshot.
+- Targeted Connect suite: 26 passed.
+- Advances Connect P0 crash-boundary reliability. Knowledge Core IR unchanged.
+
+## 2026-11-05 (FirestoreExporter test suite restoration)
+- tests/test_firestore_exporter_batching.py setUp now supplies required tenant_id/silo_id and injects a mock client.
+- Restores pass after fail-closed OKP_TENANT_ID/OKP_SILO_ID enforcement in FirestoreExporter.__init__.
+- Targeted: 2 passed. Full suite previously failed these two tests; Connect suite remains green.
+- Advances security/provenance consistency evidence (P1) without changing production paths. Knowledge Core IR unchanged.

@@ -18,9 +18,9 @@ class TestFirestoreExporterBatching(unittest.TestCase):
             messages=[Message(role="user", content="msg") for _ in range(501)]
         )
         self.package.add_conversation(conv)
-        self.exporter = FirestoreExporter(project_id="test-project")
-        self.exporter.db = MagicMock()
-        self.exporter.db.batch.return_value = MagicMock()
+        mock_client = MagicMock()
+        mock_client.batch.return_value = MagicMock()
+        self.exporter = FirestoreExporter(project_id="test-project", tenant_id="test-tenant", silo_id="test-silo", client=mock_client)
 
     def test_message_batching(self):
         self.exporter._write_messages_batched(self.package.conversations[0], "2026-01-01T00:00:00Z")

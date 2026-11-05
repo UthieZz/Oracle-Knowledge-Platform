@@ -31,3 +31,8 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 - Added regression test_local_folder_snapshot_persist_failure_rolls_back_seq_and_snapshot.
 - Targeted Connect suite: 26 passed.
 - Advances Connect P0 crash-boundary evidence for connector snapshot durability. Knowledge Core IR unchanged.
+
+## 2026-11-05 (FirestoreExporter test suite restoration)
+- tests/test_firestore_exporter_batching.py updated to supply tenant_id/silo_id and mock client in setUp.
+- Confirms fail-closed enterprise export path remains enforced while restoring unit test coverage for batching.
+- Targeted: 2 passed. Connect P0 suite still green (22+ targeted). Knowledge Core IR unchanged.
