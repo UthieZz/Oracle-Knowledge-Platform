@@ -23,3 +23,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Targeted Connect suite (accumulator + local_folder + sync_engine): 24 passed.
 - Snapshot persistence, scoped identity, WAL, retry already present and covered.
 - Knowledge Core IR unchanged. Advances Connect reliability after truncation regression.
+
+## 2026-11-05 (operator diagnostics + verification)
+- Enhanced scripts/connect_health.py to report whether package.metadata.object_count matches len(objects).
+- Targeted Connect tests: 29 passed.
+- Full suite in this environment: 145 passed, 2 failed (Firestore exporter tests; missing google-cloud-firestore dependency/mocks here; unrelated to Connect).
+- Knowledge Core IR unchanged. Advances Connect P3 operator visibility.
