@@ -12,8 +12,8 @@
 - Background SyncWorker + LocalFolderConnector + KnowledgeAccumulator closed loop: worker polls, enqueues, processes via accumulator; file create/update/delete become visible to KnowledgePackageRetriever. Tested.
 - Minimal durable runner: scripts/run_connect_worker.py starts the worker against a watched folder, persists the living package and the connector snapshot, and stops cleanly on signal. Suitable for a local-folder pilot path.
 - LocalFolderConnector snapshot persistence: optional snapshot_path loads prior state on restart so files deleted while the worker is stopped generate delete events on the next incremental_sync. Snapshot stores version, monotonic sequence and map; event_ids incorporate sequence so delete/recreate of identical content receives a new id. Tested.
-- Operator visibility: scripts/connect_health.py surfaces queued/processed/failed, oldest_queued age, last_processed_at, and limited failed-event summaries (id/attempts/error).
-- Not yet: production SSO/onboarding, real business-system connector beyond local folder, complete authorization model beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and CLI, unattended service packaging beyond the runner script, full current-suite verification in this environment.
+- Operator visibility: scripts/connect_health.py surfaces queued/processed/failed, oldest_queued age, last_processed_at, and limited failed-event summaries (id/attempts/error). Reports package metadata.object_count consistency with actual object count.
+- Not yet: production SSO/onboarding, real business-system connector beyond local folder, complete authorization model beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and CLI, unattended service packaging beyond the runner script.
 
 Next highest-leverage: additional crash-boundary cases or expand operator diagnostics; or implement one real business-system connector once the local path is further hardened. Security/provenance boundary checks remain open.
 
@@ -22,5 +22,7 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - Source identity namespaced as source|tenant|silo|object_id.
 - SyncEngine: WAL mode, exponential backoff, failed list, reset_failed, health with last_processed_at.
 - KnowledgeAccumulator: scoped upsert/delete, permission recording, persist rollback, permissions normalize + delete cleanup.
-- Runner persists snapshot. Targeted tests: 24 passed.
-- Remaining P0: more crash-boundary proofs, full suite, runtime verification of living package convergence under concurrent failure.
+- Runner persists snapshot. connect_health reports package metadata consistency.
+- Targeted Connect suite: 29 passed (sync_engine + accumulator + local_folder + worker + e2e + health).
+- Full suite (this environment): 145 passed, 2 failed (test_firestore_exporter.py requires google-cloud-firestore / mock setup not present here; not a Connect regression).
+- Remaining P0: more crash-boundary proofs under concurrent failure, runtime verification of living package convergence, full suite in a complete dependency environment.
