@@ -96,3 +96,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Confirms Connect-stored permission metadata survives package persistence and reload; retrieval fail-closed behavior holds across process restart.
 - Targeted: 1 passed. Broader Connect suite remains green (28 passed).
 - Advances P1 security/provenance consistency. Knowledge Core IR unchanged.
+
+
+## 2026-11-05 (permission metadata cleanup on delete)
+- KnowledgeAccumulator._remove now removes the scoped permission entry from package.metadata["permissions"] on delete.
+- Ensures deleted objects do not leave residual authorization metadata. Regression test_delete_removes_permission_metadata confirms persistence across reload.
+- Targeted: 1 passed. Connect suite remains green (24 passed).
+- Advances P1 provenance/authorization consistency. Knowledge Core IR unchanged.
