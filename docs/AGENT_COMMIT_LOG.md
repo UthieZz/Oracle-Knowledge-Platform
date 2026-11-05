@@ -1,5 +1,12 @@
 # AGENT COMMIT LOG
 
+## 2026-11-05 (connector snapshot persist rollback)
+- LocalFolderConnector.initial_sync / incremental_sync capture prior seq and snapshot, restore them if _persist_snapshot raises.
+- Ensures in-memory state stays consistent with last successful on-disk snapshot; subsequent retry generates correct events.
+- Added regression test_local_folder_snapshot_persist_failure_rolls_back_seq_and_snapshot.
+- Targeted Connect suite: 26 passed.
+- Advances Connect P0 crash-boundary reliability. Knowledge Core IR unchanged.
+
 ## 2026-11-04 (WAL durability)
 - SyncEngine connections now enable SQLite WAL journal mode and synchronous=NORMAL.
 - Improves crash recovery and concurrent reader safety for the durable queue and cursor store without changing the public contract.

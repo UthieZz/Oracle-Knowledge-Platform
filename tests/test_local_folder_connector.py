@@ -3,6 +3,8 @@ import json
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from okc.connect.local_folder_connector import LocalFolderConnector
 from okc.connect.sync_engine import SyncEngine
 from okc.connect.knowledge_accumulator import KnowledgeAccumulator
@@ -262,3 +264,51 @@ def test_local_folder_restart_deletion_updates_package(tmp_path):
         pass
     assert len(acc2.package.objects) == 1
     assert "gone.txt" not in {o.provenance.source_record_ids[0] for o in acc2.package.objects if o.provenance.source_record_ids}
+
+
+def test_local_folder_snapshot_persist_failure_rolls_back_seq_and_snapshot(tmp_path, monkeypatch):
+    """If _persist_snapshot raises, in-memory seq and snapshot must roll back so a retry is consistent."""
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "a.txt").write_text("content a", encoding="utf-8")
+
+    snap_path = str(tmp_path / "snap.json")
+    conn = LocalFolderConnector(str(root), snapshot_path=snap_path)
+    assert conn.authenticate({})
+
+    # First successful sync to establish baseline
+    events = conn.initial_sync("t", "s")
+    assert len(events) == 1
+    baseline_seq = conn._seq
+    baseline_snap = dict(conn._last_snapshot)
+    assert Path(snap_path).exists()
+
+    # Now force a change and make persist fail
+    (root / "b.txt").write_text("content b", encoding="utf-8")
+
+    def boom(*args, **kwargs):
+        raise OSError("simulated persist failure")
+
+    monkeypatch.setattr(conn, "_persist_snapshot", boom)
+
+    with pytest.raises(OSError, match="simulated persist failure"):
+        conn.incremental_sync("0", "t", "s")
+
+    # In-memory state must be unchanged
+    assert conn._seq == baseline_seq
+    assert conn._last_snapshot == baseline_snap
+    # Disk must still have the prior valid snapshot
+    saved = json.loads(Path(snap_path).read_text(encoding="utf-8"))
+    assert saved.get("seq") == baseline_seq
+    assert set(saved.get("snapshot", {})) == {"a.txt"}
+
+    # Remove the patch and retry; must succeed and advance
+    monkeypatch.undo()
+    more = conn.incremental_sync("0", "t", "s")
+    assert len(more) == 1
+    assert more[0].payload["object_id"] == "b.txt"
+    assert conn._seq == baseline_seq + 1
+    assert Path(snap_path).exists()
+    after = json.loads(Path(snap_path).read_text(encoding="utf-8"))
+    assert after.get("seq") == baseline_seq + 1
+    assert set(after.get("snapshot", {})) == {"a.txt", "b.txt"}

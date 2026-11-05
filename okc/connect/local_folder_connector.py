@@ -113,46 +113,17 @@ class LocalFolderConnector(Connector):
             raise RuntimeError("not authenticated")
         snap = self._scan()
         events: List[SyncEvent] = []
-        start_seq = self._seq
-        for rel, info in sorted(snap.items()):
-            event_id = self._make_event_id("create", rel, info["hash"])
-            events.append(
-                SyncEvent(
-                    event_id=event_id,
-                    source=self.name,
-                    kind="create",
-                    cursor=str(info["mtime"]),
-                    payload={
-                        "text": info["text"],
-                        "object_id": rel,
-                        "source_file": info["abs"],
-                        "content_hash": info["hash"],
-                    },
-                    tenant_id=tenant_id,
-                    silo_id=silo_id,
-                )
-            )
-            self._seq += 1
-        self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
-        self._persist_snapshot()
-        return events
-
-    def incremental_sync(self, cursor: str, tenant_id: str, silo_id: str) -> List[SyncEvent]:
-        if not self._authenticated:
-            raise RuntimeError("not authenticated")
-        snap = self._scan()
-        events: List[SyncEvent] = []
-        prev = self._last_snapshot
-        # Creates / updates
-        for rel, info in sorted(snap.items()):
-            if rel not in prev or prev[rel] != info["hash"]:
-                kind = "update" if rel in prev else "create"
-                event_id = self._make_event_id(kind, rel, info["hash"])
+        # Snapshot prior state for rollback if persist fails
+        old_seq = self._seq
+        old_snapshot = dict(self._last_snapshot)
+        try:
+            for rel, info in sorted(snap.items()):
+                event_id = self._make_event_id("create", rel, info["hash"])
                 events.append(
                     SyncEvent(
                         event_id=event_id,
                         source=self.name,
-                        kind=kind,
+                        kind="create",
                         cursor=str(info["mtime"]),
                         payload={
                             "text": info["text"],
@@ -165,24 +136,70 @@ class LocalFolderConnector(Connector):
                     )
                 )
                 self._seq += 1
-        # Deletes
-        for rel in sorted(prev):
-            if rel not in snap:
-                event_id = self._make_event_id("delete", rel)
-                events.append(
-                    SyncEvent(
-                        event_id=event_id,
-                        source=self.name,
-                        kind="delete",
-                        payload={"object_id": rel},
-                        tenant_id=tenant_id,
-                        silo_id=silo_id,
+            self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+            self._persist_snapshot()
+            return events
+        except Exception:
+            # Restore prior state so a subsequent call is consistent
+            self._seq = old_seq
+            self._last_snapshot = old_snapshot
+            raise
+
+    def incremental_sync(self, cursor: str, tenant_id: str, silo_id: str) -> List[SyncEvent]:
+        if not self._authenticated:
+            raise RuntimeError("not authenticated")
+        snap = self._scan()
+        events: List[SyncEvent] = []
+        prev = self._last_snapshot
+        # Snapshot prior state for rollback if persist fails
+        old_seq = self._seq
+        old_snapshot = dict(self._last_snapshot)
+        try:
+            # Creates / updates
+            for rel, info in sorted(snap.items()):
+                if rel not in prev or prev[rel] != info["hash"]:
+                    kind = "update" if rel in prev else "create"
+                    event_id = self._make_event_id(kind, rel, info["hash"])
+                    events.append(
+                        SyncEvent(
+                            event_id=event_id,
+                            source=self.name,
+                            kind=kind,
+                            cursor=str(info["mtime"]),
+                            payload={
+                                "text": info["text"],
+                                "object_id": rel,
+                                "source_file": info["abs"],
+                                "content_hash": info["hash"],
+                            },
+                            tenant_id=tenant_id,
+                            silo_id=silo_id,
+                        )
                     )
-                )
-                self._seq += 1
-        self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
-        self._persist_snapshot()
-        return events
+                    self._seq += 1
+            # Deletes
+            for rel in sorted(prev):
+                if rel not in snap:
+                    event_id = self._make_event_id("delete", rel)
+                    events.append(
+                        SyncEvent(
+                            event_id=event_id,
+                            source=self.name,
+                            kind="delete",
+                            payload={"object_id": rel},
+                            tenant_id=tenant_id,
+                            silo_id=silo_id,
+                        )
+                    )
+                    self._seq += 1
+            self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+            self._persist_snapshot()
+            return events
+        except Exception:
+            # Restore prior state so a subsequent call is consistent
+            self._seq = old_seq
+            self._last_snapshot = old_snapshot
+            raise
 
     def handle_deletion(self, object_id: str, tenant_id: str, silo_id: str) -> SyncEvent:
         event_id = self._make_event_id("delete", object_id)

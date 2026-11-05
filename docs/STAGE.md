@@ -12,7 +12,7 @@
 - Permission_change with read=False is enforced fail-closed in KnowledgePackageRetriever for explicit entries (tested create → revoke → exclude → restore → include).
 - Background SyncWorker + LocalFolderConnector + KnowledgeAccumulator closed loop: worker polls, enqueues, processes via accumulator; file create/update/delete become visible to KnowledgePackageRetriever. Tested.
 - Minimal durable runner: scripts/run_connect_worker.py starts the worker against a watched folder, persists the living package and the connector snapshot, and stops cleanly on signal. Suitable for a local-folder pilot path.
-- LocalFolderConnector snapshot persistence: optional snapshot_path loads prior state on restart so files deleted while the worker is stopped generate delete events on the next incremental_sync. Snapshot stores version, monotonic sequence and map; event_ids incorporate sequence so delete/recreate of identical content receives a new id. Persist uses atomic temp+replace. Corrupt/truncated snapshot is ignored on load (starts clean). Tested.
+- LocalFolderConnector snapshot persistence: optional snapshot_path loads prior state on restart so files deleted while the worker is stopped generate delete events on the next incremental_sync. Snapshot stores version, monotonic sequence and map; event_ids incorporate sequence so delete/recreate of identical content receives a new id. Persist uses atomic temp+replace. Corrupt/truncated snapshot is ignored on load (starts clean). On _persist_snapshot failure after in-memory mutation, seq and snapshot roll back so a subsequent retry is consistent. Tested.
 - Operator visibility: scripts/connect_health.py surfaces queued/ready_to_process/waiting_for_retry/processed/failed, oldest_queued age, last_processed_at, limited failed-event summaries (id/attempts/error), and (when path supplied) connector snapshot status (version/seq/tracked count/mtime or MISSING/LEGACY/UNREADABLE).
 - Not yet: production SSO/onboarding, real business-system connector beyond local folder, complete authorization model beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and CLI, unattended service packaging beyond the runner script, full current-suite verification in this environment.
 
@@ -26,7 +26,8 @@ Next highest-leverage: additional crash-boundary cases; or implement one real bu
 
 - Combined restart path: initial sync + process to package, file deleted while stopped, restart connector+engine+accumulator, process delete, package converges to remaining objects. Tested.
 
-## 2026-11-04 (persist crash boundary)
-- Added regression test_persist_failure_rolls_back_in_memory_and_retry_succeeds proving KnowledgeAccumulator.process rolls back in-memory package, source index and metadata when _persist raises after mutation, leaves the prior on-disk package intact (atomic), and that a subsequent retry succeeds.
-- Targeted Connect suite (local_folder + sync_engine + knowledge_accumulator + sync_worker + e2e): 25 passed.
-- Advances Connect P0 crash consistency evidence for package persistence. Knowledge Core IR unchanged.
+## 2026-11-05 (connector snapshot persist rollback)
+- LocalFolderConnector.initial_sync and incremental_sync now snapshot prior _seq/_last_snapshot and restore them if _persist_snapshot raises.
+- Added regression test_local_folder_snapshot_persist_failure_rolls_back_seq_and_snapshot.
+- Targeted Connect suite: 26 passed.
+- Advances Connect P0 crash-boundary evidence for connector snapshot durability. Knowledge Core IR unchanged.
