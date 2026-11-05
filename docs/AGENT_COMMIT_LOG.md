@@ -1,4 +1,7 @@
-# AGENT COMMIT LOG
+## 2026-11-05 (connect health CLI regression)
+- Added tests/test_connect_health.py::test_connect_health_cli_on_fresh_db_reports_zeros_and_exits_zero.
+- Locks the operator-facing zero-state output of scripts/connect_health.py (queued/ready/waiting/processed/failed all zero, oldest_queued=none, last_processed=none).
+- Targeted: 1 passed. Connect suite remains green (26 passed earlier). Advances P3 operator visibility evidence. Knowledge Core IR unchanged.
 
 ## 2026-11-05 (WAL durability)
 - SyncEngine connections now enable SQLite WAL journal mode and synchronous=NORMAL.
