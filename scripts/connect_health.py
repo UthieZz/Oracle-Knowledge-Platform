@@ -75,7 +75,13 @@ def main() -> None:
             try:
                 pkg = KnowledgePackage.from_json(pkg_path.read_text(encoding="utf-8"))
                 mtime = pkg_path.stat().st_mtime
-                print(f"package=OK objects={len(pkg.objects)} mtime={mtime:.0f} path={pkg_path}")
+                actual = len(pkg.objects)
+                meta_count = pkg.metadata.get("object_count")
+                consistent = "consistent" if meta_count == actual else f"MISMATCH meta={meta_count}"
+                print(
+                    f"package=OK objects={actual} meta_object_count={meta_count} {consistent} "
+                    f"mtime={mtime:.0f} path={pkg_path}"
+                )
             except Exception as exc:
                 print(f"package=UNREADABLE error={exc} path={pkg_path}")
 
