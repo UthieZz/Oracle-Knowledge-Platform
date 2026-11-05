@@ -212,3 +212,51 @@ def test_permission_change_survives_package_reload(tmp_path):
     acc3 = KnowledgeAccumulator(package_path=pkg_path)
     hits_restored = KnowledgePackageRetriever(acc3.package).retrieve(_request("secret"))
     assert len(hits_restored) == 1
+
+
+def test_delete_removes_permission_metadata(tmp_path):
+    """Delete event removes the corresponding permission metadata entry.
+    Prevents stale permission records after object removal. Advances P1 provenance consistency.
+    """
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+    # Create
+    ev_c = SyncEvent(
+        event_id="c1",
+        source="lf",
+        kind="create",
+        cursor=None,
+        payload={"object_id": "doc.txt", "text": "hello"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(ev_c)
+    scoped = "lf|t1|s1|doc.txt"
+    # Permission change
+    ev_p = SyncEvent(
+        event_id="p1",
+        source="lf",
+        kind="permission_change",
+        cursor=None,
+        payload={"object_id": "doc.txt", "read": False},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(ev_p)
+    assert scoped in acc.package.metadata.get("permissions", {})
+    # Delete
+    ev_d = SyncEvent(
+        event_id="d1",
+        source="lf",
+        kind="delete",
+        cursor=None,
+        payload={"object_id": "doc.txt"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(ev_d)
+    assert scoped not in acc.package.metadata.get("permissions", {})
+    assert len(acc.package.objects) == 0
+    # Reload confirms persistence
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    assert scoped not in acc2.package.metadata.get("permissions", {})
