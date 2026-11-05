@@ -24,8 +24,8 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - KnowledgeAccumulator: scoped upsert/delete, permission recording, persist rollback, permissions normalize + delete cleanup. Reprocessing an identical create after successful package persist (simulating engine mark-processed failure) is idempotent: object count and content remain unchanged.
 
 - Runner persists snapshot. connect_health reports package metadata consistency.
-- Targeted Connect suite: 31 passed (sync_engine + accumulator + local_folder + worker + e2e + health) after adding list_cursors diagnostic.
+- Targeted Connect suite: 32 passed (incl. multi-instance same-DB visibility) (sync_engine + accumulator + local_folder + worker + e2e + health) after adding list_cursors diagnostic.
 
 - Full suite (this environment): 145 passed, 2 failed (test_firestore_exporter.py requires google-cloud-firestore / mock setup not present here; not a Connect regression).
-- Remaining P0: more crash-boundary proofs under concurrent failure or multi-process, runtime verification of living package convergence under real restarts, full suite in a complete dependency environment.
+- Remaining P0: concurrent failure under true parallel writers; multi-process sequential visibility now tested, runtime verification of living package convergence under real restarts, full suite in a complete dependency environment.
 

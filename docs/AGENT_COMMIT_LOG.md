@@ -31,3 +31,8 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Targeted Connect suite: 31 passed (prior 30 + new cursor test).
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics without new infrastructure.
 
+
+## 2026-11-05 (multi-instance queue visibility)
+- Added regression test_multi_instance_same_db_enqueue_process_visibility: two SyncEngine instances on the same DB see enqueue, process_next, cursor advance, and health consistently. Sequential multi-instance baseline for multi-process durability.
+- Targeted Connect suite: 32 passed (prior 31 + new test).
+- Knowledge Core IR unchanged. Advances Connect P0 crash/multi-process verification evidence.

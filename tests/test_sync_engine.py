@@ -346,3 +346,42 @@ def test_list_cursors_returns_scope_state_after_success(tmp_path):
     assert c["silo_id"] == "eng"
     assert c["cursor"] == "seq-42"
     assert c["updated_at"] is not None
+
+
+def test_multi_instance_same_db_enqueue_process_visibility(tmp_path):
+    """Two SyncEngine instances on the same DB (multi-process simulation) see consistent queue and processed state.
+
+    Verifies durable queue visibility and that process_next on one instance is reflected for the other.
+    Does not claim full concurrent write safety under true parallel threads; sequential multi-instance is the baseline.
+    """
+    db = str(tmp_path / "multi.db")
+    eng_a = SyncEngine(db)
+    eng_b = SyncEngine(db)
+
+    ev = SyncEvent(
+        event_id="shared1",
+        source="stub",
+        kind="create",
+        cursor="c1",
+        payload={"text": "visible"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    assert eng_a.enqueue(ev) is True
+    # Second instance sees the queued event
+    assert eng_b.list_queued() == ["shared1"]
+    h_b = eng_b.health()
+    assert h_b["queued"] == 1
+    assert h_b["ready_to_process"] == 1
+
+    # Process from instance A
+    assert eng_a.process_next(lambda e: None) == "shared1"
+    # Instance B sees it processed and cursor advanced
+    assert eng_b.list_queued() == []
+    assert eng_b.health()["processed"] == 1
+    assert eng_b.get_cursor("stub", "t1", "s1") == "c1"
+    assert eng_a.get_cursor("stub", "t1", "s1") == "c1"
+
+    # Idempotent re-enqueue from either does not re-queue
+    assert eng_b.enqueue(ev) is False
+    assert eng_a.list_queued() == []
