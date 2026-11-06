@@ -60,3 +60,8 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - connect_health.py now reports last_source and package_lag_seconds (when last_processed_at present) for operator visibility into package freshness.
 - Regression added. Knowledge Core IR unchanged. Advances P3 diagnostics.
 
+
+## Current Connect status (2026-11-06 health test restoration)
+- tests/test_connect_health.py restored and extended with high package lag WARNING regression.
+- Targeted health suite: 7 passed.
+- Knowledge Core IR unchanged. Restores and hardens P3 diagnostics evidence after file truncation.

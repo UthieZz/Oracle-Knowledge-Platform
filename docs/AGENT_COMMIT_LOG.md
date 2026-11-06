@@ -85,3 +85,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_connect_health_reports_last_source_and_package_lag.
 - Targeted health test: 1 passed (new); prior suite remains green.
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for package lag visibility.
+
+## 2026-11-06 (restore and extend health regressions)
+- Restored tests/test_connect_health.py (truncated to PLACEHOLDER_TEST).
+- Added test_connect_health_warns_on_high_package_lag covering package_lag_high WARNING path via backdated processed event.
+- All 7 health tests pass.
+- Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics regression coverage after truncation.
