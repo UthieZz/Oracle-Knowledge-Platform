@@ -1,6 +1,8 @@
 """Tests for LocalFolderConnector: initial/incremental, delete, e2e to KnowledgePackage."""
 import json
 import tempfile
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -312,3 +314,56 @@ def test_local_folder_snapshot_persist_failure_rolls_back_seq_and_snapshot(tmp_p
     after = json.loads(Path(snap_path).read_text(encoding="utf-8"))
     assert after.get("seq") == baseline_seq + 1
     assert set(after.get("snapshot", {})) == {"a.txt", "b.txt"}
+
+
+def test_local_folder_real_process_restart_deletion_converges_package(tmp_path):
+    """True process restart: launch worker subprocess, stop it, delete file, relaunch, package converges.
+    Provides runtime verification beyond in-process simulation.
+    """
+    import subprocess
+    import time
+    root = tmp_path / "watched"
+    root.mkdir()
+    (root / "keep.txt").write_text("Keep this content.", encoding="utf-8")
+    (root / "gone.txt").write_text("This disappears after stop.", encoding="utf-8")
+
+    db = str(tmp_path / "sync.db")
+    pkg = str(tmp_path / "living.json")
+    snap = str(tmp_path / "snap.json")
+    script = str(Path(__file__).resolve().parent.parent / "scripts" / "run_connect_worker.py")
+
+    # First process
+    proc1 = subprocess.Popen(
+        [sys.executable, script, "--folder", str(root), "--tenant", "t", "--silo", "s",
+         "--db", db, "--package", pkg, "--snapshot", snap, "--poll", "0.5"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parent.parent)}
+    )
+    time.sleep(2.0)  # allow initial sync + process
+    proc1.terminate()
+    proc1.wait(timeout=5)
+    assert Path(pkg).exists()
+    data1 = json.loads(Path(pkg).read_text(encoding="utf-8"))
+    assert len(data1.get("objects", [])) == 2
+
+    # Delete while stopped
+    (root / "gone.txt").unlink()
+
+    # Second process
+    proc2 = subprocess.Popen(
+        [sys.executable, script, "--folder", str(root), "--tenant", "t", "--silo", "s",
+         "--db", db, "--package", pkg, "--snapshot", snap, "--poll", "0.5"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parent.parent)}
+    )
+    time.sleep(2.0)
+    proc2.terminate()
+    proc2.wait(timeout=5)
+
+    data2 = json.loads(Path(pkg).read_text(encoding="utf-8"))
+    assert len(data2.get("objects", [])) == 1
+    # Ensure the remaining object is the keep one via source marker
+    markers = []
+    for o in data2.get("objects", []):
+        for rid in o.get("provenance", {}).get("source_record_ids", []):
+            markers.append(rid)
+    assert any("keep.txt" in m for m in markers)
+    assert not any("gone.txt" in m for m in markers)

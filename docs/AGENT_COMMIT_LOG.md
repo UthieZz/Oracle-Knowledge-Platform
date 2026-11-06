@@ -41,3 +41,8 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_concurrent_enqueue_and_process_from_multiple_threads: 4 threads each enqueue 5 unique events and process 3 on the same WAL DB. Final drain yields 20 processed, 0 failed, cursor advanced. No loss or corruption.
 - Targeted Connect suite: 34 passed.
 - Knowledge Core IR unchanged. Advances remaining P0 concurrent failure case under parallel writers.
+
+## 2026-11-06 (real process restart package convergence)
+- Added regression test_local_folder_real_process_restart_deletion_converges_package: launches run_connect_worker.py as subprocess, stops it, deletes a file, relaunches, verifies living package converges to remaining objects. Provides true process-level runtime verification beyond in-process simulation.
+- Targeted Connect suite: 35 passed (prior 34 + new restart test).
+- Knowledge Core IR unchanged. Advances remaining P0 runtime verification of living package convergence under real restarts.
