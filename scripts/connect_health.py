@@ -165,6 +165,11 @@ def main() -> None:
     if waiting > 5:
         status = "WARNING"
         reasons.append("waiting_retry_high")
+    # Nothing immediately processable while queue is non-empty: all events are waiting for retry
+    ready = h.get("ready_to_process", h["queued"])
+    if ready == 0 and h.get("queued", 0) > 0:
+        status = "WARNING"
+        reasons.append("no_ready_events")
     reason_s = " (" + ",".join(reasons) + ")" if reasons else ""
     print(f"status={status}{reason_s}")
 

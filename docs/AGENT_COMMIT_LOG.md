@@ -111,3 +111,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_connect_health_warns_on_high_waiting_retry.
 - Targeted health suite: 9 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for backoff stall signals.
+
+
+## 2026-11-06 (operator no-ready-events warning in health)
+- Enhanced scripts/connect_health.py to set status=WARNING no_ready_events when queued > 0 and ready_to_process == 0.
+- Added regression test_connect_health_warns_on_no_ready_events.
+- Targeted health suite: 10 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for cases where the queue is non-empty but nothing is immediately eligible for processing.

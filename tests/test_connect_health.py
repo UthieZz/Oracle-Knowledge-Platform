@@ -280,3 +280,35 @@ def test_connect_health_warns_on_high_waiting_retry(tmp_path: Path):
     assert "waiting_retry=6" in out
     assert "status=WARNING" in out
     assert "waiting_retry_high" in out
+
+
+def test_connect_health_warns_on_no_ready_events(tmp_path: Path):
+    """Queue non-empty but ready_to_process==0 must surface as WARNING no_ready_events."""
+    from datetime import datetime, timezone, timedelta
+    db = tmp_path / "h.db"
+    eng = SyncEngine(str(db))
+    future_ts = (datetime.now(timezone.utc) + timedelta(seconds=60)).isoformat()
+    with eng._conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO events (event_id, source, tenant_id, silo_id, kind, payload, status, attempts, enqueued_at, next_retry_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("wait-only", "test", "t", "s", "create", "{}", "queued", 1, future_ts, future_ts),
+        )
+        conn.commit()
+
+    script = Path(__file__).resolve().parent.parent / "scripts" / "connect_health.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(db)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "ready=0" in out
+    assert "queued=1" in out
+    assert "status=WARNING" in out
+    assert "no_ready_events" in out

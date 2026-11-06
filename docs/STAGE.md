@@ -82,3 +82,10 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - connect_health.py status now warns on high waiting_for_retry (>5 events).
 - Regression added. Targeted health suite: 9 passed.
 - Knowledge Core IR unchanged. Advances P3 operator diagnostics for stalled retry visibility.
+
+
+## Current Connect status (2026-11-06 no-ready-events warning)
+- connect_health.py status now warns with no_ready_events when queued > 0 and ready_to_process == 0.
+- Signals that all queued events are waiting for retry (nothing immediately processable).
+- Regression added. Targeted health suite: 10 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for stalled processing.
