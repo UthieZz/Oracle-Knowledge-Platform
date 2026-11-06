@@ -248,3 +248,35 @@ def test_connect_health_warns_on_high_queue_age(tmp_path: Path):
     assert "oldest_queued=" in out
     assert "status=WARNING" in out
     assert "queue_age_high" in out
+
+
+def test_connect_health_warns_on_high_waiting_retry(tmp_path: Path):
+    """More than 5 events waiting for retry must surface as WARNING waiting_retry_high."""
+    from datetime import datetime, timezone, timedelta
+    db = tmp_path / "h.db"
+    eng = SyncEngine(str(db))
+    future_ts = (datetime.now(timezone.utc) + timedelta(seconds=60)).isoformat()
+    with eng._conn() as conn:
+        for i in range(6):
+            conn.execute(
+                """
+                INSERT INTO events (event_id, source, tenant_id, silo_id, kind, payload, status, attempts, enqueued_at, next_retry_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (f"wait-{i}", "test", "t", "s", "create", "{}", "queued", 1, future_ts, future_ts),
+            )
+        conn.commit()
+
+    script = Path(__file__).resolve().parent.parent / "scripts" / "connect_health.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(db)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "waiting_retry=6" in out
+    assert "status=WARNING" in out
+    assert "waiting_retry_high" in out
