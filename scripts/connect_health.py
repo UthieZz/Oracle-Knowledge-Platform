@@ -18,10 +18,11 @@ from okc.connect.sync_engine import SyncEngine
 from okc.models.knowledge_package import KnowledgePackage
 
 
-def _report_snapshot(snap_path: Path) -> None:
+def _report_snapshot(snap_path: Path) -> str:
+    """Report snapshot status and return a short state token for the summary."""
     if not snap_path.exists():
         print(f"snapshot=MISSING path={snap_path}")
-        return
+        return "missing"
     try:
         raw = json.loads(snap_path.read_text(encoding="utf-8"))
         mtime = snap_path.stat().st_mtime
@@ -31,13 +32,17 @@ def _report_snapshot(snap_path: Path) -> None:
                 f"snapshot=OK version={raw.get('version')} seq={raw.get('seq')} "
                 f"tracked={tracked} mtime={mtime:.0f} path={snap_path}"
             )
+            return "ok"
         elif isinstance(raw, dict):
             tracked = len(raw)
             print(f"snapshot=LEGACY tracked={tracked} mtime={mtime:.0f} path={snap_path}")
+            return "legacy"
         else:
             print(f"snapshot=UNREADABLE reason=unexpected_type path={snap_path}")
+            return "unreadable"
     except Exception as exc:
         print(f"snapshot=UNREADABLE error={exc} path={snap_path}")
+        return "unreadable"
 
 
 def main() -> None:
@@ -80,17 +85,20 @@ def main() -> None:
     else:
         print("cursors=0")
 
+    pkg_state = "absent"
     if len(sys.argv) >= 3:
         pkg_path = Path(sys.argv[2])
         if not pkg_path.exists():
             print(f"package=MISSING path={pkg_path}")
+            pkg_state = "missing"
         else:
             try:
                 pkg = KnowledgePackage.from_json(pkg_path.read_text(encoding="utf-8"))
                 mtime = pkg_path.stat().st_mtime
                 actual = len(pkg.objects)
                 meta_count = pkg.metadata.get("object_count")
-                consistent = "consistent" if meta_count == actual else f"MISMATCH meta={meta_count}"
+                consistent = meta_count == actual
+                consistent_s = "consistent" if consistent else f"MISMATCH meta={meta_count}"
                 perms = pkg.metadata.get("permissions", {})
                 perm_count = len(perms) if isinstance(perms, dict) else 0
                 read_false = sum(
@@ -98,15 +106,18 @@ def main() -> None:
                     if isinstance(v, dict) and v.get("read") is False
                 )
                 print(
-                    f"package=OK objects={actual} meta_object_count={meta_count} {consistent} "
+                    f"package=OK objects={actual} meta_object_count={meta_count} {consistent_s} "
                     f"permissions_entries={perm_count} explicit_read_false={read_false} "
                     f"mtime={mtime:.0f} path={pkg_path}"
                 )
+                pkg_state = "ok" if consistent else "mismatch"
             except Exception as exc:
                 print(f"package=UNREADABLE error={exc} path={pkg_path}")
+                pkg_state = "unreadable"
 
+    snap_state = "absent"
     if len(sys.argv) >= 4:
-        _report_snapshot(Path(sys.argv[3]))
+        snap_state = _report_snapshot(Path(sys.argv[3]))
 
     # Operator summary line for quick status
     status = "OK"
@@ -114,12 +125,12 @@ def main() -> None:
     if h.get("failed", 0) > 0:
         status = "WARNING"
         reasons.append(f"failed={h.get('failed')}")
-    if len(sys.argv) >= 3 and not Path(sys.argv[2]).exists():
+    if pkg_state in ("missing", "unreadable", "mismatch"):
         status = "WARNING"
-        reasons.append("package_missing")
-    if len(sys.argv) >= 4 and not Path(sys.argv[3]).exists():
+        reasons.append(f"package_{pkg_state}")
+    if snap_state in ("missing", "unreadable"):
         status = "WARNING"
-        reasons.append("snapshot_missing")
+        reasons.append(f"snapshot_{snap_state}")
     reason_s = " (" + ",".join(reasons) + ")" if reasons else ""
     print(f"status={status}{reason_s}")
 
