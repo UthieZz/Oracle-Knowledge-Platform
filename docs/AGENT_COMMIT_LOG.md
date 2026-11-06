@@ -53,3 +53,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Fix: after first failure the test forces next_retry_at into the past so the second attempt is processed immediately and the event transitions to failed. No production code change.
 - Targeted Connect suite: 30 passed (sync_engine + accumulator + local_folder + worker + health + contract).
 - Knowledge Core IR unchanged. Restores regression coverage for retry exhaustion under backoff.
+
+## 2026-11-06 (fresh verification evidence)
+- Re-ran targeted Connect suite (including e2e): 31 passed.
+- Full suite: 144 passed, 4 failed in test_grounded_ask.py solely due to absent GEMINI_API_KEY (expected in this environment; no Connect impact).
+- No production code change. Documents current evidence for P0 verification item.
+- Knowledge Core IR unchanged. Local Connect path remains restart-safe with snapshot + package persistence.

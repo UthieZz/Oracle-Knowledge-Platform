@@ -29,3 +29,10 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - Full suite (this environment): 145 passed, 2 failed (test_firestore_exporter.py requires google-cloud-firestore / mock setup not present here; not a Connect regression).
 - Remaining P0: full suite in a complete dependency environment. Real subprocess process-restart deletion convergence now regression-tested (package converges after stop/delete/restart). Concurrent multi-thread writers on WAL queue regression-tested (no loss).
 
+
+## Current Connect status (2026-11-06 verification)
+- Targeted Connect suite (sync_engine + local_folder + knowledge_accumulator + sync_worker + connect_health + connect_contract + connect_e2e): 31 passed.
+- Full suite in this environment: 144 passed, 4 failed (all in tests/test_grounded_ask.py; ValueError from missing GEMINI_API_KEY; not a Connect or Knowledge Core regression).
+- Snapshot recovery, scoped source identity, crash-boundary idempotency after package persist, concurrent writers, and real subprocess process-restart deletion convergence remain covered by existing regressions.
+- Knowledge Core IR unchanged.
+- Remaining P0: full suite under complete optional dependencies (Gemini key for grounded-ask tests; firestore mocks if needed). Local Connect vertical slice is durable and restart-safe for the folder pilot.
