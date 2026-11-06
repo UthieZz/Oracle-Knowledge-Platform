@@ -48,3 +48,10 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - Gives operators an immediate overall health signal.
 - Regression coverage updated; targeted Connect suite 32 passed.
 - Knowledge Core IR unchanged.
+
+## Current Connect status (2026-11-06 operator status completeness)
+- connect_health.py status=OK|WARNING now treats unreadable package, object-count mismatch, and unreadable snapshot as WARNING with explicit reasons (package_unreadable, package_mismatch, snapshot_unreadable).
+- Missing package/snapshot continue to warn. Operators get a single-line signal for integrity problems without opening files.
+- New regressions cover unreadable package, count mismatch, and unreadable snapshot.
+- Targeted Connect suite (health + related): 5 passed in this change; prior 32 remains green for the surface.
+- Knowledge Core IR unchanged. Advances Connect P3 operator visibility for package/snapshot integrity.
