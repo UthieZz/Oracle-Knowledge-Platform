@@ -197,7 +197,10 @@ def test_connect_health_warns_on_high_package_lag(tmp_path: Path):
         metadata={"object_count": 0, "last_source": "local_folder"},
     )
     pkg_path.write_text(pkg.to_json())
-    # Package mtime is now; lag should be ~400s
+    # Force package mtime into the past so last_processed (old_ts ~400s ago) is still newer by >300s
+    import os
+    old_mtime = (datetime.now(timezone.utc) - timedelta(seconds=800)).timestamp()
+    os.utime(pkg_path, (old_mtime, old_mtime))
 
     script = Path(__file__).resolve().parent.parent / "scripts" / "connect_health.py"
     result = subprocess.run(

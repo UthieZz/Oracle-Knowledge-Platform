@@ -119,8 +119,10 @@ def main() -> None:
                     try:
                         from datetime import datetime
                         last_p_dt = datetime.fromisoformat(last_p_str.replace("Z", "+00:00"))
-                        lag = max(0, mtime - last_p_dt.timestamp())
-                        print(f"package_lag_seconds={lag:.0f} (package mtime - last_processed)")
+                        # Positive lag means last process is newer than package mtime:
+                        # processing advanced but package may not have been persisted.
+                        lag = max(0.0, last_p_dt.timestamp() - mtime)
+                        print(f"package_lag_seconds={lag:.0f} (last_processed - package mtime)")
                         if lag > 300:
                             # High lag is an operator signal that persist may be stalled
                             pkg_lag_warning = True

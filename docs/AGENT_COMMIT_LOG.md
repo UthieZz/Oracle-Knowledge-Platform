@@ -97,3 +97,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_connect_health_warns_on_high_queue_age.
 - Targeted Connect suite: 37 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for stalled queue visibility.
+
+## 2026-11-06 (correct package lag direction in health)
+- Fixed scripts/connect_health.py package_lag calculation: lag = last_processed.timestamp() - package_mtime (was inverted).
+- High lag now correctly signals processing advanced while package remains stale.
+- Updated test_connect_health_warns_on_high_package_lag to set old package mtime via os.utime.
+- Targeted health suite: 8 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics.

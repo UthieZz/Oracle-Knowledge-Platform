@@ -70,3 +70,9 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - connect_health.py status now warns on high queue age (>600s oldest queued).
 - Regression added. Targeted suite 37 passed.
 - Knowledge Core IR unchanged. Advances P3 operator diagnostics.
+
+## Current Connect status (2026-11-06 package lag direction correction)
+- connect_health.py package_lag_seconds now measures last_processed - package mtime (positive = processing advanced without matching package persist).
+- Previous inverted calculation (mtime - last_processed) is corrected; high lag (>300s) still warns as package_lag_high.
+- Regression test updated to force old package mtime. Targeted health suite: 8 passed.
+- Knowledge Core IR unchanged. Advances P3 operator diagnostics accuracy for stalled persist signals.
