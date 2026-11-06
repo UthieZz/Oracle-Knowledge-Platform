@@ -91,8 +91,15 @@ def main() -> None:
                 actual = len(pkg.objects)
                 meta_count = pkg.metadata.get("object_count")
                 consistent = "consistent" if meta_count == actual else f"MISMATCH meta={meta_count}"
+                perms = pkg.metadata.get("permissions", {})
+                perm_count = len(perms) if isinstance(perms, dict) else 0
+                read_false = sum(
+                    1 for v in (perms.values() if isinstance(perms, dict) else [])
+                    if isinstance(v, dict) and v.get("read") is False
+                )
                 print(
                     f"package=OK objects={actual} meta_object_count={meta_count} {consistent} "
+                    f"permissions_entries={perm_count} explicit_read_false={read_false} "
                     f"mtime={mtime:.0f} path={pkg_path}"
                 )
             except Exception as exc:
