@@ -46,3 +46,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_local_folder_real_process_restart_deletion_converges_package: launches run_connect_worker.py as subprocess, stops it, deletes a file, relaunches, verifies living package converges to remaining objects. Provides true process-level runtime verification beyond in-process simulation.
 - Targeted Connect suite: 35 passed (prior 34 + new restart test).
 - Knowledge Core IR unchanged. Advances remaining P0 runtime verification of living package convergence under real restarts.
+
+## 2026-11-06 (retry test regression fix)
+- Fixed tests/test_sync_engine.py::test_process_next_failure_retries_then_fails.
+- Root cause: exponential backoff sets next_retry_at in the future; process_next correctly skips non-ready events. The test assumed immediate re-eligibility.
+- Fix: after first failure the test forces next_retry_at into the past so the second attempt is processed immediately and the event transitions to failed. No production code change.
+- Targeted Connect suite: 30 passed (sync_engine + accumulator + local_folder + worker + health + contract).
+- Knowledge Core IR unchanged. Restores regression coverage for retry exhaustion under backoff.

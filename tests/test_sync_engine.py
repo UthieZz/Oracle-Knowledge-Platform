@@ -62,6 +62,13 @@ def test_process_next_failure_retries_then_fails(tmp_path):
 
     assert eng.process_next(boom) is None
     assert eng.list_queued() == ["e1"]
+    # Force the backoff window to the past so the second attempt is eligible immediately.
+    # Production code correctly delays retries; the test must not depend on wall-clock sleep.
+    from datetime import datetime, timezone, timedelta
+    import sqlite3
+    with sqlite3.connect(db) as c:
+        past = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+        c.execute("UPDATE events SET next_retry_at = ? WHERE event_id = ?", (past, "e1"))
     assert eng.process_next(boom) is None
     assert eng.list_queued() == []
     assert eng.list_failed() == ["e1"]
