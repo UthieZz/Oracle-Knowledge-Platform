@@ -46,7 +46,10 @@ def test_connect_health_reports_permission_summary_when_package_supplied(tmp_pat
     pkg_path = tmp_path / "living.json"
     pkg = KnowledgePackage(
         package_id="test-pkg",
-        metadata={"permissions": {"src:a|t|s|1": {"read": False}, "src:b|t|s|2": {"read": True}}},
+        metadata={
+            "object_count": 0,
+            "permissions": {"src:a|t|s|1": {"read": False}, "src:b|t|s|2": {"read": True}},
+        },
     )
     pkg_path.write_text(pkg.to_json())
 
@@ -63,3 +66,75 @@ def test_connect_health_reports_permission_summary_when_package_supplied(tmp_pat
     assert "permissions_entries=2" in out
     assert "explicit_read_false=1" in out
     assert "status=OK" in out
+
+
+def test_connect_health_warns_on_unreadable_package(tmp_path: Path):
+    """Unreadable package must surface as status=WARNING package_unreadable."""
+    db = tmp_path / "h.db"
+    SyncEngine(str(db))
+    pkg_path = tmp_path / "bad.json"
+    pkg_path.write_text("{not valid json")
+
+    script = Path(__file__).resolve().parent.parent / "scripts" / "connect_health.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(db), str(pkg_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "package=UNREADABLE" in out
+    assert "status=WARNING" in out
+    assert "package_unreadable" in out
+
+
+def test_connect_health_warns_on_package_count_mismatch(tmp_path: Path):
+    """Object count mismatch must surface as status=WARNING package_mismatch."""
+    from okc.models.knowledge_package import KnowledgePackage
+
+    db = tmp_path / "h.db"
+    pkg_path = tmp_path / "living.json"
+    pkg = KnowledgePackage(
+        package_id="test-pkg",
+        metadata={"object_count": 5},  # actual objects = 0
+    )
+    pkg_path.write_text(pkg.to_json())
+
+    script = Path(__file__).resolve().parent.parent / "scripts" / "connect_health.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(db), str(pkg_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "MISMATCH" in out
+    assert "status=WARNING" in out
+    assert "package_mismatch" in out
+
+
+def test_connect_health_warns_on_unreadable_snapshot(tmp_path: Path):
+    """Unreadable snapshot must surface as status=WARNING snapshot_unreadable."""
+    db = tmp_path / "h.db"
+    SyncEngine(str(db))
+    snap_path = tmp_path / "snap.json"
+    snap_path.write_text("not json")
+
+    script = Path(__file__).resolve().parent.parent / "scripts" / "connect_health.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(db), str(tmp_path / "missing_pkg.json"), str(snap_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "snapshot=UNREADABLE" in out
+    assert "status=WARNING" in out
+    assert "snapshot_unreadable" in out
+    assert "package_missing" in out
