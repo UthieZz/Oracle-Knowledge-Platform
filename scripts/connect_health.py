@@ -153,6 +153,11 @@ def main() -> None:
     if pkg_lag_warning:
         status = "WARNING"
         reasons.append("package_lag_high")
+    # High queue age is an operator signal that processing may be stalled
+    age = h.get("oldest_queued_age_seconds")
+    if age is not None and age > 600:
+        status = "WARNING"
+        reasons.append("queue_age_high")
     reason_s = " (" + ",".join(reasons) + ")" if reasons else ""
     print(f"status={status}{reason_s}")
 

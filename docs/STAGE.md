@@ -65,3 +65,8 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - tests/test_connect_health.py restored and extended with high package lag WARNING regression.
 - Targeted health suite: 7 passed.
 - Knowledge Core IR unchanged. Restores and hardens P3 diagnostics evidence after file truncation.
+
+## Current Connect status (2026-11-06 queue age warning)
+- connect_health.py status now warns on high queue age (>600s oldest queued).
+- Regression added. Targeted suite 37 passed.
+- Knowledge Core IR unchanged. Advances P3 operator diagnostics.

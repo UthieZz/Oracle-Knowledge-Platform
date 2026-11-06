@@ -212,3 +212,36 @@ def test_connect_health_warns_on_high_package_lag(tmp_path: Path):
     assert "package_lag_seconds=" in out
     assert "status=WARNING" in out
     assert "package_lag_high" in out
+
+
+def test_connect_health_warns_on_high_queue_age(tmp_path: Path):
+    """Oldest queued event older than 600s must surface as WARNING queue_age_high."""
+    from datetime import datetime, timezone, timedelta
+    import sqlite3
+
+    db = tmp_path / "h.db"
+    eng = SyncEngine(str(db))
+    old_ts = (datetime.now(timezone.utc) - timedelta(seconds=700)).isoformat()
+    with eng._conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO events (event_id, source, tenant_id, silo_id, kind, payload, status, attempts, enqueued_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("old-queued", "test", "t", "s", "create", "{}", "queued", 0, old_ts),
+        )
+        conn.commit()
+
+    script = Path(__file__).resolve().parent.parent / "scripts" / "connect_health.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(db)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "oldest_queued=" in out
+    assert "status=WARNING" in out
+    assert "queue_age_high" in out
