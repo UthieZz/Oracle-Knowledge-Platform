@@ -59,3 +59,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Full suite: 144 passed, 4 failed in test_grounded_ask.py solely due to absent GEMINI_API_KEY (expected in this environment; no Connect impact).
 - No production code change. Documents current evidence for P0 verification item.
 - Knowledge Core IR unchanged. Local Connect path remains restart-safe with snapshot + package persistence.
+
+## 2026-11-06 (operator permission summary in health)
+- Enhanced scripts/connect_health.py to report permissions_entries and explicit_read_false when package path supplied.
+- Added regression test_connect_health_reports_permission_summary_when_package_supplied.
+- Targeted Connect suite: 32 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 diagnostics without altering retrieval or accumulator logic.
