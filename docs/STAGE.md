@@ -12,7 +12,7 @@
 - Background SyncWorker + LocalFolderConnector + KnowledgeAccumulator closed loop: worker polls, enqueues, processes via accumulator; file create/update/delete become visible to KnowledgePackageRetriever. Tested.
 - Minimal durable runner: scripts/run_connect_worker.py starts the worker against a watched folder, persists the living package and the connector snapshot, and stops cleanly on signal. Suitable for a local-folder pilot path.
 - LocalFolderConnector snapshot persistence: optional snapshot_path loads prior state on restart so files deleted while the worker is stopped generate delete events on the next incremental_sync. Snapshot stores version, monotonic sequence and map; event_ids incorporate sequence so delete/recreate of identical content receives a new id. Tested.
-- Operator visibility: scripts/connect_health.py surfaces queued/processed/failed, oldest_queued age, last_processed_at, and limited failed-event summaries (id/attempts/error). Reports package metadata.object_count consistency with actual object count. Also reports cursor state (source/tenant/silo/cursor/updated) via SyncEngine.list_cursors() so operators can verify sync progress without direct DB inspection.
+- Operator visibility: scripts/connect_health.py surfaces queued/processed/failed, oldest_queued age, last_processed_at, and limited failed-event summaries (id/attempts/error). Reports package metadata.object_count consistency with actual object count. Also reports cursor state (source/tenant/silo/cursor/updated) via SyncEngine.list_cursors() so operators can verify sync progress without direct DB inspection. Now also reports permissions_entries and explicit_read_false when package path supplied.
 - Not yet: production SSO/onboarding, real business-system connector beyond local folder, complete authorization model beyond the Connect-stored read flag, admin health UX beyond engine/worker.health() and CLI, unattended service packaging beyond the runner script.
 
 Next highest-leverage: additional crash-boundary cases or expand operator diagnostics; or implement one real business-system connector once the local path is further hardened. Security/provenance boundary checks remain open.
@@ -36,3 +36,9 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - Snapshot recovery, scoped source identity, crash-boundary idempotency after package persist, concurrent writers, and real subprocess process-restart deletion convergence remain covered by existing regressions.
 - Knowledge Core IR unchanged.
 - Remaining P0: full suite under complete optional dependencies (Gemini key for grounded-ask tests; firestore mocks if needed). Local Connect vertical slice is durable and restart-safe for the folder pilot.
+
+## Current Connect status (2026-11-06 operator diagnostics)
+- connect_health.py now reports permissions_entries and explicit_read_false counts when a living package path is supplied.
+- Gives operators visibility into Connect-stored permission metadata without opening the package.
+- Regression added and targeted Connect suite: 32 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 operator visibility for security-related state.
