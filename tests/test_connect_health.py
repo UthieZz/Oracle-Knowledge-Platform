@@ -35,6 +35,7 @@ def test_connect_health_cli_on_fresh_db_reports_zeros_and_exits_zero(tmp_path: P
     assert "last_processed=none" in out
     assert "cursors=0" in out
     assert f"db={db}" in out or str(db) in out
+    assert "status=OK" in out
 
 
 def test_connect_health_reports_permission_summary_when_package_supplied(tmp_path: Path):
@@ -61,3 +62,4 @@ def test_connect_health_reports_permission_summary_when_package_supplied(tmp_pat
     out = result.stdout
     assert "permissions_entries=2" in out
     assert "explicit_read_false=1" in out
+    assert "status=OK" in out

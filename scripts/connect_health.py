@@ -108,6 +108,21 @@ def main() -> None:
     if len(sys.argv) >= 4:
         _report_snapshot(Path(sys.argv[3]))
 
+    # Operator summary line for quick status
+    status = "OK"
+    reasons = []
+    if h.get("failed", 0) > 0:
+        status = "WARNING"
+        reasons.append(f"failed={h.get('failed')}")
+    if len(sys.argv) >= 3 and not Path(sys.argv[2]).exists():
+        status = "WARNING"
+        reasons.append("package_missing")
+    if len(sys.argv) >= 4 and not Path(sys.argv[3]).exists():
+        status = "WARNING"
+        reasons.append("snapshot_missing")
+    reason_s = " (" + ",".join(reasons) + ")" if reasons else ""
+    print(f"status={status}{reason_s}")
+
 
 if __name__ == "__main__":
     main()

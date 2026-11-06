@@ -65,3 +65,9 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_connect_health_reports_permission_summary_when_package_supplied.
 - Targeted Connect suite: 32 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 diagnostics without altering retrieval or accumulator logic.
+
+## 2026-11-06 (operator status summary in health)
+- Enhanced scripts/connect_health.py to emit a single status=OK|WARNING line at the end, with reasons for failed events, missing package, or missing snapshot.
+- Updated existing regression tests to assert the status line.
+- Targeted Connect suite: 32 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 operator visibility for quick health assessment.

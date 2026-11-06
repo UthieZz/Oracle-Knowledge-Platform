@@ -42,3 +42,9 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - Gives operators visibility into Connect-stored permission metadata without opening the package.
 - Regression added and targeted Connect suite: 32 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operator visibility for security-related state.
+
+## Current Connect status (2026-11-06 operator status summary)
+- connect_health.py now ends with a status=OK|WARNING line summarizing failed count, package presence, and snapshot presence.
+- Gives operators an immediate overall health signal.
+- Regression coverage updated; targeted Connect suite 32 passed.
+- Knowledge Core IR unchanged.
