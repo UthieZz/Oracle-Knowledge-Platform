@@ -108,9 +108,23 @@ def main() -> None:
                 print(
                     f"package=OK objects={actual} meta_object_count={meta_count} {consistent_s} "
                     f"permissions_entries={perm_count} explicit_read_false={read_false} "
+                    f"last_source={pkg.metadata.get('last_source', 'none')} "
                     f"mtime={mtime:.0f} path={pkg_path}"
                 )
                 pkg_state = "ok" if consistent else "mismatch"
+                # Package freshness lag vs last processed (operator signal for stalled persist)
+                last_p_str = h.get("last_processed_at")
+                if last_p_str and last_p_str != "none":
+                    try:
+                        from datetime import datetime
+                        last_p_dt = datetime.fromisoformat(last_p_str.replace("Z", "+00:00"))
+                        lag = max(0, mtime - last_p_dt.timestamp())
+                        print(f"package_lag_seconds={lag:.0f} (package mtime - last_processed)")
+                        if lag > 300:
+                            # Note: not auto-WARNING yet; operators decide; surface the number
+                            pass
+                    except Exception:
+                        pass
             except Exception as exc:
                 print(f"package=UNREADABLE error={exc} path={pkg_path}")
                 pkg_state = "unreadable"

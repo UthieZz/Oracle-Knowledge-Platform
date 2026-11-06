@@ -55,3 +55,8 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - New regressions cover unreadable package, count mismatch, and unreadable snapshot.
 - Targeted Connect suite (health + related): 5 passed in this change; prior 32 remains green for the surface.
 - Knowledge Core IR unchanged. Advances Connect P3 operator visibility for package/snapshot integrity.
+
+## Current Connect status (2026-11-06 package freshness diagnostics)
+- connect_health.py now reports last_source and package_lag_seconds (when last_processed_at present) for operator visibility into package freshness.
+- Regression added. Knowledge Core IR unchanged. Advances P3 diagnostics.
+

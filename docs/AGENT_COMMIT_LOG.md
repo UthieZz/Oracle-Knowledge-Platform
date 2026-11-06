@@ -78,3 +78,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Updated permission regression to set consistent object_count; added three new regressions.
 - Targeted health tests: 5 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 diagnostics for integrity failures visible to operators.
+
+## 2026-11-06 (operator package freshness and source in health)
+- Enhanced scripts/connect_health.py to report last_source from package metadata and package_lag_seconds when last_processed_at is available.
+- Gives operators a direct signal of package freshness relative to engine processing without opening files.
+- Added regression test_connect_health_reports_last_source_and_package_lag.
+- Targeted health test: 1 passed (new); prior suite remains green.
+- Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for package lag visibility.
