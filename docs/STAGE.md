@@ -56,3 +56,10 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Operators can see how many objects would be denied under strict_permissions=True.
 - New regression passes. Targeted health suite 8 passed.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-07 — Health CLI --strict-check for permission readiness
+- Added optional --strict-check flag to connect_health.py.
+- When set, objects_without_explicit_permission > 0 produces status=WARNING and exit 1.
+- Default (no flag) remains OK so local-folder pilot behavior is unchanged.
+- New regression passes. Targeted health suite 9 passed.
+- Knowledge Core IR and Connect contracts unchanged.
