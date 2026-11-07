@@ -28,3 +28,8 @@ Implemented and targeted-tested:
 ## Next
 
 P1 authorization consistency or full optional-deps suite + Studio build verification.
+
+## 2026-11-07 — Health CLI regression expansion
+- Added tests for snapshot_missing, package_unreadable, and failed_events warnings (exit 1).
+- Targeted health tests: 7 passed.
+- Connect path and Knowledge Core IR unchanged.
