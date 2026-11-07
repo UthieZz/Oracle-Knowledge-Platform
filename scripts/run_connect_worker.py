@@ -25,6 +25,11 @@ import sys
 import time
 from pathlib import Path
 
+# Bootstrap project root so `python scripts/run_connect_worker.py` works without PYTHONPATH
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from okc.connect.knowledge_accumulator import KnowledgeAccumulator
 from okc.connect.local_folder_connector import LocalFolderConnector
 from okc.connect.sync_engine import SyncEngine

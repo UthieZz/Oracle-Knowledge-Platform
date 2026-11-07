@@ -16,6 +16,11 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Bootstrap project root so `python scripts/connect_health.py` works without PYTHONPATH
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from okc.connect.sync_engine import SyncEngine
 from okc.models.knowledge_package import KnowledgePackage
 
