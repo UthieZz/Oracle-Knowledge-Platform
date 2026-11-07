@@ -31,7 +31,6 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Targeted Connect suite: 31 passed (prior 30 + new cursor test).
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics without new infrastructure.
 
-
 ## 2026-11-05 (multi-instance queue visibility)
 - Added regression test_multi_instance_same_db_enqueue_process_visibility: two SyncEngine instances on the same DB see enqueue, process_next, cursor advance, and health consistently. Sequential multi-instance baseline for multi-process durability.
 - Targeted Connect suite: 32 passed (prior 31 + new test).
@@ -105,13 +104,11 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Targeted health suite: 8 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics.
 
-
 ## 2026-11-06 (operator waiting retry warning in health)
 - Enhanced scripts/connect_health.py to set status=WARNING waiting_retry_high when waiting_for_retry > 5.
 - Added regression test_connect_health_warns_on_high_waiting_retry.
 - Targeted health suite: 9 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for backoff stall signals.
-
 
 ## 2026-11-06 (operator no-ready-events warning in health)
 - Enhanced scripts/connect_health.py to set status=WARNING no_ready_events when queued > 0 and ready_to_process == 0.
@@ -125,3 +122,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Updated all WARNING regressions in tests/test_connect_health.py to assert returncode == 1.
 - Targeted health suite: 10 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operational usability.
+
+## 2026-11-07 (roadmap status alignment with STAGE evidence)
+- Updated ROADMAP.md date and current implementation snapshot to 2026-11-07.
+- Marked P0 local-folder Connect vertical slice as largely complete (snapshot persistence, scoped identity, crash boundaries, retry, real restart convergence, operator health diagnostics including status=WARNING exit 1).
+- Targeted Connect suite confirmed 40 passed in this environment.
+- Remaining open: full optional-deps suite, P1 authorization consistency, src/okc reconciliation, real business connector, deployed runtime.
+- Knowledge Core IR unchanged. Advances documentation accuracy for B2B diligence and subsequent agent priority selection.
