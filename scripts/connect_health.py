@@ -172,6 +172,9 @@ def main() -> None:
         reasons.append("no_ready_events")
     reason_s = " (" + ",".join(reasons) + ")" if reasons else ""
     print(f"status={status}{reason_s}")
+    # Non-zero exit on WARNING so operators/monitoring can detect issues
+    if status == "WARNING":
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -83,7 +83,7 @@ def test_connect_health_warns_on_unreadable_package(tmp_path: Path):
         check=False,
         env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
     out = result.stdout
     assert "package=UNREADABLE" in out
     assert "status=WARNING" in out
@@ -110,7 +110,7 @@ def test_connect_health_warns_on_package_count_mismatch(tmp_path: Path):
         check=False,
         env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
     out = result.stdout
     assert "MISMATCH" in out
     assert "status=WARNING" in out
@@ -132,7 +132,7 @@ def test_connect_health_warns_on_unreadable_snapshot(tmp_path: Path):
         check=False,
         env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
     out = result.stdout
     assert "snapshot=UNREADABLE" in out
     assert "status=WARNING" in out
@@ -210,7 +210,7 @@ def test_connect_health_warns_on_high_package_lag(tmp_path: Path):
         check=False,
         env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
     out = result.stdout
     assert "package_lag_seconds=" in out
     assert "status=WARNING" in out
@@ -243,7 +243,7 @@ def test_connect_health_warns_on_high_queue_age(tmp_path: Path):
         check=False,
         env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
     out = result.stdout
     assert "oldest_queued=" in out
     assert "status=WARNING" in out
@@ -275,7 +275,7 @@ def test_connect_health_warns_on_high_waiting_retry(tmp_path: Path):
         check=False,
         env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
     out = result.stdout
     assert "waiting_retry=6" in out
     assert "status=WARNING" in out
@@ -306,7 +306,7 @@ def test_connect_health_warns_on_no_ready_events(tmp_path: Path):
         check=False,
         env={**dict(**__import__("os").environ), "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
     out = result.stdout
     assert "ready=0" in out
     assert "queued=1" in out

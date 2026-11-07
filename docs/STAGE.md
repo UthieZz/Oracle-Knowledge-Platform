@@ -89,3 +89,10 @@ Next highest-leverage: additional crash-boundary cases or expand operator diagno
 - Signals that all queued events are waiting for retry (nothing immediately processable).
 - Regression added. Targeted health suite: 10 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for stalled processing.
+
+## Current Connect status (2026-11-07 health exit code)
+- connect_health.py now exits with code 1 when status=WARNING (any reason).
+- Exit 0 only on status=OK. Enables scripting/monitoring without parsing output.
+- Regression tests updated to assert returncode==1 on all WARNING paths.
+- Targeted health suite: 10 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics usability.

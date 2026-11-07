@@ -118,3 +118,10 @@ Knowledge Core IR unchanged. Advances Connect P0/P3 operator visibility and docu
 - Added regression test_connect_health_warns_on_no_ready_events.
 - Targeted health suite: 10 passed.
 - Knowledge Core IR unchanged. Advances Connect P3 operator diagnostics for cases where the queue is non-empty but nothing is immediately eligible for processing.
+
+## 2026-11-07 (health CLI non-zero exit on WARNING)
+- Enhanced scripts/connect_health.py to sys.exit(1) when status=WARNING.
+- Operators and monitoring can now treat non-zero exit as actionable without scraping stdout.
+- Updated all WARNING regressions in tests/test_connect_health.py to assert returncode == 1.
+- Targeted health suite: 10 passed.
+- Knowledge Core IR unchanged. Advances Connect P3 operational usability.
