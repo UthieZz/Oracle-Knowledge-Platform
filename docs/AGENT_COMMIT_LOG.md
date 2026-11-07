@@ -13,3 +13,9 @@
 - All emit status=WARNING and exit 1.
 - pytest tests/test_connect_health.py → 7 passed.
 - Strengthens operator diagnostics verification for the local-folder pilot.
+
+## 2026-11-07 — Explicit permission modes in retriever
+- Added strict_permissions flag to KnowledgePackageRetriever (default False).
+- Documents and tests pilot compatibility (missing entry visible) vs production fail-closed (missing denied).
+- Advances P1 authorization consistency without breaking existing behavior.
+- Tests: tests/test_knowledge_accumulator.py → 8 passed.

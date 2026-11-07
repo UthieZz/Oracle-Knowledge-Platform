@@ -298,3 +298,50 @@ def test_reprocess_after_package_persist_is_idempotent(tmp_path):
     on_disk = KnowledgePackage.from_json(Path(pkg_path).read_text(encoding="utf-8"))
     assert len(on_disk.objects) == 1
     assert on_disk.objects[0].object_id == original_obj_id
+
+
+def test_missing_permission_entry_visible_by_default(tmp_path):
+    """Documented compatibility: no permissions entry means object remains visible."""
+    acc = KnowledgeAccumulator()
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "visible knowledge"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(create)
+    retriever = KnowledgePackageRetriever(acc.package)  # strict_permissions=False
+    hits = retriever.retrieve(_request("visible"))
+    assert len(hits) == 1
+
+
+def test_missing_permission_entry_denied_in_strict_mode(tmp_path):
+    """Production mode: absence of permission entry is treated as denial."""
+    acc = KnowledgeAccumulator()
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "restricted knowledge"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(create)
+    retriever = KnowledgePackageRetriever(acc.package, strict_permissions=True)
+    hits = retriever.retrieve(_request("restricted"))
+    assert len(hits) == 0
+
+    # Explicit allow restores visibility even in strict mode
+    allow = SyncEvent(
+        event_id="p1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": True},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(allow)
+    hits_allowed = retriever.retrieve(_request("restricted"))
+    assert len(hits_allowed) == 1

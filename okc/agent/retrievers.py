@@ -37,9 +37,17 @@ class KnowledgePackageRetriever:
     Unrelated objects stay in the package; they are not deleted.
     """
 
-    def __init__(self, package: KnowledgePackage, min_score: float = 0.0) -> None:
+    def __init__(
+        self,
+        package: KnowledgePackage,
+        min_score: float = 0.0,
+        strict_permissions: bool = False,
+    ) -> None:
         self.package = package
         self.min_score = min_score
+        # strict_permissions=False (default): objects without a permissions entry remain visible
+        # (documented pilot compatibility). True: missing entry is treated as denied (production mode).
+        self.strict_permissions = strict_permissions
 
     def retrieve(self, request: AgentContextRequest) -> Sequence[KnowledgeObject]:
         raw_permissions = self.package.metadata.get("permissions", {})
@@ -57,11 +65,17 @@ class KnowledgePackageRetriever:
                 if rid.startswith("src:")
             ]
             forbidden = False
+            has_explicit = False
             for src_id in src_ids:
                 perm = permissions.get(src_id)
-                if perm is not None and perm.get("read") is False:
-                    forbidden = True
-                    break
+                if perm is not None:
+                    has_explicit = True
+                    if perm.get("read") is False:
+                        forbidden = True
+                        break
+            if not forbidden and self.strict_permissions and src_ids and not has_explicit:
+                # Production mode: absence of a permission record is denial.
+                forbidden = True
             if forbidden:
                 continue
             score = _score(request, obj)

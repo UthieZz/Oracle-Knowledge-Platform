@@ -33,3 +33,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Added tests for snapshot_missing, package_unreadable, and failed_events warnings (exit 1).
 - Targeted health tests: 7 passed.
 - Connect path and Knowledge Core IR unchanged.
+
+## 2026-11-07 — Permission mode for retrieval
+- KnowledgePackageRetriever now accepts optional strict_permissions (default False).
+- False preserves documented pilot compatibility: missing permission entry remains visible.
+- True treats missing entry as denial (production-oriented fail-closed).
+- Explicit read=False still excludes in both modes; explicit read=True allows.
+- New tests: missing visible by default; missing denied in strict; explicit allow restores in strict.
+- Targeted accumulator tests: 8 passed.
+- Knowledge Core IR and Connect contracts unchanged.
