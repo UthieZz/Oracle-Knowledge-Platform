@@ -103,7 +103,7 @@ Manual import remains a supported fallback. The product goal is to reduce repeat
 1. Define an explicit access-policy model for tenant, silo, user/source permissions and missing permission data.
 2. Apply and test policy at ingestion, queue processing, package access, retrieval, context construction, publishing/export and administrative operations.
 3. Test read revocation after prior retrieval, context/cache invalidation, deletion, restoration and tenant/silo mismatch.
-4. Document the current compatibility behavior where objects without a permission entry remain visible; decide whether pilot and production modes need different defaults.
+4. Document the current compatibility behavior where objects without a permission entry remain visible; decide whether pilot and production modes need different defaults. **Done for pilot:** see docs/PERMISSION_MODEL.md (default visible; strict_permissions and --strict-check available).
 5. Trace provenance from source through importer, compiler, package persistence, exporter, retrieval and final citation. Ensure a cited source actually supports the answer rather than being attached merely because it was retrieved.
 6. Reconcile provenance and source-identity handling across `okc/` and `src/`, especially where exporter object identity or relationship/attachment lineage may differ.
 7. Document retention and deletion semantics for packages, exports, caches, backups and tenant offboarding.

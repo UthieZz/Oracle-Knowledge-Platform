@@ -75,3 +75,9 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Strengthens operator diagnostics for restart recovery reliability.
 - Targeted health suite: 11 passed.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-07 — Document intentional permission model
+- Added docs/PERMISSION_MODEL.md.
+- Explicitly records default pilot behavior (missing entry remains visible), strict_permissions mode, health CLI visibility, and what the model is not.
+- Advances P1 acceptance criterion: default permission behavior is documented and intentional.
+- No code, IR, or contract change. Health and accumulator tests remain green.

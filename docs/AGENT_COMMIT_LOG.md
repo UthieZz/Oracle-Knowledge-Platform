@@ -51,3 +51,9 @@
 - Confirms existing check (implemented in connect_health.py) emits WARNING + exit 1 on corrupted snapshot.
 - pytest tests/test_connect_health.py → 11 passed.
 - Advances operational visibility for the local-folder pilot without IR or contract change.
+
+## 2026-11-07 — Document permission model
+- Created docs/PERMISSION_MODEL.md describing current intentional retrieval permission behavior.
+- Default (missing entry visible) vs strict mode, health --strict-check, and explicit limitations.
+- Supports P1 without altering runtime.
+- No tests required (documentation only). Prior targeted suites still pass.
