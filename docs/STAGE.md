@@ -63,3 +63,9 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Default (no flag) remains OK so local-folder pilot behavior is unchanged.
 - New regression passes. Targeted health suite 9 passed.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-07 — Health CLI object_count_mismatch regression
+- Added regression confirming metadata object_count != actual objects produces status=WARNING and exit 1.
+- Strengthens operator diagnostics for package consistency after interrupted persists or manual edits.
+- Targeted health suite: 10 passed.
+- Knowledge Core IR and Connect contracts unchanged.

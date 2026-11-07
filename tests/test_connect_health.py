@@ -188,3 +188,37 @@ def test_connect_health_strict_check_warns_on_missing_permission(tmp_path: Path)
     assert r2.returncode == 1
     assert "status=WARNING" in r2.stdout
     assert "objects_without_explicit_permission" in r2.stdout
+
+
+def test_connect_health_warns_on_object_count_mismatch(tmp_path: Path):
+    """Metadata object_count must match actual objects; mismatch is operator WARNING.
+    Prevents silent inconsistency after interrupted persists or manual edits.
+    """
+    from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+    from okc.connect.sync_engine import SyncEngine
+    from okc.connect.interfaces import SyncEvent
+    import json
+
+    db = tmp_path / "sync.db"
+    pkg = tmp_path / "pkg.json"
+    SyncEngine(str(db))
+    acc = KnowledgeAccumulator(package_path=str(pkg))
+    event = SyncEvent(
+        event_id="e1",
+        source="local",
+        kind="create",
+        payload={"object_id": "doc1", "text": "content"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(event)
+
+    # Corrupt metadata object_count while leaving actual objects unchanged
+    raw = json.loads(pkg.read_text(encoding="utf-8"))
+    raw["metadata"]["object_count"] = 999
+    pkg.write_text(json.dumps(raw), encoding="utf-8")
+
+    r = _run_health("--db", str(db), "--package", str(pkg))
+    assert r.returncode == 1
+    assert "status=WARNING" in r.stdout
+    assert "object_count_mismatch" in r.stdout

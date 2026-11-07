@@ -39,3 +39,9 @@
 - Default invocation unchanged (pilot remains OK).
 - Regression: tests/test_connect_health.py::test_connect_health_strict_check_warns_on_missing_permission → passed.
 - Health suite 9 passed. No IR or contract change.
+
+## 2026-11-07 — Health CLI object_count_mismatch regression
+- Added test_connect_health_warns_on_object_count_mismatch.
+- Confirms existing check (implemented in connect_health.py) emits WARNING + exit 1 on metadata/object mismatch.
+- pytest tests/test_connect_health.py → 10 passed.
+- Advances operational visibility for the local-folder pilot without IR or contract change.
