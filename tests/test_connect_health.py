@@ -116,3 +116,39 @@ def test_connect_health_warns_on_failed_events(tmp_path: Path):
     assert r.returncode == 1
     assert "status=WARNING" in r.stdout
     assert "failed_events" in r.stdout
+
+
+def test_connect_health_reports_objects_without_explicit_permission(tmp_path: Path):
+    """Operator visibility: count objects that have src markers but no permission entry.
+    Advances P1/P3 by making the pilot vs strict_permissions gap inspectable.
+    """
+    from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+    from okc.connect.sync_engine import SyncEngine
+    from okc.models.knowledge_package import KnowledgePackage
+
+    db = tmp_path / "sync.db"
+    pkg_path = tmp_path / "pkg.json"
+    SyncEngine(str(db))
+
+    # Minimal package with one object lacking a permission entry
+    from okc.models.knowledge_package import KnowledgeObject, Provenance
+    obj = KnowledgeObject(
+        object_id="obj1",
+        title="t",
+        content="c",
+        provenance=Provenance(
+            source_platform="local",
+            source_file="file1",
+            tenant_id="t1",
+            silo_id="s1",
+            source_record_ids=["src:local|t1|s1|file1"],
+        ),
+    )
+    pkg = KnowledgePackage(package_id="pkg1", objects=[obj], metadata={"permissions": {}})
+    pkg_path.write_text(pkg.to_json(), encoding="utf-8")
+
+    r = _run_health("--db", str(db), "--package", str(pkg_path), "--json")
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["package"]["objects_without_explicit_permission"] == 1
+    assert data["package"]["permissions_entries"] == 0

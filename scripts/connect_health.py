@@ -38,11 +38,20 @@ def _package_info(package_path: str | None) -> dict:
         pkg = KnowledgePackage.from_json(p.read_text(encoding="utf-8"))
         info["object_count"] = len(pkg.objects)
         info["readable"] = True
-        info["permissions_entries"] = len(pkg.metadata.get("permissions") or {})
+        perms = pkg.metadata.get("permissions") or {}
+        info["permissions_entries"] = len(perms)
         info["explicit_read_false"] = sum(
-            1 for v in (pkg.metadata.get("permissions") or {}).values()
+            1 for v in perms.values()
             if isinstance(v, dict) and v.get("read") is False
         )
+        # Count objects that have a src: marker but no matching permission entry.
+        # Useful for operators deciding when to enable strict_permissions.
+        missing = 0
+        for obj in pkg.objects:
+            src_ids = [rid[4:] for rid in (obj.provenance.source_record_ids or []) if rid.startswith("src:")]
+            if src_ids and not any(sid in perms for sid in src_ids):
+                missing += 1
+        info["objects_without_explicit_permission"] = missing
         info["last_source"] = pkg.metadata.get("last_source")
     except Exception as exc:  # noqa: BLE001
         info["error"] = str(exc)[:200]
@@ -176,7 +185,10 @@ def main() -> None:
         print(f"last_processed_at={summary['last_processed_at']}")
         print(f"package_lag_seconds={summary['package_lag_seconds']}")
         if args.package:
-            print(f"package_exists={summary['package']['exists']} readable={summary['package']['readable']} object_count={summary['package']['object_count']}")
+            pkg = summary['package']
+            print(f"package_exists={pkg['exists']} readable={pkg['readable']} object_count={pkg['object_count']}")
+            if pkg.get('readable'):
+                print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)}")
         if args.snapshot:
             print(f"snapshot_exists={summary['snapshot']['exists']} readable={summary['snapshot']['readable']}")
 

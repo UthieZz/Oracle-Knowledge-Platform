@@ -49,3 +49,10 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Explicit permission_change (read=True) restores the object through the same gateway path.
 - Test: tests/test_agent_context_gateway.py::test_gateway_respects_strict_retriever_missing_permission → passed.
 - No change to KnowledgePackage IR, Connect contract, or default (pilot) permission behavior.
+
+
+## 2026-11-07 — Health CLI permission gap visibility
+- connect_health.py now reports objects_without_explicit_permission for readable packages.
+- Operators can see how many objects would be denied under strict_permissions=True.
+- New regression passes. Targeted health suite 8 passed.
+- Knowledge Core IR and Connect contracts unchanged.

@@ -26,3 +26,10 @@
 - Confirms denied objects (missing permission entry) are not reintroduced at context construction.
 - Explicit allow still works. 18 related tests passed.
 - Advances P1 authorization consistency evidence without altering default pilot behavior.
+
+
+## 2026-11-07 — Health CLI reports objects without explicit permission
+- Added objects_without_explicit_permission count to package health summary (text and JSON).
+- Makes the pilot (missing entry visible) vs production strict_permissions gap inspectable by operators.
+- Test: tests/test_connect_health.py::test_connect_health_reports_objects_without_explicit_permission → passed.
+- Health suite 8 passed. No IR or contract change.
