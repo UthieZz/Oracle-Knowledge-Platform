@@ -152,3 +152,39 @@ def test_connect_health_reports_objects_without_explicit_permission(tmp_path: Pa
     data = json.loads(r.stdout)
     assert data["package"]["objects_without_explicit_permission"] == 1
     assert data["package"]["permissions_entries"] == 0
+
+
+def test_connect_health_strict_check_warns_on_missing_permission(tmp_path: Path):
+    """--strict-check elevates objects_without_explicit_permission to WARNING.
+    Default (no flag) remains OK so pilot behavior is unchanged.
+    """
+    from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+    from okc.connect.sync_engine import SyncEngine
+    from okc.connect.interfaces import SyncEvent
+
+    db = tmp_path / "sync.db"
+    pkg = tmp_path / "pkg.json"
+    SyncEngine(str(db))
+    acc = KnowledgeAccumulator(package_path=str(pkg))
+    # Create an object with no permission entry
+    event = SyncEvent(
+        event_id="e1",
+        source="local",
+        kind="create",
+        payload={"object_id": "doc1", "text": "hello visible"},
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    acc.process(event)
+
+    # Default: OK
+    r = _run_health("--db", str(db), "--package", str(pkg))
+    assert r.returncode == 0
+    assert "status=OK" in r.stdout
+    assert "objects_without_explicit_permission=1" in r.stdout
+
+    # With --strict-check: WARNING
+    r2 = _run_health("--db", str(db), "--package", str(pkg), "--strict-check")
+    assert r2.returncode == 1
+    assert "status=WARNING" in r2.stdout
+    assert "objects_without_explicit_permission" in r2.stdout
