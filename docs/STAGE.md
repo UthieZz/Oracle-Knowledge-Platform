@@ -42,3 +42,10 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New tests: missing visible by default; missing denied in strict; explicit allow restores in strict.
 - Targeted accumulator tests: 8 passed.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-07 — Strict permission boundary at context gateway
+
+- Added regression: ContextGateway + KnowledgePackageRetriever(strict_permissions=True) does not return objects lacking an explicit permission entry.
+- Explicit permission_change (read=True) restores the object through the same gateway path.
+- Test: tests/test_agent_context_gateway.py::test_gateway_respects_strict_retriever_missing_permission → passed.
+- No change to KnowledgePackage IR, Connect contract, or default (pilot) permission behavior.

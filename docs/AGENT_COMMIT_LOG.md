@@ -19,3 +19,10 @@
 - Documents and tests pilot compatibility (missing entry visible) vs production fail-closed (missing denied).
 - Advances P1 authorization consistency without breaking existing behavior.
 - Tests: tests/test_knowledge_accumulator.py → 8 passed.
+
+## 2026-11-07 — Strict permission gateway boundary test
+
+- Added test linking KnowledgePackageRetriever(strict_permissions=True) to ContextGateway.
+- Confirms denied objects (missing permission entry) are not reintroduced at context construction.
+- Explicit allow still works. 18 related tests passed.
+- Advances P1 authorization consistency evidence without altering default pilot behavior.

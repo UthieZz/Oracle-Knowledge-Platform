@@ -49,3 +49,49 @@ def test_gateway_rejects_cross_silo_context():
     except ContextAccessError:
         return
     raise AssertionError("Cross-silo KnowledgeObject was not rejected.")
+
+
+def test_gateway_respects_strict_retriever_missing_permission():
+    """P1 boundary: ContextGateway does not reintroduce objects denied by a strict-mode retriever.
+    Missing permission entry is treated as denial when the retriever is constructed with strict_permissions=True.
+    """
+    from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+    from okc.connect.interfaces import SyncEvent
+    from okc.agent.retrievers import KnowledgePackageRetriever
+
+    acc = KnowledgeAccumulator()
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "restricted knowledge"},
+        tenant_id="acme",
+        silo_id="finance",
+    )
+    acc.process(create)
+
+    # Strict retriever denies objects lacking an explicit permission entry
+    retriever = KnowledgePackageRetriever(acc.package, strict_permissions=True)
+    request = AgentContextRequest(
+        request_id="req_strict",
+        tenant_id="acme",
+        silo_id="finance",
+        agent_id="agent_1",
+        task="restricted knowledge",
+    )
+    package = ContextGateway(retriever).build(request)
+    assert len(package.items) == 0
+
+    # Explicit allow restores the object through the same gateway path
+    allow = SyncEvent(
+        event_id="p1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": True},
+        tenant_id="acme",
+        silo_id="finance",
+    )
+    acc.process(allow)
+    package_allowed = ContextGateway(retriever).build(request)
+    assert len(package_allowed.items) == 1
+    assert package_allowed.items[0].title or package_allowed.items[0].content
