@@ -222,3 +222,19 @@ def test_connect_health_warns_on_object_count_mismatch(tmp_path: Path):
     assert r.returncode == 1
     assert "status=WARNING" in r.stdout
     assert "object_count_mismatch" in r.stdout
+
+
+def test_connect_health_warns_on_unreadable_snapshot(tmp_path: Path):
+    """Unreadable snapshot JSON is an operator WARNING.
+    Prevents silent reliance on a corrupted restart snapshot.
+    """
+    db = tmp_path / "sync.db"
+    from okc.connect.sync_engine import SyncEngine
+    SyncEngine(str(db))
+    bad = tmp_path / "bad.snapshot.json"
+    bad.write_text("not-json", encoding="utf-8")
+
+    r = _run_health("--db", str(db), "--snapshot", str(bad))
+    assert r.returncode == 1
+    assert "status=WARNING" in r.stdout
+    assert "snapshot_unreadable" in r.stdout

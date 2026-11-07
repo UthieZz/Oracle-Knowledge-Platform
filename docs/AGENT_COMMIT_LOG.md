@@ -45,3 +45,9 @@
 - Confirms existing check (implemented in connect_health.py) emits WARNING + exit 1 on metadata/object mismatch.
 - pytest tests/test_connect_health.py → 10 passed.
 - Advances operational visibility for the local-folder pilot without IR or contract change.
+
+## 2026-11-07 — Health CLI snapshot_unreadable regression
+- Added test_connect_health_warns_on_unreadable_snapshot.
+- Confirms existing check (implemented in connect_health.py) emits WARNING + exit 1 on corrupted snapshot.
+- pytest tests/test_connect_health.py → 11 passed.
+- Advances operational visibility for the local-folder pilot without IR or contract change.

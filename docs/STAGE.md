@@ -69,3 +69,9 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Strengthens operator diagnostics for package consistency after interrupted persists or manual edits.
 - Targeted health suite: 10 passed.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-07 — Health CLI snapshot_unreadable regression
+- Added regression confirming unreadable snapshot JSON produces status=WARNING and exit 1.
+- Strengthens operator diagnostics for restart recovery reliability.
+- Targeted health suite: 11 passed.
+- Knowledge Core IR and Connect contracts unchanged.
