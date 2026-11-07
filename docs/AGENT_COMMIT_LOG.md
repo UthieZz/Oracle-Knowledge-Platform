@@ -33,3 +33,9 @@
 - Makes the pilot (missing entry visible) vs production strict_permissions gap inspectable by operators.
 - Test: tests/test_connect_health.py::test_connect_health_reports_objects_without_explicit_permission → passed.
 - Health suite 8 passed. No IR or contract change.
+
+## 2026-11-07 — Health CLI --strict-check
+- Added optional --strict-check flag. When present, objects_without_explicit_permission > 0 sets status=WARNING (exit 1).
+- Default invocation unchanged (pilot remains OK).
+- Regression: tests/test_connect_health.py::test_connect_health_strict_check_warns_on_missing_permission → passed.
+- Health suite 9 passed. No IR or contract change.
