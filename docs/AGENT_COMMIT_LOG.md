@@ -64,3 +64,11 @@
 - Change: `--config` JSON accepted by both scripts; CLI overrides config; validation of required fields preserved.
 - Verification: pytest tests/test_connect_health.py tests/test_sync_engine.py tests/test_knowledge_accumulator.py tests/test_local_folder_connector.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_agent_context_gateway.py → 44 passed.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-08 — Health CLI text output for config-resolved paths
+
+- Problem: text-mode health omitted package/snapshot details when paths were supplied only via `--config`.
+- Change: print conditions now use resolved package/snapshot variables.
+- Verification: pytest tests/test_connect_health.py → includes new regression; prior targeted suites remain green.
+- Added docs/CONNECT_LOCAL_PILOT.md.
+- Knowledge Core IR and Connect contracts unchanged.

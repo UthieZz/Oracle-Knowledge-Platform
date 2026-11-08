@@ -211,12 +211,12 @@ def main() -> None:
         print(f"oldest_queued_age_seconds={summary['oldest_queued_age_seconds']}")
         print(f"last_processed_at={summary['last_processed_at']}")
         print(f"package_lag_seconds={summary['package_lag_seconds']}")
-        if args.package:
+        if package:
             pkg = summary['package']
             print(f"package_exists={pkg['exists']} readable={pkg['readable']} object_count={pkg['object_count']}")
             if pkg.get('readable'):
                 print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)}")
-        if args.snapshot:
+        if snapshot:
             print(f"snapshot_exists={summary['snapshot']['exists']} readable={summary['snapshot']['readable']}")
 
     if summary["status"] == "WARNING":

@@ -259,3 +259,20 @@ def test_connect_health_accepts_config_file(tmp_path):
     data = json.loads(r.stdout)
     assert data["status"] in ("OK", "WARNING")
     assert data["db_path"] == str(db)
+
+
+def test_connect_health_text_output_uses_config_package(tmp_path: Path):
+    """Text mode reports package details when package comes from --config, not only CLI flag."""
+    db = tmp_path / "sync.db"
+    pkg = tmp_path / "pkg.json"
+    cfg = tmp_path / "config.json"
+    pkg.write_text('{"schema_version":"2.0.0","package_id":"test-pkg","objects":[],"metadata":{}}')
+    cfg.write_text(json.dumps({"db": str(db), "package": str(pkg)}))
+    from okc.connect.sync_engine import SyncEngine
+    SyncEngine(str(db))
+
+    r = _run_health("--config", str(cfg))
+    assert r.returncode == 0, r.stderr
+    assert "status=OK" in r.stdout
+    assert "package_exists=True" in r.stdout
+    assert "object_count=0" in r.stdout

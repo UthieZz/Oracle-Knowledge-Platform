@@ -126,6 +126,7 @@ Manual import remains a supported fallback. The product goal is to reduce repeat
 ### P3 — Operate the local pilot reliably
 
 **Recent (2026-11-08):** Optional JSON config file support added to health and worker CLIs (CLI overrides config). Reduces operator argument repetition for the local pilot.
+**Recent (2026-11-08 continued):** Health CLI text output now reports package/snapshot details when paths come from `--config`. Added `docs/CONNECT_LOCAL_PILOT.md` with exact operator commands and config example.
 
 **Goal:** Turn the runner into a repeatable pilot installation without prematurely building a full control plane.
 

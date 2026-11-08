@@ -96,3 +96,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New regression: tests/test_knowledge_accumulator.py::test_malformed_permission_change_is_ignored → passed.
 - Targeted accumulator suite: 9 passed.
 - Knowledge Core IR, Connect contract, and default (pilot) retrieval behavior unchanged.
+
+## 2026-11-08 — Health CLI text output respects config paths (P3 operator UX)
+
+- Fixed: text-mode package and snapshot details now print when paths come from `--config` (previously required the CLI flag).
+- New regression: tests/test_connect_health.py::test_connect_health_text_output_uses_config_package → passed.
+- Targeted health suite remains green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Added docs/CONNECT_LOCAL_PILOT.md with exact config and invocation examples.
