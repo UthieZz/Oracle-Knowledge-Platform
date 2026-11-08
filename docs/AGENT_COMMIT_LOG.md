@@ -109,3 +109,10 @@
 - Change: added optional --source to connect_recover.py --list; filters list_failed_details by source.
 - Verification: pytest tests/test_connect_recover.py → includes new regression; targeted suite green.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-08 — Recovery CLI lists tenant and silo (P3)
+
+- Problem: operators listing failed events saw source/kind but not the tenant/silo scope of the failure.
+- Change: list_failed_details and text --list now include tenant_id and silo_id.
+- Verification: pytest tests/test_connect_recover.py tests/test_sync_engine.py → 12 passed.
+- Knowledge Core IR and Connect contracts unchanged.

@@ -249,16 +249,18 @@ class SyncEngine:
             return [r["event_id"] for r in rows]
 
     def list_failed_details(self) -> List[Dict[str, Any]]:
-        """Return failed events with source, kind, last_error and attempts for operator diagnostics."""
+        """Return failed events with source, kind, tenant, silo, last_error and attempts for operator diagnostics."""
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT event_id, source, kind, last_error, attempts, enqueued_at FROM events WHERE status = 'failed' ORDER BY enqueued_at"
+                "SELECT event_id, source, kind, tenant_id, silo_id, last_error, attempts, enqueued_at FROM events WHERE status = 'failed' ORDER BY enqueued_at"
             ).fetchall()
             return [
                 {
                     "event_id": r["event_id"],
                     "source": r["source"],
                     "kind": r["kind"],
+                    "tenant_id": r["tenant_id"],
+                    "silo_id": r["silo_id"],
                     "last_error": r["last_error"],
                     "attempts": r["attempts"],
                     "enqueued_at": r["enqueued_at"],

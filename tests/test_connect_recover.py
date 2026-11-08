@@ -36,6 +36,8 @@ def test_connect_recover_lists_and_resets(tmp_path: Path):
     assert "fail-1" in proc.stdout
     assert "source=local_folder" in proc.stdout
     assert "kind=create" in proc.stdout
+    assert "tenant=t" in proc.stdout
+    assert "silo=s" in proc.stdout
     assert "enqueued=" in proc.stdout
 
     # Reset

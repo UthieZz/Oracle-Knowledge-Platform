@@ -158,3 +158,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New regression: tests/test_connect_recover.py::test_connect_recover_filters_by_source → passed.
 - Targeted recovery suite green. Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 operator diagnostics for the local pilot.
+
+## 2026-11-08 — Recovery CLI lists tenant and silo (P3)
+
+- list_failed_details now returns tenant_id and silo_id for failed events.
+- scripts/connect_recover.py --list text output displays them so operators can identify the failing scope without DB inspection.
+- New assertion in tests/test_connect_recover.py confirms the fields appear.
+- Targeted recovery + sync_engine suite: 12 passed. Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by improving failed-event diagnostics for multi-scope local pilot operators.
