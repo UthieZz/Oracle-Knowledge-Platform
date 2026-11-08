@@ -168,16 +168,37 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
     return summary
 
 
+def _load_config(path: str | None) -> dict:
+    if not path:
+        return {}
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"Config not found: {path}")
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise SystemExit(f"Invalid config JSON: {e}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="OKP Connect health inspector")
-    parser.add_argument("--db", required=True, help="Path to SyncEngine SQLite DB")
+    parser.add_argument("--config", help="JSON config file with db/package/snapshot/strict_check (CLI overrides)")
+    parser.add_argument("--db", help="Path to SyncEngine SQLite DB")
     parser.add_argument("--package", help="Path to living KnowledgePackage JSON")
     parser.add_argument("--snapshot", help="Path to connector snapshot JSON")
     parser.add_argument("--json", action="store_true", help="Emit single JSON summary instead of text")
     parser.add_argument("--strict-check", action="store_true", help="Treat objects without explicit permission as WARNING (for production readiness check)")
     args = parser.parse_args()
 
-    summary = collect_health(args.db, args.package, args.snapshot, strict_check=args.strict_check)
+    cfg = _load_config(args.config)
+    db = args.db or cfg.get("db")
+    if not db:
+        raise SystemExit("--db or config.db is required")
+    package = args.package or cfg.get("package")
+    snapshot = args.snapshot or cfg.get("snapshot")
+    strict = args.strict_check or bool(cfg.get("strict_check"))
+
+    summary = collect_health(db, package, snapshot, strict_check=strict)
 
     if args.json:
         print(json.dumps(summary, default=str, indent=2))

@@ -238,3 +238,24 @@ def test_connect_health_warns_on_unreadable_snapshot(tmp_path: Path):
     assert r.returncode == 1
     assert "status=WARNING" in r.stdout
     assert "snapshot_unreadable" in r.stdout
+
+
+def test_connect_health_accepts_config_file(tmp_path):
+    """Config file supplies db/package; CLI can override."""
+    db = tmp_path / "sync.db"
+    pkg = tmp_path / "pkg.json"
+    cfg = tmp_path / "config.json"
+    # Minimal valid package
+    pkg.write_text('{"schema_version":"2.0.0","package_id":"test-pkg","objects":[],"metadata":{}}')
+    cfg.write_text(json.dumps({"db": str(db), "package": str(pkg)}))
+    # Empty DB will be created by SyncEngine on use; health should run
+    from okc.connect.sync_engine import SyncEngine
+    SyncEngine(str(db))  # create empty
+    r = subprocess.run(
+        [sys.executable, "scripts/connect_health.py", "--config", str(cfg), "--json"],
+        capture_output=True, text=True, cwd=Path(__file__).parents[1]
+    )
+    assert r.returncode == 0, r.stderr
+    data = json.loads(r.stdout)
+    assert data["status"] in ("OK", "WARNING")
+    assert data["db_path"] == str(db)

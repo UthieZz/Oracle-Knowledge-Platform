@@ -57,3 +57,10 @@
 - Default (missing entry visible) vs strict mode, health --strict-check, and explicit limitations.
 - Supports P1 without altering runtime.
 - No tests required (documentation only). Prior targeted suites still pass.
+
+
+## 2026-11-08 — Optional JSON config for Connect CLIs
+- Problem: Operators must supply the same paths/tenant/silo on every health and worker invocation.
+- Change: `--config` JSON accepted by both scripts; CLI overrides config; validation of required fields preserved.
+- Verification: pytest tests/test_connect_health.py tests/test_sync_engine.py tests/test_knowledge_accumulator.py tests/test_local_folder_connector.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_agent_context_gateway.py → 44 passed.
+- Knowledge Core IR and Connect contracts unchanged.

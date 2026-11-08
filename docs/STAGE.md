@@ -81,3 +81,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Explicitly records default pilot behavior (missing entry remains visible), strict_permissions mode, health CLI visibility, and what the model is not.
 - Advances P1 acceptance criterion: default permission behavior is documented and intentional.
 - No code, IR, or contract change. Health and accumulator tests remain green.
+
+
+## 2026-11-08 — CLI config file support (P3 operator usability)
+- Added optional `--config` JSON to `scripts/connect_health.py` and `scripts/run_connect_worker.py`.
+- Config supplies paths/tenant/silo/poll; CLI arguments override. Missing required fields still fail clearly.
+- New regression: tests/test_connect_health.py::test_connect_health_accepts_config_file → passed.
+- Targeted Connect suite: 44 passed.
+- Advances P3 by reducing repeated CLI argument burden for local pilot operators. No IR or contract change.

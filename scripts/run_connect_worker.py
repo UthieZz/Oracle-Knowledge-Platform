@@ -36,33 +36,55 @@ from okc.connect.sync_engine import SyncEngine
 from okc.connect.sync_worker import SyncWorker
 
 
+def _load_config(path: str | None) -> dict:
+    if not path:
+        return {}
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"Config not found: {path}")
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise SystemExit(f"Invalid config JSON: {e}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run durable local-folder Connect worker")
-    parser.add_argument("--folder", required=True, help="Directory to watch for .txt/.md")
-    parser.add_argument("--tenant", required=True, help="Tenant id")
-    parser.add_argument("--silo", required=True, help="Silo id")
-    parser.add_argument("--db", required=True, help="SQLite path for SyncEngine queue/cursor")
-    parser.add_argument("--package", required=True, help="JSON path for durable KnowledgePackage")
+    parser.add_argument("--config", help="JSON config with folder/tenant/silo/db/package/snapshot/poll (CLI overrides)")
+    parser.add_argument("--folder", help="Directory to watch for .txt/.md")
+    parser.add_argument("--tenant", help="Tenant id")
+    parser.add_argument("--silo", help="Silo id")
+    parser.add_argument("--db", help="SQLite path for SyncEngine queue/cursor")
+    parser.add_argument("--package", help="JSON path for durable KnowledgePackage")
     parser.add_argument("--snapshot", help="JSON path for connector snapshot (default: <db>.snapshot.json)")
-    parser.add_argument("--poll", type=float, default=5.0, help="Poll interval seconds")
+    parser.add_argument("--poll", type=float, help="Poll interval seconds")
     args = parser.parse_args()
 
-    snapshot_path = args.snapshot or str(Path(args.db).with_suffix(".snapshot.json"))
+    cfg = _load_config(args.config)
+    folder = args.folder or cfg.get("folder")
+    tenant = args.tenant or cfg.get("tenant")
+    silo = args.silo or cfg.get("silo")
+    db = args.db or cfg.get("db")
+    package = args.package or cfg.get("package")
+    if not all([folder, tenant, silo, db, package]):
+        raise SystemExit("folder, tenant, silo, db, package required (via CLI or config)")
+    poll = args.poll if args.poll is not None else cfg.get("poll", 5.0)
+    snapshot_path = args.snapshot or cfg.get("snapshot") or str(Path(db).with_suffix(".snapshot.json"))
 
-    connector = LocalFolderConnector(args.folder, snapshot_path=snapshot_path)
+    connector = LocalFolderConnector(folder, snapshot_path=snapshot_path)
     if not connector.authenticate({}):
         print("LocalFolderConnector authentication failed", file=sys.stderr)
         sys.exit(1)
 
-    engine = SyncEngine(args.db)
-    accumulator = KnowledgeAccumulator(package_path=args.package)
+    engine = SyncEngine(db)
+    accumulator = KnowledgeAccumulator(package_path=package)
     worker = SyncWorker(
         engine,
         connector,
-        args.tenant,
-        args.silo,
+        tenant,
+        silo,
         accumulator.process,
-        poll_interval=args.poll,
+        poll_interval=poll,
     )
 
     stop = False
@@ -76,8 +98,8 @@ def main() -> None:
 
     worker.start()
     print(
-        f"Connect worker running: folder={args.folder} tenant={args.tenant} "
-        f"silo={args.silo} db={args.db} package={args.package} snapshot={snapshot_path}"
+        f"Connect worker running: folder={folder} tenant={tenant} "
+        f"silo={silo} db={db} package={package} snapshot={snapshot_path}"
     )
     try:
         while not stop:
