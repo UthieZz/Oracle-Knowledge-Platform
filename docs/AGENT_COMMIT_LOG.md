@@ -116,3 +116,11 @@
 - Change: list_failed_details and text --list now include tenant_id and silo_id.
 - Verification: pytest tests/test_connect_recover.py tests/test_sync_engine.py → 12 passed.
 - Knowledge Core IR and Connect contracts unchanged.
+
+
+## 2026-11-08 — Recovery CLI tenant and silo filters (P3)
+
+- Problem: operators listing failed events across scopes had no way to filter by tenant_id or silo_id without a DB query.
+- Change: added optional --tenant and --silo to connect_recover.py --list; filters list_failed_details by those fields. --reset-all respects the filters.
+- Verification: pytest tests/test_connect_recover.py → 4 passed (new regression included).
+- Knowledge Core IR and Connect contracts unchanged.

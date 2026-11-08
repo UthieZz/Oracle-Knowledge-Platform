@@ -112,3 +112,46 @@ def test_connect_recover_filters_by_source(tmp_path: Path):
     assert proc.returncode == 0
     assert "fail-a" in proc.stdout
     assert "fail-b" not in proc.stdout
+
+
+def test_connect_recover_filters_by_tenant_and_silo(tmp_path: Path):
+    db = tmp_path / "sync.db"
+    engine = SyncEngine(str(db), max_attempts=1)
+    ev1 = SyncEvent(
+        event_id="fail-t1",
+        source="local_folder",
+        kind="create",
+        payload={"object_id": "a.txt", "text": "x"},
+        tenant_id="acme",
+        silo_id="default",
+    )
+    ev2 = SyncEvent(
+        event_id="fail-t2",
+        source="local_folder",
+        kind="create",
+        payload={"object_id": "b.txt", "text": "y"},
+        tenant_id="other",
+        silo_id="default",
+    )
+    engine.enqueue(ev1)
+    engine.enqueue(ev2)
+    def boom(_e):
+        raise RuntimeError("intentional")
+    engine.process_next(boom)
+    engine.process_next(boom)
+
+    proc = subprocess.run(
+        [sys.executable, "scripts/connect_recover.py", "--db", str(db), "--list", "--tenant", "acme"],
+        capture_output=True, text=True, cwd=Path(__file__).parents[1],
+    )
+    assert proc.returncode == 0
+    assert "fail-t1" in proc.stdout
+    assert "fail-t2" not in proc.stdout
+
+    proc = subprocess.run(
+        [sys.executable, "scripts/connect_recover.py", "--db", str(db), "--list", "--silo", "default"],
+        capture_output=True, text=True, cwd=Path(__file__).parents[1],
+    )
+    assert proc.returncode == 0
+    assert "fail-t1" in proc.stdout
+    assert "fail-t2" in proc.stdout
