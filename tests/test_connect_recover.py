@@ -44,3 +44,31 @@ def test_connect_recover_lists_and_resets(tmp_path: Path):
     assert "Reset fail-1" in proc.stdout
     assert engine.list_failed() == []
     assert "fail-1" in engine.list_queued()
+
+
+def test_connect_recover_accepts_config_file(tmp_path: Path):
+    db = tmp_path / "sync.db"
+    cfg = tmp_path / "pilot.json"
+    cfg.write_text(json.dumps({"db": str(db)}), encoding="utf-8")
+
+    engine = SyncEngine(str(db), max_attempts=1)
+    ev = SyncEvent(
+        event_id="fail-cfg",
+        source="local_folder",
+        kind="create",
+        payload={"object_id": "b.txt", "text": "y"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    engine.enqueue(ev)
+    def boom(_e):
+        raise RuntimeError("intentional")
+    engine.process_next(boom)
+    assert "fail-cfg" in engine.list_failed()
+
+    proc = subprocess.run(
+        [sys.executable, "scripts/connect_recover.py", "--config", str(cfg), "--list"],
+        capture_output=True, text=True, cwd=Path(__file__).parents[1],
+    )
+    assert proc.returncode == 0
+    assert "fail-cfg" in proc.stdout

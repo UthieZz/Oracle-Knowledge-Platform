@@ -1,4 +1,4 @@
-# OKP Stage — 2026-11-07
+# OKP Stage — 2026-11-08
 
 ## Verified this run (local environment)
 
@@ -112,3 +112,10 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New regression: tests/test_connect_recover.py → passed.
 - Targeted recovery suite green. Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 by making manual recovery of exhausted retries explicit and scriptable without DB inspection.
+
+## 2026-11-08 — Recovery CLI --config support (P3)
+
+- Added optional `--config` to scripts/connect_recover.py. Resolves db from config.db; `--db` overrides. Required field validated.
+- New regression: tests/test_connect_recover.py::test_connect_recover_accepts_config_file → passed.
+- Updates operator guide. Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by aligning recovery CLI with health/worker config pattern for local pilot operators.

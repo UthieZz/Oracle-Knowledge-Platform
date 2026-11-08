@@ -3,6 +3,8 @@
 
 Lists failed events and optionally resets one or all for manual recovery.
 Does not advance cursors; reprocessing is the caller's responsibility via the worker.
+
+Supports --config JSON (same schema as health/worker) for db path. CLI overrides config.
 """
 from __future__ import annotations
 
@@ -18,16 +20,34 @@ if str(_ROOT) not in sys.path:
 from okc.connect.sync_engine import SyncEngine
 
 
+def _load_config(path: str | None) -> dict:
+    if not path:
+        return {}
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"Config not found: {path}")
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise SystemExit(f"Invalid config JSON: {e}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="OKP Connect failed-event recovery")
-    parser.add_argument("--db", required=True, help="Path to SyncEngine SQLite DB")
+    parser.add_argument("--config", help="JSON config file with db (CLI overrides)")
+    parser.add_argument("--db", help="Path to SyncEngine SQLite DB")
     parser.add_argument("--list", action="store_true", help="List failed event details")
     parser.add_argument("--reset", help="Reset a specific failed event_id to queued")
     parser.add_argument("--reset-all", action="store_true", help="Reset all failed events to queued")
     parser.add_argument("--json", action="store_true", help="JSON output")
     args = parser.parse_args()
 
-    engine = SyncEngine(args.db)
+    cfg = _load_config(args.config)
+    db = args.db or cfg.get("db")
+    if not db:
+        raise SystemExit("--db or config.db is required")
+
+    engine = SyncEngine(db)
     details = engine.list_failed_details()
 
     if args.list or (not args.reset and not args.reset_all):

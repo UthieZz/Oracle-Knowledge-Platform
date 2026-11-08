@@ -79,3 +79,10 @@
 - Change: added scripts/connect_recover.py with --list, --reset, --reset-all.
 - Verification: pytest tests/test_connect_recover.py → 1 passed. Prior targeted Connect suite remains green (43 passed earlier).
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-08 — Recovery CLI --config support
+
+- Problem: recovery CLI required explicit --db while health and worker accept shared --config.
+- Change: added --config to scripts/connect_recover.py; resolves db from config.db; --db overrides; validates required field.
+- Verification: pytest tests/test_connect_recover.py → 2 passed (new config regression included).
+- Updates docs/CONNECT_LOCAL_PILOT.md. Knowledge Core IR and Connect contracts unchanged.

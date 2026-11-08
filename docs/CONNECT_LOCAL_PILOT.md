@@ -86,9 +86,10 @@ This guide reduces operator argument repetition and documents the intentional pi
 ## Recover failed events
 
 ```bash
+python scripts/connect_recover.py --config pilot.json --list
 python scripts/connect_recover.py --db /var/okp/sync.db --list
-python scripts/connect_recover.py --db /var/okp/sync.db --reset EVENT_ID
-python scripts/connect_recover.py --db /var/okp/sync.db --reset-all
+python scripts/connect_recover.py --config pilot.json --reset EVENT_ID
+python scripts/connect_recover.py --config pilot.json --reset-all
 ```
 
-After reset, restart the worker (or wait for next poll) to reprocess. Cursors are not advanced by reset.
+After reset, restart the worker (or wait for next poll) to reprocess. Cursors are not advanced by reset. `--config` supplies the db path; `--db` overrides.
