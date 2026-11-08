@@ -72,3 +72,10 @@
 - Verification: pytest tests/test_connect_health.py → includes new regression; prior targeted suites remain green.
 - Added docs/CONNECT_LOCAL_PILOT.md.
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-08 — Operator recovery CLI for failed events
+
+- Problem: operators had to inspect SQLite or call reset_failed programmatically to recover exhausted events.
+- Change: added scripts/connect_recover.py with --list, --reset, --reset-all.
+- Verification: pytest tests/test_connect_recover.py → 1 passed. Prior targeted Connect suite remains green (43 passed earlier).
+- Knowledge Core IR and Connect contracts unchanged.

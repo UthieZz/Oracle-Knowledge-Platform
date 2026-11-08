@@ -104,3 +104,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted health suite remains green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Added docs/CONNECT_LOCAL_PILOT.md with exact config and invocation examples.
+
+## 2026-11-08 — Operator recovery CLI for failed events (P3)
+
+- Added scripts/connect_recover.py: lists failed event details and resets one or all back to queued (attempts=0).
+- Does not advance cursors; reprocessing remains operator/worker responsibility.
+- New regression: tests/test_connect_recover.py → passed.
+- Targeted recovery suite green. Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making manual recovery of exhausted retries explicit and scriptable without DB inspection.

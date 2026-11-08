@@ -82,3 +82,13 @@ python scripts/connect_health.py --config pilot.json --strict-check
 - Health regressions: `tests/test_connect_health.py`
 
 This guide reduces operator argument repetition and documents the intentional pilot defaults. It does not claim B2B readiness.
+
+## Recover failed events
+
+```bash
+python scripts/connect_recover.py --db /var/okp/sync.db --list
+python scripts/connect_recover.py --db /var/okp/sync.db --reset EVENT_ID
+python scripts/connect_recover.py --db /var/okp/sync.db --reset-all
+```
+
+After reset, restart the worker (or wait for next poll) to reprocess. Cursors are not advanced by reset.
