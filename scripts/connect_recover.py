@@ -37,6 +37,7 @@ def main() -> None:
     parser.add_argument("--config", help="JSON config file with db (CLI overrides)")
     parser.add_argument("--db", help="Path to SyncEngine SQLite DB")
     parser.add_argument("--list", action="store_true", help="List failed event details")
+    parser.add_argument("--source", help="When listing, only show events from this source")
     parser.add_argument("--reset", help="Reset a specific failed event_id to queued")
     parser.add_argument("--reset-all", action="store_true", help="Reset all failed events to queued")
     parser.add_argument("--json", action="store_true", help="JSON output")
@@ -49,6 +50,8 @@ def main() -> None:
 
     engine = SyncEngine(db)
     details = engine.list_failed_details()
+    if args.source:
+        details = [d for d in details if d.get("source") == args.source]
 
     if args.list or (not args.reset and not args.reset_all):
         if args.json:

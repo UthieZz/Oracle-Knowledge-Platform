@@ -88,6 +88,7 @@ This guide reduces operator argument repetition and documents the intentional pi
 ```bash
 python scripts/connect_recover.py --config pilot.json --list
 python scripts/connect_recover.py --db /var/okp/sync.db --list
+python scripts/connect_recover.py --db /var/okp/sync.db --list --source local_folder
 python scripts/connect_recover.py --config pilot.json --reset EVENT_ID
 python scripts/connect_recover.py --config pilot.json --reset-all
 ```

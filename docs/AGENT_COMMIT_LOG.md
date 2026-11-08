@@ -101,3 +101,11 @@
 - Change: text output of connect_recover.py --list now includes enqueued= timestamp from list_failed_details.
 - Verification: pytest tests/test_connect_recover.py → includes new assertion; targeted suite green.
 - Knowledge Core IR and Connect contracts unchanged.
+
+
+## 2026-11-08 — Recovery CLI source filter (P3)
+
+- Problem: operators listing failed events saw all sources mixed; no way to filter without DB query.
+- Change: added optional --source to connect_recover.py --list; filters list_failed_details by source.
+- Verification: pytest tests/test_connect_recover.py → includes new regression; targeted suite green.
+- Knowledge Core IR and Connect contracts unchanged.

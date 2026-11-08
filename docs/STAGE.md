@@ -149,3 +149,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 * New assertion in tests/test_connect_recover.py confirms the field appears.
 * Targeted recovery suite green. Knowledge Core IR and Connect contracts unchanged.
 * Advances P3 by improving failed-event diagnostics for local pilot operators.
+
+
+## 2026-11-08 — Recovery CLI source filter (P3)
+
+- Added optional --source to scripts/connect_recover.py --list.
+- Operators can filter failed events by source without DB inspection (useful as multi-source connectors are added).
+- New regression: tests/test_connect_recover.py::test_connect_recover_filters_by_source → passed.
+- Targeted recovery suite green. Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 operator diagnostics for the local pilot.
