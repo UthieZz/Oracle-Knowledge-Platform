@@ -131,3 +131,10 @@
 - Change: Added docs/IMPLEMENTATION_OWNERSHIP.md stating Connect owns okc/ (Pydantic KnowledgePackage); src/ owns legacy compiler/UI and Gemini importer. No merge without further evidence.
 - Verification: Documentation only. Prior targeted suites green. No IR or contract change.
 - Advances P2 by making runtime-entry ownership explicit and recoverable from the repo.
+
+## 2026-11-08 — Roadmap sync with current evidence (P2/P3)
+
+- Problem: ROADMAP.md dated 2026-11-07 lagged STAGE.md and ownership record from 2026-11-08.
+- Change: Updated date/snapshot to 2026-11-08; noted IMPLEMENTATION_OWNERSHIP.md; consolidated P3 recent operator recovery/config/health progress.
+- Verification: Documentation only. Aligns roadmap with recorded targeted tests and ownership. No IR or contract change.
+- Supports consistent interpretation of implementation vs tested status.
