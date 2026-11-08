@@ -121,6 +121,14 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Advances P3 by aligning recovery CLI with health/worker config pattern for local pilot operators.
 
 
+## 2026-11-08 — Recovery CLI lists source and kind (P3)
+
+- `list_failed_details` now returns `source` and `kind` for failed events.
+- `scripts/connect_recover.py --list` displays them so operators can identify the failing event type without DB inspection.
+- New assertion in tests/test_connect_recover.py confirms the fields appear.
+- Targeted recovery suite green. Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by improving failed-event diagnostics for local pilot operators.
+
 ## 2026-11-08 — Health CLI recovery hint (P3)
 
 - Text-mode health now emits `recovery_hint=` when failed events exist, pointing operators at `connect_recover.py --list` (and --reset).

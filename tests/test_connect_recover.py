@@ -34,6 +34,8 @@ def test_connect_recover_lists_and_resets(tmp_path: Path):
     )
     assert proc.returncode == 0
     assert "fail-1" in proc.stdout
+    assert "source=local_folder" in proc.stdout
+    assert "kind=create" in proc.stdout
 
     # Reset
     proc = subprocess.run(
