@@ -276,3 +276,26 @@ def test_connect_health_text_output_uses_config_package(tmp_path: Path):
     assert "status=OK" in r.stdout
     assert "package_exists=True" in r.stdout
     assert "object_count=0" in r.stdout
+
+
+def test_connect_health_emits_recovery_hint_on_failed(tmp_path: Path):
+    """When failed events exist, text health output includes an actionable recovery hint."""
+    db = tmp_path / "sync.db"
+    from okc.connect.sync_engine import SyncEngine
+    engine = SyncEngine(str(db))
+    with engine._conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO events (event_id, source, kind, payload, tenant_id, silo_id, status, attempts, enqueued_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'failed', 5, ?)
+            """,
+            ("evt-failed", "local", "create", "{}", "t", "s", "2026-01-01T00:00:00+00:00"),
+        )
+
+    r = _run_health("--db", str(db))
+    assert r.returncode == 1
+    assert "status=WARNING" in r.stdout
+    assert "failed_events" in r.stdout
+    assert "recovery_hint=" in r.stdout
+    assert "connect_recover.py" in r.stdout
+    assert str(db) in r.stdout

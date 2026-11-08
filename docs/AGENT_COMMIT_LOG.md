@@ -86,3 +86,11 @@
 - Change: added --config to scripts/connect_recover.py; resolves db from config.db; --db overrides; validates required field.
 - Verification: pytest tests/test_connect_recover.py → 2 passed (new config regression included).
 - Updates docs/CONNECT_LOCAL_PILOT.md. Knowledge Core IR and Connect contracts unchanged.
+
+
+## 2026-11-08 — Health CLI recovery hint for failed events
+
+- Problem: operators seeing failed_events WARNING had to recall the separate recovery CLI.
+- Change: text health output now prints recovery_hint=python scripts/connect_recover.py --db <path> --list (plus brief usage note).
+- Verification: pytest tests/test_connect_health.py tests/test_connect_recover.py → includes new regression; prior targeted suites remain green.
+- Knowledge Core IR and Connect contracts unchanged.

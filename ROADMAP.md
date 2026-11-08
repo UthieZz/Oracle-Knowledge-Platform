@@ -124,7 +124,7 @@ Manual import remains a supported fallback. The product goal is to reduce repeat
 **Acceptance evidence:** the primary runtime paths are documented; no critical merge ambiguity is hidden by roadmap wording; the main product workflow is reproducible and source evidence survives it.
 
 ### P3 — Operate the local pilot reliably
-**Recent (2026-11-08):** Added scripts/connect_recover.py for listing and resetting failed events (manual recovery without DB inspection).
+**Recent (2026-11-08):** Added scripts/connect_recover.py for listing and resetting failed events (manual recovery without DB inspection). Health CLI text output now includes a recovery_hint when failed events are present.
 
 **Recent (2026-11-08):** Optional JSON config file support added to health and worker CLIs (CLI overrides config). Reduces operator argument repetition for the local pilot.
 **Recent (2026-11-08 continued):** Health CLI text output now reports package/snapshot details when paths come from `--config`. Added `docs/CONNECT_LOCAL_PILOT.md` with exact operator commands and config example.

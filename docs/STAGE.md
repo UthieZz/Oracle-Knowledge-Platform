@@ -119,3 +119,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New regression: tests/test_connect_recover.py::test_connect_recover_accepts_config_file → passed.
 - Updates operator guide. Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 by aligning recovery CLI with health/worker config pattern for local pilot operators.
+
+
+## 2026-11-08 — Health CLI recovery hint (P3)
+
+- Text-mode health now emits `recovery_hint=` when failed events exist, pointing operators at `connect_recover.py --list` (and --reset).
+- New regression: tests/test_connect_health.py::test_connect_health_emits_recovery_hint_on_failed → passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the next recovery action discoverable from the health output itself.

@@ -219,6 +219,12 @@ def main() -> None:
         if snapshot:
             print(f"snapshot_exists={summary['snapshot']['exists']} readable={summary['snapshot']['readable']}")
 
+        # Operator recovery hint when failed events exist (P3 usability)
+        if summary.get("failed", 0) > 0:
+            db_display = summary.get("db_path", "<db>")
+            print(f"recovery_hint=python scripts/connect_recover.py --db {db_display} --list")
+            print("  (or --config if using shared config; --reset / --reset-all to recover)")
+
     if summary["status"] == "WARNING":
         sys.exit(1)
 
