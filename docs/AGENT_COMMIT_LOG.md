@@ -124,3 +124,10 @@
 - Change: added optional --tenant and --silo to connect_recover.py --list; filters list_failed_details by those fields. --reset-all respects the filters.
 - Verification: pytest tests/test_connect_recover.py → 4 passed (new regression included).
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-08 — Record implementation ownership (P2)
+
+- Problem: Dual src/ and okc/ surfaces continue to require rediscovery; no explicit current-ownership record for the Connect pilot.
+- Change: Added docs/IMPLEMENTATION_OWNERSHIP.md stating Connect owns okc/ (Pydantic KnowledgePackage); src/ owns legacy compiler/UI and Gemini importer. No merge without further evidence.
+- Verification: Documentation only. Prior targeted suites green. No IR or contract change.
+- Advances P2 by making runtime-entry ownership explicit and recoverable from the repo.
