@@ -58,7 +58,7 @@ def main() -> None:
                 print("No failed events.")
             else:
                 for d in details:
-                    print(f"{d['event_id']}\tsource={d.get('source','')}\tkind={d.get('kind','')}\tattempts={d['attempts']}\terror={d['last_error']}")
+                    print(f"{d['event_id']}\tsource={d.get('source','')}\tkind={d.get('kind','')}\tattempts={d['attempts']}\tenqueued={d.get('enqueued_at','')}\terror={d['last_error']}")
         if not args.reset and not args.reset_all:
             return
 
