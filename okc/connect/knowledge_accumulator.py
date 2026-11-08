@@ -113,6 +113,12 @@ class KnowledgeAccumulator:
             elif event.kind == "delete":
                 self._remove(scoped)
             elif event.kind == "permission_change":
+                # Only record well-formed permission records. A missing or non-bool
+                # 'read' is ignored so malformed events cannot pollute the map
+                # that retrieval treats as authoritative for explicit deny/allow.
+                read_flag = event.payload.get("read")
+                if not isinstance(read_flag, bool):
+                    return
                 perms = self.package.metadata.setdefault("permissions", {})
                 perms[scoped] = event.payload
             self._persist()

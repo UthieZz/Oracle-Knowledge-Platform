@@ -345,3 +345,52 @@ def test_missing_permission_entry_denied_in_strict_mode(tmp_path):
     acc.process(allow)
     hits_allowed = retriever.retrieve(_request("restricted"))
     assert len(hits_allowed) == 1
+
+
+def test_malformed_permission_change_is_ignored(tmp_path):
+    """P1 boundary: permission_change without a boolean 'read' does not
+    pollute the permissions map. Protects retrieval from non-authoritative
+    records while leaving the object visible under default (non-strict) mode.
+    """
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "visible content"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(create)
+    scoped = "folder|t|s|doc1"
+    # Missing 'read'
+    bad1 = SyncEvent(
+        event_id="p1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(bad1)
+    assert scoped not in acc.package.metadata.get("permissions", {})
+    # Non-bool 'read'
+    bad2 = SyncEvent(
+        event_id="p2",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": "no"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(bad2)
+    assert scoped not in acc.package.metadata.get("permissions", {})
+    # Object remains retrievable under default mode
+    retriever = KnowledgePackageRetriever(acc.package)
+    hits = retriever.retrieve(_request("visible"))
+    assert len(hits) == 1
+    # Reload confirms nothing was persisted
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    assert scoped not in acc2.package.metadata.get("permissions", {})
+

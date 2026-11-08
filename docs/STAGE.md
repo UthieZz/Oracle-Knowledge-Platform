@@ -89,3 +89,10 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New regression: tests/test_connect_health.py::test_connect_health_accepts_config_file → passed.
 - Targeted Connect suite: 44 passed.
 - Advances P3 by reducing repeated CLI argument burden for local pilot operators. No IR or contract change.
+
+## 2026-11-08 — Permission change payload validation (P1 boundary)
+- KnowledgeAccumulator now ignores permission_change events whose payload lacks a boolean `read` field.
+- Prevents malformed events from writing non-authoritative entries into package.metadata["permissions"].
+- New regression: tests/test_knowledge_accumulator.py::test_malformed_permission_change_is_ignored → passed.
+- Targeted accumulator suite: 9 passed.
+- Knowledge Core IR, Connect contract, and default (pilot) retrieval behavior unchanged.
