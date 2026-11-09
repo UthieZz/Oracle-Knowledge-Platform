@@ -336,3 +336,34 @@ def test_connect_health_text_shows_snapshot_seq(tmp_path: Path):
     assert "snapshot_exists=True" in r.stdout
     assert "snapshot_seq=42" in r.stdout
     assert "version=1" in r.stdout
+
+
+def test_connect_health_reports_permission_event_provenance(tmp_path: Path):
+    """Health text/JSON reports how many permission entries carry recorded_from_event provenance."""
+    db = tmp_path / "sync.db"
+    from okc.connect.sync_engine import SyncEngine
+    SyncEngine(str(db))
+    pkg_path = tmp_path / "package.json"
+    from okc.models.knowledge_package import KnowledgePackage
+    pkg = KnowledgePackage(
+        package_id="health-prov-test",
+        schema_version="2.0",
+        objects=[],
+        metadata={
+            "permissions": {
+                "src:with-prov": {"read": True, "recorded_from_event": "evt-1", "recorded_at": "2026-01-01T00:00:00Z"},
+                "src:without": {"read": False},
+            }
+        },
+    )
+    pkg_path.write_text(pkg.model_dump_json(), encoding="utf-8")
+
+    r = _run_health("--db", str(db), "--package", str(pkg_path))
+    assert r.returncode == 0
+    assert "permissions_with_event_provenance=1" in r.stdout
+    assert "permissions_entries=2" in r.stdout
+
+    r_json = _run_health("--db", str(db), "--package", str(pkg_path), "--json")
+    data = json.loads(r_json.stdout)
+    assert data["package"]["permissions_with_event_provenance"] == 1
+    assert data["package"]["permissions_entries"] == 2

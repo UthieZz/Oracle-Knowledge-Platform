@@ -208,3 +208,11 @@
 - Verification: pytest tests/test_sqlite_exporter_permissions.py::test_sqlite_exporter_recreate_after_deny_and_delete_is_exported → passed. Prior related suites green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 by closing the lifecycle evidence gap at the export boundary.
+
+## 2026-11-09 — Health CLI reports permission event provenance (P1/P3)
+
+- Problem: operators could not see from health output whether permission entries carried the recorded_from_event provenance added earlier.
+- Change: package health summary now includes permissions_with_event_provenance count; text output prints it.
+- Verification: pytest tests/test_connect_health.py::test_connect_health_reports_permission_event_provenance → passed. Targeted health + accumulator + exporter: 33 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 provenance visibility and P3 operator diagnostics without altering runtime behavior.

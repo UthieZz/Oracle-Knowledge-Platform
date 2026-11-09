@@ -262,3 +262,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted exporter + accumulator suite remains green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency for deletion/restoration semantics at export.
+
+## 2026-11-09 — Health CLI reports permission event provenance (P1/P3)
+
+- connect_health.py now counts and displays permissions_with_event_provenance (entries that carry recorded_from_event).
+- Operators can see whether recorded permission decisions are fully traced without opening the package.
+- New regression: tests/test_connect_health.py::test_connect_health_reports_permission_event_provenance → passed.
+- Targeted health + accumulator + exporter suites: 33 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 provenance visibility and P3 operator diagnostics for the local-folder pilot.
