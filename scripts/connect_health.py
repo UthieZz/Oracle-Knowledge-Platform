@@ -60,7 +60,7 @@ def _package_info(package_path: str | None) -> dict:
 
 
 def _snapshot_info(snapshot_path: str | None) -> dict:
-    info = {"exists": False, "readable": False, "error": None}
+    info = {"exists": False, "readable": False, "error": None, "version": None, "seq": None}
     if not snapshot_path:
         return info
     p = Path(snapshot_path)
@@ -70,6 +70,9 @@ def _snapshot_info(snapshot_path: str | None) -> dict:
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
         info["readable"] = isinstance(data, dict)
+        if info["readable"]:
+            info["version"] = data.get("version")
+            info["seq"] = data.get("seq")
     except Exception as exc:  # noqa: BLE001
         info["error"] = str(exc)[:200]
         info["readable"] = False
@@ -217,7 +220,10 @@ def main() -> None:
             if pkg.get('readable'):
                 print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)}")
         if snapshot:
-            print(f"snapshot_exists={summary['snapshot']['exists']} readable={summary['snapshot']['readable']}")
+            snap = summary['snapshot']
+            print(f"snapshot_exists={snap['exists']} readable={snap['readable']}")
+            if snap.get('readable') and snap.get('seq') is not None:
+                print(f"snapshot_seq={snap['seq']} version={snap.get('version')}")
         cursors = summary.get("cursors") or []
         if cursors:
             print(f"cursors={len(cursors)}")
