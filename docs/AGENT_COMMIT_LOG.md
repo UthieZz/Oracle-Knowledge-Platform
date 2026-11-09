@@ -138,3 +138,10 @@
 - Change: Updated date/snapshot to 2026-11-08; noted IMPLEMENTATION_OWNERSHIP.md; consolidated P3 recent operator recovery/config/health progress.
 - Verification: Documentation only. Aligns roadmap with recorded targeted tests and ownership. No IR or contract change.
 - Supports consistent interpretation of implementation vs tested status.
+
+## 2026-11-09 — Recovery CLI consistent JSON for resets (P3)
+
+- Problem: --json + --reset emitted human text then JSON, breaking machine consumers.
+- Change: suppress text on --json; emit clean {"reset": N, "ids": [...]} (and JSON error on failure).
+- Verification: pytest tests/test_connect_recover.py → 5 passed (new JSON reset regression included).
+- Knowledge Core IR and Connect contracts unchanged.

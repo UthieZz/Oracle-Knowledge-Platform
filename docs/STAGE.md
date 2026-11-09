@@ -181,3 +181,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Added docs/IMPLEMENTATION_OWNERSHIP.md recording current evidence: Connect path owns okc/ and its Pydantic KnowledgePackage; src/ remains for legacy compiler/UI and Gemini importer.
 - No code change. Supports P2 mapping of runtime entry points without migration.
 - Targeted Connect suite and core tests remain green (prior runs: 46 Connect, 162 core).
+
+## 2026-11-09 — Recovery CLI consistent JSON output (P3)
+
+- Fixed: --json with --reset / --reset-all no longer emits mixed text + JSON.
+- Reset path now returns structured {"reset": N, "ids": [...]} when --json; error cases also JSON.
+- New regression: tests/test_connect_recover.py::test_connect_recover_json_reset → passed.
+- Targeted recovery suite: 5 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making recovery scriptable without output parsing fragility.

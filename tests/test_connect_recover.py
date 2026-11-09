@@ -51,6 +51,35 @@ def test_connect_recover_lists_and_resets(tmp_path: Path):
     assert "fail-1" in engine.list_queued()
 
 
+def test_connect_recover_json_reset(tmp_path: Path):
+    db = tmp_path / "sync.db"
+    engine = SyncEngine(str(db), max_attempts=1)
+    ev = SyncEvent(
+        event_id="fail-json",
+        source="local_folder",
+        kind="create",
+        payload={"object_id": "c.txt", "text": "z"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    engine.enqueue(ev)
+    def boom(_e):
+        raise RuntimeError("intentional")
+    engine.process_next(boom)
+    assert "fail-json" in engine.list_failed()
+
+    proc = subprocess.run(
+        [sys.executable, "scripts/connect_recover.py", "--db", str(db), "--reset", "fail-json", "--json"],
+        capture_output=True, text=True, cwd=Path(__file__).parents[1],
+    )
+    assert proc.returncode == 0
+    data = json.loads(proc.stdout)
+    assert data["reset"] == 1
+    assert "fail-json" in data["ids"]
+    assert engine.list_failed() == []
+    assert "fail-json" in engine.list_queued()
+
+
 def test_connect_recover_accepts_config_file(tmp_path: Path):
     db = tmp_path / "sync.db"
     cfg = tmp_path / "pilot.json"

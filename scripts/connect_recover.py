@@ -72,21 +72,30 @@ def main() -> None:
             return
 
     reset_count = 0
+    reset_ids = []
     if args.reset:
         if engine.reset_failed(args.reset):
             reset_count += 1
-            print(f"Reset {args.reset}")
+            reset_ids.append(args.reset)
+            if not args.json:
+                print(f"Reset {args.reset}")
         else:
-            print(f"Not found or not failed: {args.reset}", file=sys.stderr)
+            msg = f"Not found or not failed: {args.reset}"
+            if args.json:
+                print(json.dumps({"error": msg, "reset": 0}, indent=2))
+            else:
+                print(msg, file=sys.stderr)
             sys.exit(1)
     if args.reset_all:
         for d in details:
             if engine.reset_failed(d["event_id"]):
                 reset_count += 1
-        print(f"Reset {reset_count} events")
+                reset_ids.append(d["event_id"])
+        if not args.json:
+            print(f"Reset {reset_count} events")
 
     if args.json and (args.reset or args.reset_all):
-        print(json.dumps({"reset": reset_count}, indent=2))
+        print(json.dumps({"reset": reset_count, "ids": reset_ids}, indent=2))
 
 
 if __name__ == "__main__":
