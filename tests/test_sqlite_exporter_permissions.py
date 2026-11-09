@@ -95,3 +95,61 @@ def test_sqlite_exporter_strict_mode_excludes_missing(tmp_path: Path):
     with sqlite3.connect(db) as conn:
         count = conn.execute("SELECT COUNT(*) FROM knowledge_objects").fetchone()[0]
     assert count == 1
+
+
+def test_sqlite_exporter_recreate_after_deny_and_delete_is_exported(tmp_path: Path):
+    """After explicit deny + delete, a re-create of the same object_id is exported under default mode.
+    Confirms no stale permission entry survives the object lifecycle at the export boundary.
+    """
+    pkg_path = str(tmp_path / "living.json")
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+
+    # Create and deny
+    acc.process(SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "original"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    acc.process(SyncEvent(
+        event_id="p1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": False},
+        tenant_id="t",
+        silo_id="s",
+    ))
+
+    # Delete (cleans permission entry)
+    acc.process(SyncEvent(
+        event_id="d1",
+        source="folder",
+        kind="delete",
+        payload={"object_id": "doc1"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+
+    # Re-create same object_id
+    acc.process(SyncEvent(
+        event_id="c2",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "restored"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+
+    db = str(tmp_path / "export.db")
+    exporter = SQLiteExporter(db_path=db)
+    exporter.export(acc.package, tenant_id="t", silo_id="s")  # default mode
+
+    with sqlite3.connect(db) as conn:
+        count = conn.execute("SELECT COUNT(*) FROM knowledge_objects").fetchone()[0]
+        content = conn.execute("SELECT content FROM knowledge_objects WHERE object_id LIKE '%'").fetchone()
+    assert count == 1
+    # Permission map should not contain a deny for the recreated object
+    perms = acc.package.metadata.get("permissions") or {}
+    assert not any(p.get("read") is False for p in perms.values())

@@ -200,3 +200,11 @@
 - Verification: pytest tests/test_sqlite_exporter_permissions.py tests/test_knowledge_accumulator.py → 15 passed.
 - docs/PERMISSION_MODEL.md updated. Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency at the export boundary without altering default pilot behavior.
+
+## 2026-11-09 — SQLite export includes recreate after deny+delete (P1)
+
+- Problem: no explicit regression confirmed that a re-create after deny + delete is exported under default mode (stale deny must not survive).
+- Change: added test_sqlite_exporter_recreate_after_deny_and_delete_is_exported. Confirms export includes the object and permission map has no leftover deny.
+- Verification: pytest tests/test_sqlite_exporter_permissions.py::test_sqlite_exporter_recreate_after_deny_and_delete_is_exported → passed. Prior related suites green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by closing the lifecycle evidence gap at the export boundary.

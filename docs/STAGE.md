@@ -253,3 +253,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - docs/PERMISSION_MODEL.md updated to include export boundary.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 by applying the documented permission policy at the export boundary.
+
+## 2026-11-09 — Export lifecycle: recreate after deny+delete is exported (P1)
+
+- Added regression: after explicit read=False + delete (permission cleaned), re-create of same object_id is included in SQLite export under default mode.
+- Confirms no stale denial survives object lifecycle at the export boundary.
+- New test: tests/test_sqlite_exporter_permissions.py::test_sqlite_exporter_recreate_after_deny_and_delete_is_exported → passed.
+- Targeted exporter + accumulator suite remains green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency for deletion/restoration semantics at export.
