@@ -1,6 +1,6 @@
 # OKP Connect — Local-Folder Pilot Operator Guide
 
-**Status:** Implemented and targeted-tested for the local path (as of 2026-11-08).  
+**Status:** Implemented and targeted-tested for the local path (as of 2026-11-09).  
 **Scope:** Local-folder source → durable SyncEngine → KnowledgeAccumulator → living KnowledgePackage.  
 **Not:** Complete authorization, Studio deployment, or production multi-tenant claims.
 
@@ -98,3 +98,10 @@ python scripts/connect_recover.py --config pilot.json --reset-all
 ```
 
 After reset, restart the worker (or wait for next poll) to reprocess. Cursors are not advanced by reset. `--config` supplies the db path; `--db` overrides.
+
+JSON recovery output is clean (no mixed text):
+```bash
+python scripts/connect_recover.py --db /var/okp/sync.db --reset EVENT_ID --json
+# {"reset": 1, "ids": ["EVENT_ID"]}
+python scripts/connect_recover.py --db /var/okp/sync.db --reset-all --json
+```

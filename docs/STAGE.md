@@ -200,3 +200,10 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted health + recover suite: 20 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 operator diagnostics for the local-folder pilot.
+
+## 2026-11-09 — Pilot guide sync for recovery JSON consistency (P3)
+
+- Updated docs/CONNECT_LOCAL_PILOT.md with clean JSON examples for --reset / --reset-all.
+- Aligns operator instructions with the verified recovery CLI behavior (no mixed text+JSON).
+- No code or test change. Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by keeping documented operator steps current with tested CLI output.

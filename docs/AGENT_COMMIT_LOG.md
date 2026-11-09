@@ -153,3 +153,10 @@
 - Change: text output now emits cursors=N and sample lines when cursors exist.
 - Verification: pytest tests/test_connect_health.py tests/test_connect_recover.py → 20 passed (new regression included).
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-09 — Pilot operator guide updated for recovery JSON (P3)
+
+- Problem: CONNECT_LOCAL_PILOT.md lagged the verified clean JSON output for recovery resets.
+- Change: Added explicit JSON examples for --reset and --reset-all.
+- Verification: Documentation only. Aligns with tests/test_connect_recover.py::test_connect_recover_json_reset (passed in prior run).
+- Knowledge Core IR and Connect contracts unchanged.
