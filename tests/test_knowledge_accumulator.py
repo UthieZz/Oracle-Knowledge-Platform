@@ -532,3 +532,45 @@ def test_permission_entry_records_event_provenance(tmp_path):
     acc2 = KnowledgeAccumulator(package_path=tmp_path / "pkg.json")
     entry2 = acc2.package.metadata["permissions"][scoped]
     assert entry2["recorded_from_event"] == "p-deny-1"
+
+
+def test_permission_change_overwrites_event_provenance(tmp_path):
+    """Subsequent permission_change replaces recorded_from_event with the newer event id."""
+    acc = KnowledgeAccumulator(package_path=tmp_path / "pkg.json")
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "hello"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(create)
+    first = SyncEvent(
+        event_id="p-deny-1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": False},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(first)
+    scoped = "folder|t|s|doc1"
+    assert acc.package.metadata["permissions"][scoped]["recorded_from_event"] == "p-deny-1"
+
+    second = SyncEvent(
+        event_id="p-allow-2",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": True},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(second)
+    entry = acc.package.metadata["permissions"][scoped]
+    assert entry["read"] is True
+    assert entry["recorded_from_event"] == "p-allow-2"
+    assert entry["recorded_from_event"] != "p-deny-1"
+    # Survives reload
+    acc2 = KnowledgeAccumulator(package_path=tmp_path / "pkg.json")
+    assert acc2.package.metadata["permissions"][scoped]["recorded_from_event"] == "p-allow-2"

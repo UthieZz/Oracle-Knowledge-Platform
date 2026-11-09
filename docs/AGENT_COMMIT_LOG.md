@@ -1,3 +1,12 @@
+
+## 2026-11-09 — Health CLI reports missing permission event provenance (P1/P3)
+
+- Problem: operators could compare permissions_with_event_provenance to entries but the incomplete count was not explicit.
+- Change: package health summary now includes permissions_missing_event_provenance. Text and JSON output print it.
+- Added regression confirming a later permission_change overwrites recorded_from_event with the new event id (and survives reload).
+- Verification: targeted health + accumulator + exporter suites green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 provenance completeness visibility and P3 operator diagnostics.
 # Agent Commit Log
 
 ## 2026-11-07 — Connect CLI path bootstrap

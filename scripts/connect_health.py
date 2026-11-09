@@ -45,10 +45,12 @@ def _package_info(package_path: str | None) -> dict:
             if isinstance(v, dict) and v.get("read") is False
         )
         # Provenance completeness for recorded permission decisions.
-        info["permissions_with_event_provenance"] = sum(
+        with_prov = sum(
             1 for v in perms.values()
             if isinstance(v, dict) and v.get("recorded_from_event")
         )
+        info["permissions_with_event_provenance"] = with_prov
+        info["permissions_missing_event_provenance"] = info["permissions_entries"] - with_prov
         # Count objects that have a src: marker but no matching permission entry.
         # Useful for operators deciding when to enable strict_permissions.
         missing = 0
@@ -223,7 +225,7 @@ def main() -> None:
             pkg = summary['package']
             print(f"package_exists={pkg['exists']} readable={pkg['readable']} object_count={pkg['object_count']}")
             if pkg.get('readable'):
-                print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)} permissions_with_event_provenance={pkg.get('permissions_with_event_provenance', 0)}")
+                print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)} permissions_with_event_provenance={pkg.get('permissions_with_event_provenance', 0)} permissions_missing_event_provenance={pkg.get('permissions_missing_event_provenance', 0)}")
         if snapshot:
             snap = summary['snapshot']
             print(f"snapshot_exists={snap['exists']} readable={snap['readable']}")

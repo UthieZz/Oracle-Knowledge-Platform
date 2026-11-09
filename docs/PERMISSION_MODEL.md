@@ -23,7 +23,7 @@
 - `scripts/connect_health.py` reports `objects_without_explicit_permission`.
 - Optional `--strict-check` elevates any positive count to `status=WARNING` and exit 1.
 - Default invocation (no flag) remains OK so the pilot is not broken by the presence of unpermissioned objects.
-- Health also reports `permissions_with_event_provenance` so operators can confirm that recorded permission decisions carry their originating event id.
+- Health also reports `permissions_with_event_provenance` and `permissions_missing_event_provenance` so operators can confirm that recorded permission decisions carry their originating event id and see incomplete provenance at a glance.
 
 ## What this is not
 

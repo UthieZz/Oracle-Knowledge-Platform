@@ -362,8 +362,10 @@ def test_connect_health_reports_permission_event_provenance(tmp_path: Path):
     assert r.returncode == 0
     assert "permissions_with_event_provenance=1" in r.stdout
     assert "permissions_entries=2" in r.stdout
+    assert "permissions_missing_event_provenance=1" in r.stdout
 
     r_json = _run_health("--db", str(db), "--package", str(pkg_path), "--json")
     data = json.loads(r_json.stdout)
     assert data["package"]["permissions_with_event_provenance"] == 1
     assert data["package"]["permissions_entries"] == 2
+    assert data["package"]["permissions_missing_event_provenance"] == 1

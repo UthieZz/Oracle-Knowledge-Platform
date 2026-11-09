@@ -263,6 +263,14 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency for deletion/restoration semantics at export.
 
+
+## 2026-11-09 — Health CLI reports missing permission event provenance
+
+- package health summary now includes permissions_missing_event_provenance (= entries - with_event_provenance).
+- Text and JSON output surface the gap so operators can see incomplete authorization provenance without package inspection.
+- New accumulator regression confirms subsequent permission_change overwrites recorded_from_event with the newer event id.
+- Targeted health + accumulator + exporter suites remain green.
+- Knowledge Core IR and Connect contracts unchanged.
 ## 2026-11-09 — Health CLI reports permission event provenance (P1/P3)
 
 - connect_health.py now counts and displays permissions_with_event_provenance (entries that carry recorded_from_event).
