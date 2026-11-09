@@ -218,6 +218,13 @@ def main() -> None:
                 print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)}")
         if snapshot:
             print(f"snapshot_exists={summary['snapshot']['exists']} readable={summary['snapshot']['readable']}")
+        cursors = summary.get("cursors") or []
+        if cursors:
+            print(f"cursors={len(cursors)}")
+            for c in cursors[:3]:
+                print(f"  cursor source={c.get('source')} tenant={c.get('tenant_id')} silo={c.get('silo_id')} cursor={c.get('cursor')}")
+            if len(cursors) > 3:
+                print(f"  ... and {len(cursors)-3} more")
 
         # Operator recovery hint when failed events exist (P3 usability)
         if summary.get("failed", 0) > 0:

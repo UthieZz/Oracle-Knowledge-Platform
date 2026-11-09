@@ -48,6 +48,7 @@ python scripts/run_connect_worker.py \
 Stop with SIGINT/SIGTERM; queue and cursor survive restart.
 
 ## Inspect health
+Text mode now also surfaces a cursor summary (count + samples) so operators can confirm last successful positions without --json.
 
 ```bash
 python scripts/connect_health.py --config pilot.json

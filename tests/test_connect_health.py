@@ -299,3 +299,24 @@ def test_connect_health_emits_recovery_hint_on_failed(tmp_path: Path):
     assert "recovery_hint=" in r.stdout
     assert "connect_recover.py" in r.stdout
     assert str(db) in r.stdout
+
+
+def test_connect_health_text_shows_cursors(tmp_path: Path):
+    """Text output surfaces cursor count and sample so operators can verify sync progress without --json or DB inspection."""
+    db = tmp_path / "sync.db"
+    from okc.connect.sync_engine import SyncEngine
+    engine = SyncEngine(str(db))
+    # Advance a cursor via the public path (simulate successful processing)
+    with engine._conn() as conn:
+        conn.execute(
+            "INSERT INTO cursors (source, tenant_id, silo_id, cursor, updated_at) VALUES (?, ?, ?, ?, ?)",
+            ("local-folder", "acme", "default", "file:readme.md", "2026-01-01T00:00:00+00:00"),
+        )
+
+    r = _run_health("--db", str(db))
+    assert r.returncode == 0
+    assert "status=OK" in r.stdout
+    assert "cursors=1" in r.stdout
+    assert "source=local-folder" in r.stdout
+    assert "tenant=acme" in r.stdout
+    assert "cursor=file:readme.md" in r.stdout

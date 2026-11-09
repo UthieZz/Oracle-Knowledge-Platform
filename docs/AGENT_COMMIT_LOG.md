@@ -145,3 +145,11 @@
 - Change: suppress text on --json; emit clean {"reset": N, "ids": [...]} (and JSON error on failure).
 - Verification: pytest tests/test_connect_recover.py → 5 passed (new JSON reset regression included).
 - Knowledge Core IR and Connect contracts unchanged.
+
+
+## 2026-11-09 — Health CLI text cursor summary (P3)
+
+- Problem: operators using text health saw queue stats but not current cursors; required --json or DB query to confirm progress.
+- Change: text output now emits cursors=N and sample lines when cursors exist.
+- Verification: pytest tests/test_connect_health.py tests/test_connect_recover.py → 20 passed (new regression included).
+- Knowledge Core IR and Connect contracts unchanged.

@@ -190,3 +190,13 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted recovery suite: 5 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 by making recovery scriptable without output parsing fragility.
+
+
+## 2026-11-09 — Health CLI text shows cursor summary (P3)
+
+- Text-mode health now prints cursor count and up to 3 sample cursors (source/tenant/silo/cursor).
+- Operators can verify sync progress without --json or direct DB inspection.
+- New regression: tests/test_connect_health.py::test_connect_health_text_shows_cursors → passed.
+- Targeted health + recover suite: 20 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 operator diagnostics for the local-folder pilot.
