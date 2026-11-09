@@ -225,3 +225,11 @@
 - Verification: pytest tests/test_connect_health.py::test_connect_health_reports_permission_event_provenance → passed. Targeted health + accumulator + exporter: 33 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 provenance visibility and P3 operator diagnostics without altering runtime behavior.
+
+## 2026-11-09 — Permission before create is enforced (P1)
+
+- Problem: no explicit regression confirmed that a permission_change recorded before the object exists is still applied when the object is later created.
+- Change: added test_permission_change_before_create_is_enforced. Confirms entry is stored, object is created, retrieval excludes it under default mode, and both survive reload.
+- Verification: pytest tests/test_knowledge_accumulator.py::test_permission_change_before_create_is_enforced → passed. Prior accumulator suite remains green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by closing the event-ordering evidence gap for authorization decisions.

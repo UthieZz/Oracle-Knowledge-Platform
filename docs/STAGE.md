@@ -279,3 +279,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted health + accumulator + exporter suites: 33 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 provenance visibility and P3 operator diagnostics for the local-folder pilot.
+
+## 2026-11-09 — Permission recorded before object creation is enforced (P1)
+
+- Added regression: permission_change (read=False) before the corresponding create is recorded in the map and excludes the object from retrieval once created.
+- Denial precedes content; entry and enforcement survive package reload.
+- New test: tests/test_knowledge_accumulator.py::test_permission_change_before_create_is_enforced → passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency for event ordering / lifecycle in the local-folder pilot.
