@@ -204,7 +204,7 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 ## 2026-11-09 — Pilot guide sync for recovery JSON consistency (P3)
 
 - Updated docs/CONNECT_LOCAL_PILOT.md with clean JSON examples for --reset / --reset-all.
-- Aligns operator instructions with the verified recovery CLI behavior (no mixed text+JSON).
+- Aligns operator instructions with the verified clean JSON output for recovery resets (no mixed text+JSON).
 - No code or test change. Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 by keeping documented operator steps current with tested CLI output.
 
@@ -215,3 +215,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New regression: tests/test_connect_health.py::test_connect_health_text_shows_snapshot_seq → passed (code+test committed).
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 operator diagnostics for local-folder pilot restart reliability.
+
+## 2026-11-09 — Update after permission deny does not restore visibility (P1)
+
+- Added regression: an update event after explicit read=False permission_change leaves the object denied on subsequent retrieval (default mode).
+- Permission map is independent of content upserts; revoke survives update and package reload.
+- New test: tests/test_knowledge_accumulator.py::test_update_after_permission_deny_does_not_restore_visibility → passed.
+- Targeted accumulator suite: 10 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency evidence for the local-folder pilot.
