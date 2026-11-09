@@ -233,3 +233,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted accumulator suite remains green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency evidence for deletion and restoration.
+
+## 2026-11-09 — Permission entries record event provenance (P1)
+
+- KnowledgeAccumulator stores recorded_from_event and recorded_at on permission_change entries.
+- Makes the source event for an explicit allow/deny recoverable from the package without external logs.
+- New regression: tests/test_knowledge_accumulator.py::test_permission_entry_records_event_provenance → passed.
+- Targeted accumulator suite: 12 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 provenance consistency for authorization decisions in the local-folder pilot.

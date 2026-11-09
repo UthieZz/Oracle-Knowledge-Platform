@@ -184,3 +184,11 @@
 - Verification: pytest tests/test_knowledge_accumulator.py::test_recreate_after_delete_following_deny_is_visible_by_default → passed. Prior accumulator suite green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 restoration/deletion semantics for the local-folder pilot.
+
+## 2026-11-09 — Permission entries record event provenance (P1)
+
+- Problem: permission map stored only the payload; the originating event_id and time were not preserved inside the package.
+- Change: on well-formed permission_change, store a shallow copy of payload plus recorded_from_event and recorded_at.
+- Verification: pytest tests/test_knowledge_accumulator.py → 12 passed (new provenance regression included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by making authorization provenance inspectable from the living package.

@@ -500,3 +500,35 @@ def test_recreate_after_delete_following_deny_is_visible_by_default(tmp_path):
     retriever2 = KnowledgePackageRetriever(acc2.package)
     assert len(retriever2.retrieve(_request("recreated"))) == 1
     assert scoped not in acc2.package.metadata.get("permissions", {})
+
+
+def test_permission_entry_records_event_provenance(tmp_path):
+    """permission_change stores recorded_from_event and recorded_at for traceability."""
+    acc = KnowledgeAccumulator(package_path=tmp_path / "pkg.json")
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "hello"},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(create)
+    revoke = SyncEvent(
+        event_id="p-deny-1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": False},
+        tenant_id="t",
+        silo_id="s",
+    )
+    acc.process(revoke)
+    scoped = "folder|t|s|doc1"
+    entry = acc.package.metadata["permissions"][scoped]
+    assert entry["read"] is False
+    assert entry["recorded_from_event"] == "p-deny-1"
+    assert "recorded_at" in entry
+    # Survives reload
+    acc2 = KnowledgeAccumulator(package_path=tmp_path / "pkg.json")
+    entry2 = acc2.package.metadata["permissions"][scoped]
+    assert entry2["recorded_from_event"] == "p-deny-1"

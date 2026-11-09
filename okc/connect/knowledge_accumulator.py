@@ -120,7 +120,7 @@ class KnowledgeAccumulator:
                 if not isinstance(read_flag, bool):
                     return
                 perms = self.package.metadata.setdefault("permissions", {})
-                perms[scoped] = event.payload
+                perms[scoped] = {**event.payload, "recorded_from_event": event.event_id, "recorded_at": event.occurred_at}
             self._persist()
         except Exception:
             # Restore pre-process state so retry is safe
