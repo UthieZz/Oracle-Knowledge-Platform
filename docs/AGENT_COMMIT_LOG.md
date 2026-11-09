@@ -168,3 +168,11 @@
 - Verification: new regression tests/test_connect_health.py::test_connect_health_text_shows_snapshot_seq added and committed. Prior targeted suites remain green by pattern.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 restart-recovery diagnostics for the local-folder pilot.
+
+## 2026-11-09 — Update after permission deny does not restore visibility (P1)
+
+- Problem: no explicit regression confirmed that a content update after an explicit read=False permission_change leaves the object denied.
+- Change: added test_update_after_permission_deny_does_not_restore_visibility. Confirms denial survives update and reload; permission entry unchanged.
+- Verification: pytest tests/test_knowledge_accumulator.py → 10 passed (new test included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency for the local-folder pilot without altering default retrieval behavior.
