@@ -67,7 +67,7 @@ def _package_info(package_path: str | None) -> dict:
 
 
 def _snapshot_info(snapshot_path: str | None) -> dict:
-    info = {"exists": False, "readable": False, "error": None, "version": None, "seq": None}
+    info = {"exists": False, "readable": False, "error": None, "version": None, "seq": None, "tracked_files": None}
     if not snapshot_path:
         return info
     p = Path(snapshot_path)
@@ -80,6 +80,11 @@ def _snapshot_info(snapshot_path: str | None) -> dict:
         if info["readable"]:
             info["version"] = data.get("version")
             info["seq"] = data.get("seq")
+            snap_map = data.get("snapshot")
+            if isinstance(snap_map, dict):
+                info["tracked_files"] = len(snap_map)
+            else:
+                info["tracked_files"] = 0
     except Exception as exc:  # noqa: BLE001
         info["error"] = str(exc)[:200]
         info["readable"] = False
@@ -230,7 +235,7 @@ def main() -> None:
             snap = summary['snapshot']
             print(f"snapshot_exists={snap['exists']} readable={snap['readable']}")
             if snap.get('readable') and snap.get('seq') is not None:
-                print(f"snapshot_seq={snap['seq']} version={snap.get('version')}")
+                print(f"snapshot_seq={snap['seq']} version={snap.get('version')} tracked_files={snap.get('tracked_files')}")
         cursors = summary.get("cursors") or []
         if cursors:
             print(f"cursors={len(cursors)}")

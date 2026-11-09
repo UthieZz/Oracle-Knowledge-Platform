@@ -323,12 +323,12 @@ def test_connect_health_text_shows_cursors(tmp_path: Path):
 
 
 def test_connect_health_text_shows_snapshot_seq(tmp_path: Path):
-    """Text output surfaces snapshot sequence and version for restart-recovery diagnostics."""
+    """Text output surfaces snapshot sequence, version and tracked file count for restart-recovery diagnostics."""
     db = tmp_path / "sync.db"
     from okc.connect.sync_engine import SyncEngine
     SyncEngine(str(db))
     snap = tmp_path / "sync.snapshot.json"
-    snap.write_text(json.dumps({"version": 1, "seq": 42, "snapshot": {}}), encoding="utf-8")
+    snap.write_text(json.dumps({"version": 1, "seq": 42, "snapshot": {"a.md": "hash1", "b.txt": "hash2"}}), encoding="utf-8")
 
     r = _run_health("--db", str(db), "--snapshot", str(snap))
     assert r.returncode == 0
@@ -336,6 +336,7 @@ def test_connect_health_text_shows_snapshot_seq(tmp_path: Path):
     assert "snapshot_exists=True" in r.stdout
     assert "snapshot_seq=42" in r.stdout
     assert "version=1" in r.stdout
+    assert "tracked_files=2" in r.stdout
 
 
 def test_connect_health_reports_permission_event_provenance(tmp_path: Path):

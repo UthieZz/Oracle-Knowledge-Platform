@@ -241,3 +241,12 @@
 - Verification: pytest tests/test_agent_context_gateway.py::test_gateway_respects_revocation_after_prior_retrieval → passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 by closing the "revocation after prior retrieval" evidence gap called out in PERMISSION_MODEL.md.
+
+## 2026-11-09 — Health CLI reports snapshot tracked file count (P3)
+
+- Problem: operators could see snapshot seq/version but not how many files the restart-recovery map currently tracks.
+- Change: _snapshot_info now computes tracked_files from the snapshot map; text output includes it.
+- Verification: pytest tests/test_connect_health.py::test_connect_health_text_shows_snapshot_seq → passed (updated assertion).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 diagnostics for snapshot recovery reliability.
+

@@ -295,3 +295,13 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New test: tests/test_agent_context_gateway.py::test_gateway_respects_revocation_after_prior_retrieval → passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency for revocation semantics after prior access.
+
+## 2026-11-09 — Health CLI reports snapshot tracked file count (P3)
+
+- Text-mode health now prints tracked_files=N when the connector snapshot is readable.
+- Operators can confirm how many source files are under restart-recovery tracking without opening the JSON.
+- Updated existing snapshot_seq regression to assert the count.
+- Targeted health suite remains green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 operator diagnostics for local-folder pilot snapshot state.
+
