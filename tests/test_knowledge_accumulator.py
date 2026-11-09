@@ -441,3 +441,62 @@ def test_update_after_permission_deny_does_not_restore_visibility(tmp_path):
     assert acc2.package.metadata["permissions"][scoped]["read"] is False
     retriever2 = KnowledgePackageRetriever(acc2.package)
     assert len(retriever2.retrieve(_request("updated"))) == 0
+
+
+def test_recreate_after_delete_following_deny_is_visible_by_default(tmp_path):
+    """P1 restoration: after explicit deny + delete (which cleans permission entry),
+    a subsequent create of the same object_id must be visible under default mode.
+    Prevents stale deny from surviving object lifecycle.
+    """
+    pkg_path = tmp_path / "pkg.json"
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+    scoped = "folder|t|s|doc1"
+    # Create
+    acc.process(SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "original"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    # Deny
+    acc.process(SyncEvent(
+        event_id="p1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": False},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    # Delete (cleans permission)
+    acc.process(SyncEvent(
+        event_id="d1",
+        source="folder",
+        kind="delete",
+        payload={"object_id": "doc1"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    assert scoped not in acc.package.metadata.get("permissions", {})
+    assert len(acc.package.objects) == 0
+    # Re-create same object_id
+    acc.process(SyncEvent(
+        event_id="c2",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "recreated after deny+delete"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    # Must be visible under default (no inherited deny)
+    retriever = KnowledgePackageRetriever(acc.package)
+    hits = retriever.retrieve(_request("recreated"))
+    assert len(hits) == 1
+    # No permission entry present
+    assert scoped not in acc.package.metadata.get("permissions", {})
+    # Reload confirms
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    retriever2 = KnowledgePackageRetriever(acc2.package)
+    assert len(retriever2.retrieve(_request("recreated"))) == 1
+    assert scoped not in acc2.package.metadata.get("permissions", {})

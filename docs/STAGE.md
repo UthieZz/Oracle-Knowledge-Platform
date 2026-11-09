@@ -224,3 +224,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted accumulator suite: 10 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency evidence for the local-folder pilot.
+
+## 2026-11-09 — Recreate after delete-following-deny is visible (P1)
+
+- Added regression: after explicit read=False + delete (permission entry cleaned), a subsequent create of the same object_id is visible under default mode and has no inherited permission entry.
+- Confirms restoration semantics; stale deny does not survive object lifecycle.
+- New test: tests/test_knowledge_accumulator.py::test_recreate_after_delete_following_deny_is_visible_by_default → passed.
+- Targeted accumulator suite remains green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency evidence for deletion and restoration.

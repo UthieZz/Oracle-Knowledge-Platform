@@ -176,3 +176,11 @@
 - Verification: pytest tests/test_knowledge_accumulator.py → 10 passed (new test included).
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency for the local-folder pilot without altering default retrieval behavior.
+
+## 2026-11-09 — Recreate after delete-following-deny is visible (P1)
+
+- Problem: no explicit regression confirmed that a re-create after deny + delete does not inherit the prior denial.
+- Change: added test_recreate_after_delete_following_deny_is_visible_by_default. Confirms object is visible under default mode, no permission entry present, survives reload.
+- Verification: pytest tests/test_knowledge_accumulator.py::test_recreate_after_delete_following_deny_is_visible_by_default → passed. Prior accumulator suite green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 restoration/deletion semantics for the local-folder pilot.
