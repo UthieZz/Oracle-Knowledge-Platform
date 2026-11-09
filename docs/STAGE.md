@@ -287,3 +287,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - New test: tests/test_knowledge_accumulator.py::test_permission_change_before_create_is_enforced → passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 authorization consistency for event ordering / lifecycle in the local-folder pilot.
+
+## 2026-11-09 — Revocation after prior retrieval is enforced (P1)
+
+- Added regression: explicit read=False permission_change after a successful ContextGateway retrieval excludes the object on the next build.
+- Confirms the retriever consults the live permission map on every call; no stale context is reintroduced.
+- New test: tests/test_agent_context_gateway.py::test_gateway_respects_revocation_after_prior_retrieval → passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency for revocation semantics after prior access.

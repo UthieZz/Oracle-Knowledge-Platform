@@ -95,3 +95,50 @@ def test_gateway_respects_strict_retriever_missing_permission():
     package_allowed = ContextGateway(retriever).build(request)
     assert len(package_allowed.items) == 1
     assert package_allowed.items[0].title or package_allowed.items[0].content
+
+
+def test_gateway_respects_revocation_after_prior_retrieval():
+    """P1: Explicit read=False after prior successful retrieval excludes the object on subsequent gateway builds.
+    Confirms no improper caching; permission map is consulted on every retrieve.
+    """
+    from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+    from okc.connect.interfaces import SyncEvent
+    from okc.agent.retrievers import KnowledgePackageRetriever
+
+    acc = KnowledgeAccumulator()
+    create = SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "visible knowledge"},
+        tenant_id="acme",
+        silo_id="finance",
+    )
+    acc.process(create)
+
+    retriever = KnowledgePackageRetriever(acc.package)  # default (pilot) mode
+    request = AgentContextRequest(
+        request_id="req_revoke",
+        tenant_id="acme",
+        silo_id="finance",
+        agent_id="agent_1",
+        task="visible knowledge",
+    )
+    # Prior retrieval succeeds
+    package_before = ContextGateway(retriever).build(request)
+    assert len(package_before.items) == 1
+
+    # Revoke
+    deny = SyncEvent(
+        event_id="p_deny",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": False},
+        tenant_id="acme",
+        silo_id="finance",
+    )
+    acc.process(deny)
+
+    # Subsequent build excludes it
+    package_after = ContextGateway(retriever).build(request)
+    assert len(package_after.items) == 0

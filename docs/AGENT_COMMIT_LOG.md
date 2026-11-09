@@ -233,3 +233,11 @@
 - Verification: pytest tests/test_knowledge_accumulator.py::test_permission_change_before_create_is_enforced → passed. Prior accumulator suite remains green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 by closing the event-ordering evidence gap for authorization decisions.
+
+## 2026-11-09 — Revocation after prior retrieval is enforced (P1)
+
+- Problem: no explicit regression confirmed that a permission deny issued after a successful retrieval is respected on the next ContextGateway build (possible caching concern).
+- Change: added test_gateway_respects_revocation_after_prior_retrieval. Prior build returns the object; after read=False the subsequent build returns empty. Default (pilot) mode.
+- Verification: pytest tests/test_agent_context_gateway.py::test_gateway_respects_revocation_after_prior_retrieval → passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by closing the "revocation after prior retrieval" evidence gap called out in PERMISSION_MODEL.md.
