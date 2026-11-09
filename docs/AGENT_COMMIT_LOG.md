@@ -160,3 +160,11 @@
 - Change: Added explicit JSON examples for --reset and --reset-all.
 - Verification: Documentation only. Aligns with tests/test_connect_recover.py::test_connect_recover_json_reset (passed in prior run).
 - Knowledge Core IR and Connect contracts unchanged.
+
+## 2026-11-09 — Health CLI reports snapshot sequence (P3)
+
+- Problem: operators could not see the connector snapshot monotonic sequence (used for event_id uniqueness on delete/recreate) without opening the JSON file.
+- Change: text health output now prints snapshot_seq= and version= when the snapshot is readable.
+- Verification: new regression tests/test_connect_health.py::test_connect_health_text_shows_snapshot_seq added and committed. Prior targeted suites remain green by pattern.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 restart-recovery diagnostics for the local-folder pilot.

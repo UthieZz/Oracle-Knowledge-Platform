@@ -1,4 +1,4 @@
-# OKP Stage — 2026-11-08
+# OKP Stage — 2026-11-09
 
 ## Verified this run (local environment)
 
@@ -15,7 +15,7 @@ Implemented and targeted-tested:
 - LocalFolderConnector with optional `snapshot_path` (restart deletion detection, sequence for new event_ids).
 - SQLite SyncEngine (WAL, dedup, retry/backoff, cursor advances only on success).
 - KnowledgeAccumulator (source|tenant|silo namespacing, persist/rollback, cross-scope isolation).
-- Health CLI: status=OK|WARNING, exit 1 on WARNING, --json.
+- Health CLI: status=OK|WARNING, exit 1 on WARNING, --json. Text output now includes snapshot_seq and version when the snapshot is readable.
 
 ## Not verified this run
 
@@ -207,3 +207,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Aligns operator instructions with the verified recovery CLI behavior (no mixed text+JSON).
 - No code or test change. Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 by keeping documented operator steps current with tested CLI output.
+
+## 2026-11-09 — Health CLI reports snapshot sequence (P3)
+
+- Text-mode health now prints snapshot_seq and version when the snapshot JSON is readable.
+- Operators can confirm restart-recovery state (monotonic sequence used for event_ids) without inspecting the file.
+- New regression: tests/test_connect_health.py::test_connect_health_text_shows_snapshot_seq → passed (code+test committed).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 operator diagnostics for local-folder pilot restart reliability.
