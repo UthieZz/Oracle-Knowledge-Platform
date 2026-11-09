@@ -394,3 +394,50 @@ def test_malformed_permission_change_is_ignored(tmp_path):
     acc2 = KnowledgeAccumulator(package_path=pkg_path)
     assert scoped not in acc2.package.metadata.get("permissions", {})
 
+
+def test_update_after_permission_deny_does_not_restore_visibility(tmp_path):
+    """P1 boundary: an update event after an explicit read=False permission_change
+    must not re-enable retrieval. Permission map is independent of content upserts.
+    """
+    pkg_path = tmp_path / "pkg.json"
+    acc = KnowledgeAccumulator(package_path=pkg_path)
+    scoped = "folder|t|s|doc1"
+    # Create
+    acc.process(SyncEvent(
+        event_id="c1",
+        source="folder",
+        kind="create",
+        payload={"object_id": "doc1", "text": "original content"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    # Deny
+    acc.process(SyncEvent(
+        event_id="p1",
+        source="folder",
+        kind="permission_change",
+        payload={"object_id": "doc1", "read": False},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    retriever = KnowledgePackageRetriever(acc.package)
+    assert len(retriever.retrieve(_request("original"))) == 0
+    # Update content
+    acc.process(SyncEvent(
+        event_id="u1",
+        source="folder",
+        kind="update",
+        payload={"object_id": "doc1", "text": "updated content still denied"},
+        tenant_id="t",
+        silo_id="s",
+    ))
+    # Still denied under default mode
+    retriever = KnowledgePackageRetriever(acc.package)
+    assert len(retriever.retrieve(_request("updated"))) == 0
+    # Permission entry remains
+    assert acc.package.metadata["permissions"][scoped]["read"] is False
+    # Reload confirms persistence
+    acc2 = KnowledgeAccumulator(package_path=pkg_path)
+    assert acc2.package.metadata["permissions"][scoped]["read"] is False
+    retriever2 = KnowledgePackageRetriever(acc2.package)
+    assert len(retriever2.retrieve(_request("updated"))) == 0
