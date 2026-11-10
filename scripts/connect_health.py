@@ -172,6 +172,11 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
             reasons.append("object_count_mismatch")
             status = "WARNING"
 
+    # orphaned permission entries indicate incomplete cleanup or corruption
+    if pkg.get("readable") and pkg.get("orphaned_permission_entries", 0) > 0:
+        reasons.append("orphaned_permission_entries")
+        status = "WARNING"
+
     # snapshot tracked files vs package objects (both must be readable)
     if (
         snapshot_path

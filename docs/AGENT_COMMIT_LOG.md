@@ -1,3 +1,11 @@
+## 2026-11-10 — Health CLI warns on orphaned permission entries (P1/P3)
+
+- Problem: orphaned_permission_entries were reported but did not elevate status, unlike other consistency gaps.
+- Change: positive orphaned count now appends reason and sets status=WARNING (exit 1).
+- Verification: pytest tests/test_connect_health.py → 21 passed (updated existing cases + new warning regression).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1/P3 by making permission-to-content inconsistency actionable for operators.
+
 ## 2026-11-10 — Baseline verification of Connect + Firestore permission filter (P1)
 
 - Environment: fresh clone of main@08b284b in sandbox.

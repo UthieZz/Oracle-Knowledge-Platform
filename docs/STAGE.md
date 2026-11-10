@@ -1,3 +1,10 @@
+## 2026-11-10 — Health CLI warns on orphaned permission entries (P1/P3)
+
+- Orphaned permission entries (keys with no matching living object) now elevate status=WARNING and exit 1.
+- Operators get consistent alert for incomplete cleanup or corruption without package inspection.
+- Regression added; health suite 21 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+
 ## Verified this run (local sandbox, 2026-11-10)
 
 - Cloned main at 08b284b.
