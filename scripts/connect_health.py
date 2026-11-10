@@ -59,6 +59,15 @@ def _package_info(package_path: str | None) -> dict:
             if src_ids and not any(sid in perms for sid in src_ids):
                 missing += 1
         info["objects_without_explicit_permission"] = missing
+        # Orphaned permission entries: keys that do not match any living object src id.
+        # Helps operators detect incomplete cleanup or external corruption.
+        living_src_ids = set()
+        for obj in pkg.objects:
+            for rid in (obj.provenance.source_record_ids or []):
+                if rid.startswith("src:"):
+                    living_src_ids.add(rid[4:])
+        orphaned = sum(1 for k in perms if k not in living_src_ids)
+        info["orphaned_permission_entries"] = orphaned
         info["last_source"] = pkg.metadata.get("last_source")
     except Exception as exc:  # noqa: BLE001
         info["error"] = str(exc)[:200]
@@ -241,7 +250,7 @@ def main() -> None:
             pkg = summary['package']
             print(f"package_exists={pkg['exists']} readable={pkg['readable']} object_count={pkg['object_count']}")
             if pkg.get('readable'):
-                print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)} permissions_with_event_provenance={pkg.get('permissions_with_event_provenance', 0)} permissions_missing_event_provenance={pkg.get('permissions_missing_event_provenance', 0)}")
+                print(f"permissions_entries={pkg.get('permissions_entries', 0)} explicit_read_false={pkg.get('explicit_read_false', 0)} objects_without_explicit_permission={pkg.get('objects_without_explicit_permission', 0)} permissions_with_event_provenance={pkg.get('permissions_with_event_provenance', 0)} permissions_missing_event_provenance={pkg.get('permissions_missing_event_provenance', 0)} orphaned_permission_entries={pkg.get('orphaned_permission_entries', 0)}")
         if snapshot:
             snap = summary['snapshot']
             print(f"snapshot_exists={snap['exists']} readable={snap['readable']}")

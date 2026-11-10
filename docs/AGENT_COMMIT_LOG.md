@@ -300,3 +300,11 @@
 - Verification: Documentation only. Aligns with tests/test_firestore_exporter_permissions.py (3 passed in prior baseline) and the implementation in src/exporters/firestore_exporter.py.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 by closing the documented gap for the publishing boundary.
+
+## 2026-11-10 — Health CLI reports orphaned permission entries (P1/P3)
+
+- Problem: operators had no visibility into permission metadata that no longer corresponds to any living object (incomplete cleanup or corruption).
+- Change: _package_info computes orphaned_permission_entries; text and JSON surfaces it.
+- Verification: pytest tests/test_connect_health.py::test_connect_health_reports_orphaned_permission_entries → passed; full health suite 20 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1/P3 by making permission-to-content consistency inspectable.

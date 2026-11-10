@@ -346,3 +346,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Operators can confirm restart-recovery map size without inspecting the file.
 - Regression updated and passed. Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 diagnostics for snapshot recovery reliability.
+
+## 2026-11-10 — Health CLI reports orphaned permission entries (P1/P3)
+
+- connect_health.py now counts orphaned_permission_entries: permission map keys that do not match any living object's src: identity.
+- Operators can detect incomplete delete cleanup or external package corruption without opening the package.
+- New regression: tests/test_connect_health.py::test_connect_health_reports_orphaned_permission_entries → passed.
+- Targeted health suite: 20 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 provenance consistency visibility and P3 operator diagnostics for the local-folder pilot.

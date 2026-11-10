@@ -432,3 +432,42 @@ def test_connect_health_warns_on_snapshot_package_count_mismatch(tmp_path: Path)
     assert "snapshot_package_count_mismatch" in data["reasons"]
     assert data["snapshot"]["tracked_files"] == 2
     assert data["package"]["object_count"] == 0
+
+
+def test_connect_health_reports_orphaned_permission_entries(tmp_path: Path):
+    """Operator visibility: count permission entries whose scoped id is not present on any living object.
+    Advances P1/P3 by surfacing incomplete cleanup or external corruption without package inspection.
+    """
+    from okc.connect.sync_engine import SyncEngine
+    from okc.models.knowledge_package import KnowledgePackage, KnowledgeObject, Provenance
+
+    db = tmp_path / "sync.db"
+    pkg_path = tmp_path / "pkg.json"
+    SyncEngine(str(db))
+
+    # One living object, one orphaned permission entry for a missing scoped id
+    obj = KnowledgeObject(
+        object_id="obj1",
+        title="t",
+        content="c",
+        provenance=Provenance(
+            source_platform="local",
+            source_file="file1",
+            tenant_id="t1",
+            silo_id="s1",
+            source_record_ids=["src:local|t1|s1|file1"],
+        ),
+    )
+    perms = {
+        "local|t1|s1|file1": {"read": True, "recorded_from_event": "e1"},
+        "local|t1|s1|deleted": {"read": False, "recorded_from_event": "e2"},
+    }
+    pkg = KnowledgePackage(package_id="pkg1", objects=[obj], metadata={"permissions": perms})
+    pkg_path.write_text(pkg.to_json(), encoding="utf-8")
+
+    r = _run_health("--db", str(db), "--package", str(pkg_path), "--json")
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["package"]["orphaned_permission_entries"] == 1
+    assert data["package"]["permissions_entries"] == 2
+    assert "orphaned_permission_entries=1" in _run_health("--db", str(db), "--package", str(pkg_path)).stdout
