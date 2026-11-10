@@ -7,6 +7,15 @@
 - Verification: targeted health + accumulator + exporter suites green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 provenance completeness visibility and P3 operator diagnostics.
+
+## 2026-11-10 — Restore health CLI and add snapshot vs package count mismatch warning (P3)
+
+- Problem: `scripts/connect_health.py` was replaced by the literal string "PLACEHOLDER" in commit 1fb3c0a, breaking all health diagnostics.
+- Change: Restored full implementation from 63d6eb2. Added `snapshot_package_count_mismatch` WARNING when both snapshot and package are readable and tracked_files != object_count.
+- Added regression test confirming WARNING + exit 1 on mismatch.
+- Verification: `pytest tests/test_connect_health.py` → 19 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 operator diagnostics for package/snapshot consistency after restarts or interrupted processing.
 # Agent Commit Log
 
 ## 2026-11-07 — Connect CLI path bootstrap

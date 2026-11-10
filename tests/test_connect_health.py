@@ -402,3 +402,33 @@ def test_connect_health_warns_on_package_lag_high(tmp_path: Path):
     assert data["status"] == "WARNING"
     assert "package_lag_high" in data["reasons"]
     assert data.get("package_lag_seconds", 0) > 300
+
+
+def test_connect_health_warns_on_snapshot_package_count_mismatch(tmp_path: Path):
+    """WARNING when snapshot tracked file count differs from package object count (both readable)."""
+    db = tmp_path / "sync.db"
+    from okc.connect.sync_engine import SyncEngine
+    SyncEngine(str(db))
+
+    # Snapshot tracks 2 files
+    snap = tmp_path / "sync.snapshot.json"
+    snap.write_text(json.dumps({"version": 1, "seq": 1, "snapshot": {"a.md": "h1", "b.md": "h2"}}), encoding="utf-8")
+
+    # Package has 1 object
+    pkg_path = tmp_path / "package.json"
+    from okc.models.knowledge_package import KnowledgePackage
+    pkg = KnowledgePackage(package_id="mismatch-test", schema_version="2.0", objects=[], metadata={"object_count": 1})
+    # Force one object via a minimal construction if needed; empty is fine for count comparison
+    pkg_path.write_text(pkg.model_dump_json(), encoding="utf-8")
+
+    r = _run_health("--db", str(db), "--package", str(pkg_path), "--snapshot", str(snap))
+    assert r.returncode == 1
+    assert "status=WARNING" in r.stdout
+    assert "snapshot_package_count_mismatch" in r.stdout
+
+    r_json = _run_health("--db", str(db), "--package", str(pkg_path), "--snapshot", str(snap), "--json")
+    data = json.loads(r_json.stdout)
+    assert data["status"] == "WARNING"
+    assert "snapshot_package_count_mismatch" in data["reasons"]
+    assert data["snapshot"]["tracked_files"] == 2
+    assert data["package"]["object_count"] == 0

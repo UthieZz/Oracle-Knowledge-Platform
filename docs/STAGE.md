@@ -1,6 +1,33 @@
-# OKP Stage — 2026-11-09
+# OKP Stage — 2026-11-10
 
 ## Verified this run (local environment)
+
+- Restored full `scripts/connect_health.py` (was PLACEHOLDER after 1fb3c0a).
+- Added `snapshot_package_count_mismatch` WARNING when snapshot tracked_files ≠ package object_count (both readable).
+- `pytest tests/test_connect_health.py` → 19 passed.
+
+## Connect local-folder pilot status
+
+Implemented and targeted-tested:
+
+- LocalFolderConnector with optional `snapshot_path` (restart deletion detection, sequence for new event_ids).
+- SQLite SyncEngine (WAL, dedup, retry/backoff, cursor advances only on success).
+- KnowledgeAccumulator (source|tenant|silo namespacing, persist/rollback, cross-scope isolation).
+- Health CLI: status=OK|WARNING, exit 1 on WARNING, --json. Text output includes snapshot_seq, version, tracked_files. New warning for snapshot vs package object count mismatch.
+
+## Not verified this run
+
+- Full suite under all optional dependencies (google-genai, firestore, etc.).
+- Studio production build.
+- Deployed Firestore rules / AuthGate behavior.
+- Real business-system connector.
+- Complete authorization model beyond documented compatibility (objects without permission entry remain visible).
+
+## Next
+
+P1 authorization consistency (remaining boundaries) or full optional-deps suite + Studio build verification.
+
+## Prior stage notes (2026-11-09 and earlier)
 
 - Connect CLI path bootstrap fixed in `scripts/connect_health.py` and `scripts/run_connect_worker.py`.
   Operator invocation `python scripts/<cli>.py` now resolves `okc` without requiring PYTHONPATH.
