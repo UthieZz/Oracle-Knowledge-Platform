@@ -1,6 +1,6 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-08  
+**Updated:** 2026-11-10  
 **Basis:** Current-main source and documentation review. Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.  
 **Companion analysis:** [Build-First Technical Analysis — 2026-10-22](docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md)
 
@@ -37,7 +37,7 @@ Do not turn a recorded test into a production-readiness claim. Update status whe
 11. Preserve the current Firebase Spark/no-cost constraint recorded in `GEMINI.md`; do not add paid services or billing without an explicit decision.
 12. Avoid a compiler/IR rewrite, wholesale Studio rewrite, broad connector marketplace or new infrastructure without evidence of measurable value.
 
-## Current implementation snapshot — 2026-11-08
+## Current implementation snapshot — 2026-11-10
 
 ### Knowledge Core and application path
 
@@ -50,7 +50,7 @@ Do not turn a recorded test into a production-readiness claim. Update status whe
 
 ### OKP Connect — built vertical slice (P0 largely complete for local-folder pilot)
 
-Current code and `docs/STAGE.md` (updated through 2026-11-08) record these components, with targeted tests passing:
+Current code and `docs/STAGE.md` (updated through 2026-11-10) record these components, with targeted tests passing:
 
 1. **Connector contract:** authentication, initial and incremental sync, deletion, permissions and health; SyncEvent carries event ID, source, kind, cursor/payload, tenant and silo.
 2. **SQLite SyncEngine:** durable event queue (WAL), cursor table, event-ID deduplication, processor invocation, attempt/error tracking, bounded retry with exponential backoff, manual recovery (`reset_failed`), enhanced health (failed count, queue age, last_processed_at, waiting_for_retry). Cursor advances only on success. Interrupted `process_next` does not advance cursor. Multi-instance and concurrent multi-thread writers tested.
@@ -58,14 +58,14 @@ Current code and `docs/STAGE.md` (updated through 2026-11-08) record these compo
 4. **LocalFolderConnector:** recursive `.txt` / `.md` scanning, content hashes and create/update/delete events. Optional `snapshot_path` loads prior state on restart so files deleted while stopped generate delete events. Snapshot stores version, monotonic sequence and map; event_ids incorporate sequence so delete/recreate of identical content receives a new id. Tested, including real subprocess process-restart deletion convergence.
 5. **KnowledgeAccumulator:** imports text through PlainTextImporter, upserts by source marker, removes deleted objects and records permission-change metadata. Source identity namespaced as `source|tenant_id|silo_id|object_id` (legacy unscoped readable). Optional package_path loads/saves canonical JSON (atomic write). Process rolls back in-memory state if persist fails. Identical create after successful persist is idempotent. Cross-scope isolation tested.
 6. **Persistent living package:** survives process restarts. Real process-restart test confirms package converges after stop/delete/restart.
-7. **Pilot runner and health CLI:** `scripts/run_connect_worker.py` (tenant/silo required) and `scripts/connect_health.py`. Health reports queued/processed/failed, oldest age, last_processed_at, failed details, cursors, package object_count consistency, permissions_entries/explicit_read_false, last_source, package_lag_seconds, and ends with `status=OK|WARNING` (exit 1 on WARNING). Warnings cover failed, missing/unreadable package/snapshot, mismatch, high queue age, high package lag, high waiting_retry, no_ready_events.
-8. **Retrieval permission behavior:** filtering for explicit `read=False` entries; objects without entry remain visible (documented compatibility). Not a complete authorization system.
+7. **Pilot runner and health CLI:** `scripts/run_connect_worker.py` (tenant/silo required) and `scripts/connect_health.py`. Health reports queued/processed/failed, oldest age, last_processed_at, failed details, cursors, package object_count consistency, permissions_entries/explicit_read_false, last_source, package_lag_seconds, and ends with `status=OK|WARNING` (exit 1 on WARNING). Warnings cover failed, missing/unreadable package/snapshot, mismatch, high queue age, high package lag, high waiting_retry, no_ready_events, and snapshot vs package count mismatch.
+8. **Retrieval permission behavior:** filtering for explicit `read=False` entries; objects without entry remain visible (documented compatibility). Not a complete authorization system. Deletion and restoration semantics documented in docs/PERMISSION_MODEL.md from tested regressions.
 
-**Current verification evidence (this environment, 2026-11-07/08):** targeted Connect suite (sync_engine + accumulator + local_folder + worker + health + e2e + contract) 40+ passed in recorded runs. Full suite previously recorded 144-145 passed with failures only in optional-dependency tests (grounded_ask missing GEMINI_API_KEY; firestore exporter). Knowledge Core IR unchanged.
+**Current verification evidence (this environment, 2026-11-10):** targeted Connect suite (health + sync_engine + accumulator + local_folder + e2e + contract + recover + gateway) 44 passed. Full suite previously recorded 144-145 passed with failures only in optional-dependency tests (grounded_ask missing GEMINI_API_KEY; firestore exporter). Knowledge Core IR unchanged.
 
 ### Still to prove before production claims
 
-- Complete authorization across ingestion, persistence, retrieval, context, export and administrative access (P1).
+- Complete authorization across ingestion, persistence, retrieval, context, export and administrative access (P1). Firestore publishing path does not yet apply the permission filter used by SQLiteExporter and the retriever.
 - End-to-end provenance/citation integrity across the actual application path (P1/P2).
 - Supported service packaging, setup/configuration, credential handling, upgrades, backup and recovery (P3).
 - A real business-system connector, onboarding/identity integration, and a measured pilot (P4+).
@@ -103,10 +103,10 @@ Manual import remains a supported fallback. The product goal is to reduce repeat
 1. Define an explicit access-policy model for tenant, silo, user/source permissions and missing permission data.
 2. Apply and test policy at ingestion, queue processing, package access, retrieval, context construction, publishing/export and administrative operations.
 3. Test read revocation after prior retrieval, context/cache invalidation, deletion, restoration and tenant/silo mismatch.
-4. Document the current compatibility behavior where objects without a permission entry remain visible; decide whether pilot and production modes need different defaults. **Done for pilot:** see docs/PERMISSION_MODEL.md (default visible; strict_permissions and --strict-check available).
+4. Document the current compatibility behavior where objects without a permission entry remain visible; decide whether pilot and production modes need different defaults. **Done for pilot:** see docs/PERMISSION_MODEL.md (default visible; strict_permissions and --strict-check available). Deletion/restoration semantics also documented there from tested regressions.
 5. Trace provenance from source through importer, compiler, package persistence, exporter, retrieval and final citation. Ensure a cited source actually supports the answer rather than being attached merely because it was retrieved.
 6. Reconcile provenance and source-identity handling across `okc/` and `src/`, especially where exporter object identity or relationship/attachment lineage may differ.
-7. Document retention and deletion semantics for packages, exports, caches, backups and tenant offboarding.
+7. Document retention and deletion semantics for packages, exports, caches, backups and tenant offboarding. **Partial:** lifecycle behaviors for permission entries verified and summarized in PERMISSION_MODEL.md.
 
 **Acceptance evidence:** policy tests cover every relevant boundary; revoked content is not returned by subsequent governed retrieval; citations and source identity are traceable; default permission behavior is documented and intentional.
 
@@ -184,48 +184,8 @@ Prepare:
 - architecture and data-flow diagrams;
 - KnowledgePackage, compiler, provenance and Connect contracts;
 - tested connector/deployment matrix;
-- access-control model and threat-model evidence;
-- install, upgrade, backup, restore and operational procedures;
-- known limitations and non-claims.
+- access-control model and threat-model summary;
+- license, dependency and secret-scan evidence;
+- pilot results and limitations.
 
-**Acceptance evidence:** a third party can evaluate the system without founder-only knowledge; documented claims match tested behavior.
-
-## Local-first and cloud direction
-
-OKP should keep the knowledge core independent of any single storage or hosting provider. Firestore may remain a useful publishing/operational adapter for the current Studio path, while local/customer-controlled deployment evolves incrementally.
-
-Preserve this integration pipeline:
-
-`Source/Connector → SyncEvent → SyncEngine → Processor/Importer → KnowledgePackage → Compiler/Analysis → Storage/Retrieval/Context`
-
-This is an integration and persistence evolution, not a compiler rewrite. Existing cloud and Studio paths should remain stable until alternatives are implemented and verified.
-
-## Explicit non-goals unless evidence changes
-
-- No parallel canonical IR.
-- No direct connector-to-KnowledgePackage writes.
-- No new vector database, knowledge graph, microservices split or paid infrastructure merely for appearance.
-- No broad connector marketplace before one real connector and one pilot are reliable.
-- No wholesale Studio rewrite.
-- No automatic promotion of agent memory into canonical knowledge.
-- No claim of full authorization, SSO, exactly-once processing, automatic background reliability or production readiness without relevant end-to-end evidence.
-
-## Engineering session rule
-
-For every implementation session:
-
-1. Inspect current main, recent commits, this roadmap, relevant stage/docs, tests and runtime state where available.
-2. Choose the highest-value unfinished dependency in the priority order.
-3. Verify the current implementation and branch/PR state before editing.
-4. Make the smallest coherent change that improves the vertical slice.
-5. Test the affected boundary and record exact commands/results.
-6. Update stage notes and agent log only when evidence changes.
-7. Report what changed, what was tested, what remains unverified and the next highest-leverage action.
-
-Conversation history and earlier audit documents are context, not stronger evidence than current source, current tests and deployed runtime.
-
-## Definition of success
-
-OKP is ready for serious B2B/IP evaluation when an operator can set up a supported deployment, authorize a source, rely on recoverable background sync, retrieve grounded knowledge within verified access boundaries, inspect provenance and operational health, and demonstrate measurable value in a repeatable pilot.
-
-**Useful + grounded + isolated + recoverable + observable + easy to operate + measurable.**
+**Acceptance evidence:** diligence package supports an informed commercial or partnership decision without relying on undocumented founder knowledge.
