@@ -1,3 +1,12 @@
+## 2026-11-10 — Baseline verification of Connect suite on current main (P0/P1/P3)
+
+- Environment: fresh clone of main@29ba759.
+- Checks: broader targeted Connect suite (health + accumulator + sync_engine + local_folder + e2e + contract + recover + gateway) → 65 passed.
+- Confirms latest health orphaned warning and prior P1 permission/export work remain green.
+- No functional code change. Records evidence for the local-folder pilot reliability.
+- Knowledge Core IR and Connect contracts unchanged.
+- Next: continue P1 remaining boundaries or advance P3 operator packaging.
+
 ## 2026-11-10 — Health CLI warns on orphaned permission entries (P1/P3)
 
 - Problem: orphaned_permission_entries were reported but did not elevate status, unlike other consistency gaps.

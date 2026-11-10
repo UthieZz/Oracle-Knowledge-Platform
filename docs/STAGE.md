@@ -1,3 +1,12 @@
+## 2026-11-10 — Baseline verification of Connect suite on current main (P0/P1/P3)
+
+- Environment: fresh clone of main@29ba759 (orphaned permission warning commit).
+- Checks: pytest tests/test_connect_health.py tests/test_knowledge_accumulator.py tests/test_sync_engine.py tests/test_local_folder_connector.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_connect_recover.py tests/test_agent_context_gateway.py → 65 passed.
+- Health suite includes orphaned warning and provenance counts. Permission model on retrieval/export boundaries unit-tested in prior runs.
+- No functional code change. Records current evidence that the local-folder pilot path remains green after latest P1/P3 health improvements.
+- Knowledge Core IR and Connect contracts unchanged.
+- Next: remaining P1 boundaries or P3 packaging for reproducible operator setup.
+
 ## 2026-11-10 — Health CLI warns on orphaned permission entries (P1/P3)
 
 - Orphaned permission entries (keys with no matching living object) now elevate status=WARNING and exit 1.
