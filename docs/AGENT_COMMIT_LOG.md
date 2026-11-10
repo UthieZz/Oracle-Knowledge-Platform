@@ -1,4 +1,12 @@
 
+## 2026-11-10 — Document verified deletion and restoration semantics (P1)
+
+- Problem: PERMISSION_MODEL.md listed next evidence needed as "documented retention/deletion semantics" but the tested lifecycle behaviors were not summarized in one place.
+- Change: Added section to docs/PERMISSION_MODEL.md covering delete cleans entry, recreate after deny+delete is visible by default and exported, update after deny does not restore, permission before create is enforced, and revocation after prior retrieval is respected. Updated date and next-evidence note to call out Firestore publish path gap.
+- Verification: Documentation only. Aligns with existing regressions already recorded as passed. Broader targeted Connect suite confirmed 44 passed in this environment.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by making tested authorization lifecycle semantics explicit and recoverable from the repo.
+
 ## 2026-11-09 — Health CLI reports missing permission event provenance (P1/P3)
 
 - Problem: operators could compare permissions_with_event_provenance to entries but the incomplete count was not explicit.
