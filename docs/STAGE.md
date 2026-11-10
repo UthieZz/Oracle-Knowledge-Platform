@@ -5,6 +5,8 @@
 - Restored full `scripts/connect_health.py` (was PLACEHOLDER after 1fb3c0a).
 - Added `snapshot_package_count_mismatch` WARNING when snapshot tracked_files ≠ package object_count (both readable).
 - `pytest tests/test_connect_health.py` → 19 passed.
+- Broader targeted Connect suite (sync_engine + knowledge_accumulator + local_folder_connector + connect_e2e + connect_contract + connect_recover + agent_context_gateway) → 44 passed.
+- Documented verified deletion and restoration semantics in docs/PERMISSION_MODEL.md (based on existing lifecycle regressions).
 
 ## Connect local-folder pilot status
 
@@ -21,11 +23,11 @@ Implemented and targeted-tested:
 - Studio production build.
 - Deployed Firestore rules / AuthGate behavior.
 - Real business-system connector.
-- Complete authorization model beyond documented compatibility (objects without permission entry remain visible).
+- Complete authorization model beyond documented compatibility (objects without permission entry remain visible). Firestore publishing path does not yet apply the permission filter used by SQLiteExporter and the retriever.
 
 ## Next
 
-P1 authorization consistency (remaining boundaries) or full optional-deps suite + Studio build verification.
+P1 authorization consistency (remaining boundaries, especially Firestore publish path) or full optional-deps suite + Studio build verification.
 
 ## Prior stage notes (2026-11-09 and earlier)
 
@@ -325,19 +327,7 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 
 ## 2026-11-09 — Health CLI reports snapshot tracked file count (P3)
 
-- Text-mode health now prints tracked_files=N when the connector snapshot is readable.
-- Operators can confirm how many source files are under restart-recovery tracking without opening the JSON.
-- Updated existing snapshot_seq regression to assert the count.
-- Targeted health suite remains green.
-- Knowledge Core IR and Connect contracts unchanged.
-- Advances P3 operator diagnostics for local-folder pilot snapshot state.
-
-
-## 2026-11-10 — Health CLI package_lag_high regression (P3)
-
-- Added regression confirming package_lag_seconds > 300 produces status=WARNING and exit 1.
-- Strengthens operator diagnostics for package freshness vs last processed.
-- Targeted health suite: 18 passed.
-- Knowledge Core IR and Connect contracts unchanged.
-- Advances P3 by verifying the existing lag warning path.
-
+- Text-mode health now prints snapshot_seq, version, and tracked_files when the snapshot is readable.
+- Operators can confirm restart-recovery map size without inspecting the file.
+- Regression updated and passed. Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 diagnostics for snapshot recovery reliability.
