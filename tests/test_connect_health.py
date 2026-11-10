@@ -521,3 +521,29 @@ def test_connect_health_warns_on_orphaned_permission_entries(tmp_path: Path):
     assert data["status"] == "WARNING"
     assert "orphaned_permission_entries" in data["reasons"]
     assert data["package"]["orphaned_permission_entries"] == 1
+
+
+def test_connect_health_warns_on_unexpected_snapshot_version(tmp_path: Path):
+    """Snapshot version other than the expected integer 1 elevates to WARNING.
+
+    Detects legacy flat snapshots or corruption that would lose sequence on restart.
+    """
+    from okc.connect.sync_engine import SyncEngine
+
+    db = tmp_path / "sync.db"
+    snap_path = tmp_path / "snap.json"
+    SyncEngine(str(db))
+
+    # Unexpected version (string or other integer)
+    snap_path.write_text(json.dumps({"version": "0.1.2", "seq": 1, "snapshot": {}}), encoding="utf-8")
+
+    r = _run_health("--db", str(db), "--snapshot", str(snap_path))
+    assert r.returncode == 1
+    assert "status=WARNING" in r.stdout
+    assert "snapshot_version_unexpected" in r.stdout
+
+    r_json = _run_health("--db", str(db), "--snapshot", str(snap_path), "--json")
+    data = json.loads(r_json.stdout)
+    assert data["status"] == "WARNING"
+    assert "snapshot_version_unexpected" in data["reasons"]
+    assert data["snapshot"]["version"] == "0.1.2"

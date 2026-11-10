@@ -325,3 +325,11 @@
 - Verification: pytest tests/test_connect_health.py::test_connect_health_reports_orphaned_permission_entries → passed; full health suite 20 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1/P3 by making permission-to-content consistency inspectable.
+
+## 2026-11-10 — Health CLI warns on unexpected snapshot version (P3)
+
+- Problem: snapshot format version is written as integer 1; other values (legacy flat or corruption) could lose sequence on restart but were not elevated to WARNING.
+- Change: readable snapshot with version != 1 now appends snapshot_version_unexpected and sets status=WARNING (exit 1).
+- Verification: pytest tests/test_connect_health.py → 22 passed (new regression included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making snapshot format compatibility inspectable without manual file inspection.

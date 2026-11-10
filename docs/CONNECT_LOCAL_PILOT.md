@@ -55,7 +55,7 @@ python scripts/connect_health.py --config pilot.json
 ```
 
 Text output includes status, queue counts, package object count, permissions summary, and lag.  
-Exit code 1 on any WARNING. When failed events are present, text output includes a recovery_hint pointing at connect_recover.py.
+Exit code 1 on any WARNING (failed events, missing/unreadable package or snapshot, high lag/age, orphaned permissions, snapshot/package count mismatch, unexpected snapshot version, etc.). When failed events are present, text output includes a recovery_hint pointing at connect_recover.py.
 
 JSON:
 

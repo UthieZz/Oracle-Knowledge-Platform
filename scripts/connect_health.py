@@ -140,6 +140,11 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
     if snapshot_path and snap["exists"] and not snap["readable"]:
         reasons.append("snapshot_unreadable")
         status = "WARNING"
+    # Snapshot format version: connector writes integer 1; other values indicate
+    # legacy/flat or corrupted state that may lose sequence on restart.
+    if snapshot_path and snap.get("readable") and snap.get("version") != 1:
+        reasons.append("snapshot_version_unexpected")
+        status = "WARNING"
     oldest = h.get("oldest_queued_age_seconds") or 0
     if oldest > 600:
         reasons.append("queue_age_high")
