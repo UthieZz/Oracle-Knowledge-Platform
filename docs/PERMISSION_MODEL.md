@@ -45,4 +45,4 @@ These behaviors are covered by existing targeted tests in tests/test_knowledge_a
 
 ## Next evidence needed (P1)
 
-Policy tests at every boundary (ingestion, queue, package, retrieval, context, export, admin), full retention policy for packages/exports/caches/backups, and application of the same permission filter to the Firestore publishing path (now implemented in src/exporters/firestore_exporter.py with default/strict modes matching the okc path when metadata["permissions"] is present).
+Policy tests at remaining boundaries (ingestion, queue, package, admin), full retention policy for packages/exports/caches/backups. The Firestore publishing path filter is implemented and unit-tested (src/exporters/firestore_exporter.py, tests/test_firestore_exporter_permissions.py).

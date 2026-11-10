@@ -42,7 +42,7 @@ Implemented and targeted-tested:
 
 ## Next
 
-P1 authorization consistency (remaining boundaries, especially Firestore publish path) or full optional-deps suite + Studio build verification.
+P1 authorization consistency (remaining boundaries) or full optional-deps suite + Studio build verification. Firestore publish path filter is implemented and unit-tested.
 
 ## Prior stage notes (2026-11-09 and earlier)
 

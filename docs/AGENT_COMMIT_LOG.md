@@ -292,3 +292,11 @@
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 operator diagnostics verification for the local-folder pilot.
 
+
+## 2026-11-10 — Document Firestore permission filter completion (P1)
+
+- Problem: PERMISSION_MODEL.md and STAGE.md still listed the Firestore publishing path as an open gap after the filter was implemented and tested in 08b284b.
+- Change: Updated next-evidence note in PERMISSION_MODEL.md and next action in STAGE.md to record that the FirestoreExporter filter is implemented and unit-tested.
+- Verification: Documentation only. Aligns with tests/test_firestore_exporter_permissions.py (3 passed in prior baseline) and the implementation in src/exporters/firestore_exporter.py.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by closing the documented gap for the publishing boundary.
