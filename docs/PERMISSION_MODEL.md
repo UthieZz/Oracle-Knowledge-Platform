@@ -17,6 +17,7 @@
 - `KnowledgePackageRetriever(strict_permissions=True)` and `SQLiteExporter.export(..., strict_permissions=True)` treat a missing permission entry as denial when a source identifier is present.
 - Explicit allow still works; explicit deny still works.
 - The ContextGateway respects the retriever mode; denied objects are not reintroduced at context construction.
+- FirestoreExporter.export(..., strict_permissions=False) applies the same filter to knowledge_objects when metadata["permissions"] exists (explicit deny always excluded; missing included by default, denied when strict=True).
 
 ## Operator visibility
 
@@ -44,4 +45,4 @@ These behaviors are covered by existing targeted tests in tests/test_knowledge_a
 
 ## Next evidence needed (P1)
 
-Policy tests at every boundary (ingestion, queue, package, retrieval, context, export, admin), full retention policy for packages/exports/caches/backups, and application of the same permission filter to the Firestore publishing path (currently present only on SQLiteExporter and retriever).
+Policy tests at every boundary (ingestion, queue, package, retrieval, context, export, admin), full retention policy for packages/exports/caches/backups, and application of the same permission filter to the Firestore publishing path (now implemented in src/exporters/firestore_exporter.py with default/strict modes matching the okc path when metadata["permissions"] is present).

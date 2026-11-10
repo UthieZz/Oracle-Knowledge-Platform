@@ -1,4 +1,12 @@
 
+## 2026-11-10 — FirestoreExporter respects permission model (P1)
+
+- Problem: Firestore publishing path did not apply the permission filter used by SQLiteExporter and KnowledgePackageRetriever.
+- Change: FirestoreExporter.export now accepts strict_permissions (default False). Filters knowledge_objects using metadata["permissions"] and source_record_ids when present. Explicit deny always excluded; missing included by default; strict mode excludes missing for objects with source identity.
+- Verification: pytest tests/test_firestore_exporter_permissions.py → 3 passed. Connect subset 42 passed.
+- Knowledge Core IR (okc) and Connect contracts unchanged. Applies filter on legacy src publishing path when permission metadata is present.
+- Advances P1 authorization consistency at the Firestore export boundary.
+
 ## 2026-11-10 — Document verified deletion and restoration semantics (P1)
 
 - Problem: PERMISSION_MODEL.md listed next evidence needed as "documented retention/deletion semantics" but the tested lifecycle behaviors were not summarized in one place.

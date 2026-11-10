@@ -1,3 +1,10 @@
+## Verified this run (local environment)
+
+- Added permission filtering to src/exporters/firestore_exporter.py (aligned with okc SQLiteExporter/retriever).
+- Explicit read=False excludes; default includes missing; strict_permissions=True excludes missing when source identity present.
+- New tests: tests/test_firestore_exporter_permissions.py → 3 passed.
+- Prior targeted Connect suite remains green (42 passed on subset).
+
 # OKP Stage — 2026-11-10
 
 ## Verified this run (local environment)

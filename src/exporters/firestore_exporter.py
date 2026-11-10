@@ -88,11 +88,50 @@ class FirestoreExporter(Exporter):
             batch.commit()
             print(f"Batch {i//batch_size + 1}/{total_batches} committed for {collection_name}")
 
-    def export(self, package: KnowledgePackage) -> KnowledgePackage:
-        """Publish the current KnowledgePackage to Firestore."""
+
+    def _is_forbidden(self, obj, package: KnowledgePackage, strict_permissions: bool) -> bool:
+        """Return True if the object should be excluded under the permission model.
+        Aligns with okc SQLiteExporter / KnowledgePackageRetriever when metadata["permissions"] is present.
+        """
+        raw_permissions = (getattr(package, "metadata", {}) or {}).get("permissions", {})
+        permissions = raw_permissions if isinstance(raw_permissions, dict) else {}
+        provenance = getattr(obj, "provenance", {}) or {}
+        src_ids = provenance.get("source_record_ids") or []
+        if not isinstance(src_ids, list):
+            src_ids = []
+        # Normalize to match okc style (src: prefix optional handling)
+        normalized = []
+        for rid in src_ids:
+            s = str(rid)
+            if s.startswith("src:"):
+                normalized.append(s[4:])
+            else:
+                normalized.append(s)
+        if not normalized:
+            return False
+        has_explicit = False
+        for src_id in normalized:
+            perm = permissions.get(src_id)
+            if perm is not None and isinstance(perm, dict):
+                has_explicit = True
+                if perm.get("read") is False:
+                    return True
+        if strict_permissions and not has_explicit:
+            return True
+        return False
+
+    def export(self, package: KnowledgePackage, strict_permissions: bool = False) -> KnowledgePackage:
+        """Publish the current KnowledgePackage to Firestore.
+
+        Permission filtering (aligned with okc path when metadata["permissions"] present):
+        - Explicit read=False entries are always excluded.
+        - strict_permissions=False (default): objects without a permission entry are included.
+        - strict_permissions=True: objects with a source identity but no permission entry are excluded.
+        """
 
         timestamp = datetime.now(timezone.utc).isoformat()
         ensure_knowledge_object_provenance(package, strict=True)
+        self._strict_permissions = strict_permissions  # for use in writers
 
         platform_map = self._group_platforms(package)
 
@@ -107,7 +146,10 @@ class FirestoreExporter(Exporter):
                 "entities": len(package.entities),
                 "attachments": len(package.attachment_knowledge),
                 "platforms": len(platform_map),
-                "knowledge_objects": len(package.knowledge_objects),
+                "knowledge_objects": sum(
+                    1 for ko in package.knowledge_objects
+                    if not self._is_forbidden(ko, package, getattr(self, "_strict_permissions", False))
+                ),
             }
         )
 
@@ -268,7 +310,10 @@ class FirestoreExporter(Exporter):
         timestamp: str,
     ) -> None:
         operations = []
+        strict = getattr(self, "_strict_permissions", False)
         for ko in package.knowledge_objects:
+            if self._is_forbidden(ko, package, strict):
+                continue
             object_id = str(ko.id)
             platform = ko.source_platform
             if platform == "Other" or not platform:
