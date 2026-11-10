@@ -1,3 +1,11 @@
+## Verified this run (local sandbox, 2026-11-10)
+
+- Cloned main at 08b284b.
+- `pytest tests/test_firestore_exporter_permissions.py tests/test_connect_health.py` → 22 passed.
+- `pytest tests/test_local_folder_connector.py tests/test_knowledge_accumulator.py` → 24 passed.
+- FirestoreExporter permission filter present and unit-tested.
+- No code changes this run; baseline confirmed green for Connect + P1 export path.
+
 ## Verified this run (local environment)
 
 - Added permission filtering to src/exporters/firestore_exporter.py (aligned with okc SQLiteExporter/retriever).

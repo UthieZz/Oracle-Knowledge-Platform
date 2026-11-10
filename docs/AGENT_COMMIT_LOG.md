@@ -1,3 +1,11 @@
+## 2026-11-10 — Baseline verification of Connect + Firestore permission filter (P1)
+
+- Environment: fresh clone of main@08b284b in sandbox.
+- Checks: pytest tests/test_firestore_exporter_permissions.py tests/test_connect_health.py → 22 passed; tests/test_local_folder_connector.py tests/test_knowledge_accumulator.py → 24 passed.
+- Observation: FirestoreExporter.export applies the same explicit-deny / default-include / strict-exclude rules as SQLiteExporter and retriever when metadata["permissions"] is present.
+- No functional code change. Records current evidence for the P1 export boundary.
+- Next: continue P1 remaining boundaries or P3 packaging for reproducible local pilot.
+
 
 ## 2026-11-10 — FirestoreExporter respects permission model (P1)
 
