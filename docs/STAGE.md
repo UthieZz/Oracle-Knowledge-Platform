@@ -410,3 +410,12 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - pytest tests/test_connect_health.py → 25 passed (strict-check regression extended).
 - Knowledge Core IR and Connect contracts unchanged.
 - Completes recovery_hints coverage for the production-oriented permission readiness check.
+
+## 2026-11-11 — Baseline verification of Connect suite on current main (P0/P1/P3)
+
+- Environment: fresh clone of main@f1d5f32.
+- Checks: broader targeted Connect suite (health + accumulator + sync_engine + local_folder + e2e + contract + recover + gateway) → 69 passed.
+- Health suite includes all recovery_hints and permissions_missing_event_provenance WARNING. Permission model on retrieval/export boundaries unit-tested in prior runs.
+- No functional code change. Records current evidence that the local-folder pilot path remains green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Next: remaining P1 boundaries or P3 packaging for reproducible operator setup.

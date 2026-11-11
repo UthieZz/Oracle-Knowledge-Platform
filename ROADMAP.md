@@ -23,7 +23,7 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 - Studio AuthGate and firestore.rules present (deployed behavior not fully verified).
 
 ### OKP Connect local-folder pilot
-Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 65 passed on 2026-11-10 baseline):
+Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related)):
 - LocalFolderConnector with persistent snapshot (restart deletion detection, sequence for event_ids).
 - SQLite SyncEngine (WAL, dedup, retry/backoff, cursor advances only on success).
 - KnowledgeAccumulator (source|tenant|silo namespacing, persist/rollback, cross-scope isolation).

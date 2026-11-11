@@ -381,3 +381,12 @@
 - Verification: pytest tests/test_connect_health.py → 25 passed (existing strict-check test extended to assert the hint).
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1/P3 by making the production-readiness permission gap actionable from health output.
+
+## 2026-11-11 — Baseline verification of Connect suite on current main (P0/P1/P3)
+
+- Environment: fresh clone of main@f1d5f32.
+- Checks: pytest tests/test_connect_health.py tests/test_knowledge_accumulator.py tests/test_sync_engine.py tests/test_local_folder_connector.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_connect_recover.py tests/test_agent_context_gateway.py → 69 passed.
+- Health suite 25 passed. Confirms recovery_hints coverage, permission provenance warning, and prior P1 export/retrieval boundaries remain green.
+- No functional code change. Records evidence for the local-folder pilot reliability after latest health improvements.
+- Knowledge Core IR and Connect contracts unchanged.
+- Next: continue P1 remaining boundaries or advance P3 reproducible operator packaging.
