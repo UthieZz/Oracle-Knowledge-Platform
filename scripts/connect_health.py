@@ -193,9 +193,16 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
         reasons.append("snapshot_package_count_mismatch")
         status = "WARNING"
 
+    recovery_hints = []
+    if h.get("failed", 0) > 0:
+        recovery_hints.append(f"python scripts/connect_recover.py --db {db_path} --list")
+    if "snapshot_version_unexpected" in reasons:
+        recovery_hints.append("delete the snapshot file and restart the worker so the connector rebuilds a version=1 snapshot with current sequence")
+
     summary = {
         "status": status,
         "reasons": reasons,
+        "recovery_hints": recovery_hints,
         "queued": h.get("queued"),
         "processed": h.get("processed"),
         "failed": h.get("failed"),

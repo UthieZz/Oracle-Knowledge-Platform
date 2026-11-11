@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI JSON includes recovery_hints (P3)
+
+- Problem: recovery hints for failed events and snapshot_version_unexpected were text-only; JSON consumers had no structured action guidance.
+- Change: collect_health now populates recovery_hints list in the summary dict (failed → recover CLI; unexpected version → delete snapshot + restart). JSON output includes the key. Text output unchanged.
+- Verification: pytest tests/test_connect_health.py → 23 passed (new regression included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making operator recovery guidance available to automation and machine consumers.
+
 ## 2026-11-11 — Health CLI recovery hint for unexpected snapshot version (P3)
 
 - Problem: snapshot_version_unexpected WARNING was not actionable; operators had to infer that a non-1 version may lose sequence on restart and how to recover.

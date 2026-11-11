@@ -1,3 +1,10 @@
+## 2026-11-11 — Health CLI JSON recovery_hints (P3)
+
+- collect_health summary now includes recovery_hints list for failed events and snapshot_version_unexpected.
+- JSON consumers receive structured next actions. Text output unchanged.
+- pytest tests/test_connect_health.py → 23 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+
 ## 2026-11-10 — Baseline verification of Connect suite on current main (P0/P1/P3)
 
 - Environment: fresh clone of main@29ba759 (orphaned permission warning commit).
