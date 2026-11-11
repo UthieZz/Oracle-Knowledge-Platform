@@ -570,3 +570,21 @@ def test_connect_health_json_includes_recovery_hints(tmp_path: Path):
     assert "recovery_hints" in data
     assert isinstance(data["recovery_hints"], list)
     assert any("snapshot" in h.lower() or "version" in h.lower() for h in data["recovery_hints"])
+
+
+def test_connect_health_recovery_hint_on_package_missing(tmp_path: Path):
+    """JSON and text include recovery_hint when package is missing."""
+    db = tmp_path / "sync.db"
+    from okc.connect.sync_engine import SyncEngine
+    SyncEngine(str(db))
+
+    r = _run_health("--db", str(db), "--package", str(tmp_path / "missing.json"))
+    assert r.returncode == 1
+    assert "package_missing" in r.stdout
+    assert "recovery_hint=" in r.stdout
+    assert "package path" in r.stdout
+
+    r_json = _run_health("--db", str(db), "--package", str(tmp_path / "missing.json"), "--json")
+    data = json.loads(r_json.stdout)
+    assert "package_missing" in data["reasons"]
+    assert any("package path" in h for h in data.get("recovery_hints", []))

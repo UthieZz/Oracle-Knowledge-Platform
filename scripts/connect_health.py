@@ -198,6 +198,22 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
         recovery_hints.append(f"python scripts/connect_recover.py --db {db_path} --list")
     if "snapshot_version_unexpected" in reasons:
         recovery_hints.append("delete the snapshot file and restart the worker so the connector rebuilds a version=1 snapshot with current sequence")
+    if "package_missing" in reasons:
+        recovery_hints.append("ensure the package path exists and is writable by the worker; restart after creation")
+    if "package_unreadable" in reasons:
+        recovery_hints.append("inspect or restore the package JSON; it must be valid KnowledgePackage serialization")
+    if "snapshot_missing" in reasons:
+        recovery_hints.append("start the worker once so the connector writes an initial snapshot, or restore from backup")
+    if "snapshot_unreadable" in reasons:
+        recovery_hints.append("delete the unreadable snapshot file and restart the worker so the connector rebuilds it")
+    if "package_lag_high" in reasons:
+        recovery_hints.append("check worker logs for persist failures; package mtime lags last processed event")
+    if "snapshot_package_count_mismatch" in reasons:
+        recovery_hints.append("verify connector and accumulator are processing the same root; consider restart after clearing snapshot if divergence persists")
+    if "orphaned_permission_entries" in reasons:
+        recovery_hints.append("review permission map for entries without living objects; may indicate incomplete delete cleanup")
+    if "object_count_mismatch" in reasons:
+        recovery_hints.append("package metadata object_count disagrees with actual objects; inspect for interrupted persist")
 
     summary = {
         "status": status,
@@ -281,14 +297,9 @@ def main() -> None:
             if len(cursors) > 3:
                 print(f"  ... and {len(cursors)-3} more")
 
-        # Operator recovery hint when failed events exist (P3 usability)
-        if summary.get("failed", 0) > 0:
-            db_display = summary.get("db_path", "<db>")
-            print(f"recovery_hint=python scripts/connect_recover.py --db {db_display} --list")
-            print("  (or --config if using shared config; --reset / --reset-all to recover)")
-        # Actionable hint for unexpected snapshot format (may lose sequence on restart)
-        if "snapshot_version_unexpected" in summary.get("reasons", []):
-            print("recovery_hint=delete the snapshot file and restart the worker so the connector rebuilds a version=1 snapshot with current sequence")
+        # Operator recovery hints (P3 usability; also present in JSON recovery_hints)
+        for hint in summary.get("recovery_hints") or []:
+            print(f"recovery_hint={hint}")
 
     if summary["status"] == "WARNING":
         sys.exit(1)

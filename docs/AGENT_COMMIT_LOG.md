@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI recovery_hints expanded for common warnings (P3)
+
+- Problem: only failed events and unexpected snapshot version produced recovery_hints; other frequent WARNING reasons (missing/unreadable package or snapshot, lag, count mismatch, orphaned permissions) left operators without structured next actions in JSON or consistent text.
+- Change: collect_health populates recovery_hints for the additional reasons with concise operator guidance. Text mode now emits every recovery_hint line.
+- Verification: pytest tests/test_connect_health.py → 24 passed (new package_missing hint regression included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the majority of health WARNING states directly actionable for both humans and automation.
+
 ## 2026-11-11 — Health CLI JSON includes recovery_hints (P3)
 
 - Problem: recovery hints for failed events and snapshot_version_unexpected were text-only; JSON consumers had no structured action guidance.

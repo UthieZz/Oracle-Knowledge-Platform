@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI recovery_hints expanded for common warnings (P3)
+
+- collect_health now emits recovery_hints for package_missing, package_unreadable, snapshot_missing, snapshot_unreadable, package_lag_high, snapshot_package_count_mismatch, orphaned_permission_entries, and object_count_mismatch in addition to prior failed and snapshot_version_unexpected.
+- Text output now prints every recovery_hint line (consistent with JSON).
+- pytest tests/test_connect_health.py → 24 passed (new package_missing hint regression included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making more operator WARNING states directly actionable without separate docs lookup.
+
 ## 2026-11-11 — Health CLI JSON recovery_hints (P3)
 
 - collect_health summary now includes recovery_hints list for failed events and snapshot_version_unexpected.
