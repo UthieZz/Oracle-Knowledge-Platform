@@ -23,15 +23,16 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 - Studio AuthGate and firestore.rules present (deployed behavior not fully verified).
 
 ### OKP Connect local-folder pilot
-Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related)):
+Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related); targeted after json import fix: 64 passed):
 - LocalFolderConnector with persistent snapshot (restart deletion detection, sequence for event_ids).
 - SQLite SyncEngine (WAL, dedup, retry/backoff, cursor advances only on success).
 - KnowledgeAccumulator (source|tenant|silo namespacing, persist/rollback, cross-scope isolation).
 - Health CLI (scripts/connect_health.py): status=OK|WARNING, exit 1 on WARNING, --json, --config, --strict-check. Reports package/snapshot consistency, provenance gaps, orphaned entries, queue age, lag, etc. Emits structured recovery_hints for all current WARNING reasons.
 - Recovery CLI (scripts/connect_recover.py): list/reset failed events with filters, config support, clean JSON.
-- Operator guide: docs/CONNECT_LOCAL_PILOT.md.
+- Operator guide: docs/CONNECT_LOCAL_PILOT.md (includes Docker volume-mounted start example).
+- Dockerfile updated for Connect worker entrypoint and volume packaging.
 
-Knowledge Core IR and Connect contracts unchanged by recent health/recovery work.
+Knowledge Core IR and Connect contracts unchanged by recent health/recovery/packaging work.
 
 ### Ownership
 - Connect path owns okc/ and Pydantic KnowledgePackage.
@@ -58,8 +59,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 **Acceptance:** documented active/obsolete paths; no competing IRs.
 
 ### P3 — Local pilot operability
-**Status:** Strong progress. Config files, recovery CLI, health recovery_hints, cursor/snapshot visibility, operator guide.  
-**Next:** reproducible setup packaging (Docker/entrypoints or documented one-command start), diagnostics under optional deps.  
+**Status:** Strong progress. Config files, recovery CLI, health recovery_hints, cursor/snapshot visibility, operator guide, Docker packaging example.  
+**Next:** diagnostics under optional deps or further one-command packaging refinements.  
 **Acceptance:** operator can start, inspect, recover, and stop the local-folder pilot from documented steps without source inspection.
 
 ### P4 — Business integration
@@ -82,9 +83,11 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Health CLI recovery_hints for all common WARNING reasons (including queue and provenance).
 - permissions_missing_event_provenance and orphaned_permission_entries elevate WARNING.
 - FirestoreExporter permission filter unit-tested.
-- Baseline Connect suite green (69 passed on prior verification; 64 on targeted after this fix).
+- Baseline Connect suite green (69 passed on prior verification; 64 on targeted after json import fix).
+- Dockerfile and operator guide updated with reproducible Docker start for the local-folder Connect worker (P3).
 
 ## Next highest-value action
-Continue P1 remaining authorization boundaries or advance P3 reproducible operator packaging. Prefer the smallest coherent change that produces new regression evidence.
+Continue P1 remaining authorization boundaries or advance further P3 diagnostics under optional dependencies. Prefer the smallest coherent change that produces new regression evidence.
 
 - Fixed missing json import in run_connect_worker.py so --config path works (P3).
+- Docker packaging for Connect pilot documented (P3).
