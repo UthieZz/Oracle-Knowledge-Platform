@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI recovery_hints for remaining queue warnings (P3)
+
+- Problem: queue_age_high, waiting_retry_high, and no_ready_events WARNING states had no structured recovery_hints, unlike other common reasons.
+- Change: collect_health populates recovery_hints for those three with concise operator guidance pointing to recovery CLI or worker checks.
+- Verification: pytest tests/test_connect_health.py → 25 passed (new queue_age_high hint regression included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the remaining frequent health WARNING states directly actionable for humans and automation.
+
 ## 2026-11-11 — Health CLI recovery_hints expanded for common warnings (P3)
 
 - Problem: only failed events and unexpected snapshot version produced recovery_hints; other frequent WARNING reasons (missing/unreadable package or snapshot, lag, count mismatch, orphaned permissions) left operators without structured next actions in JSON or consistent text.

@@ -208,6 +208,12 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
         recovery_hints.append("delete the unreadable snapshot file and restart the worker so the connector rebuilds it")
     if "package_lag_high" in reasons:
         recovery_hints.append("check worker logs for persist failures; package mtime lags last processed event")
+    if "queue_age_high" in reasons:
+        recovery_hints.append("inspect queue for stuck events; check worker is running and processing; consider recovery CLI if failed")
+    if "waiting_retry_high" in reasons:
+        recovery_hints.append("many events awaiting retry; check error details via recovery CLI and reset after fixing root cause")
+    if "no_ready_events" in reasons:
+        recovery_hints.append("queue has events but none ready; likely all waiting on retry backoff or locked; inspect with recovery CLI --list")
     if "snapshot_package_count_mismatch" in reasons:
         recovery_hints.append("verify connector and accumulator are processing the same root; consider restart after clearing snapshot if divergence persists")
     if "orphaned_permission_entries" in reasons:

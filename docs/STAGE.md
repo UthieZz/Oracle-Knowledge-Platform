@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI recovery_hints for remaining queue warnings (P3)
+
+- collect_health now emits recovery_hints for queue_age_high, waiting_retry_high, and no_ready_events.
+- Text and JSON output include them.
+- pytest tests/test_connect_health.py → 25 passed (new queue_age regression included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Completes recovery_hints coverage for all current WARNING reasons in the local-folder pilot health CLI.
+
 ## 2026-11-11 — Health CLI recovery_hints expanded for common warnings (P3)
 
 - collect_health now emits recovery_hints for package_missing, package_unreadable, snapshot_missing, snapshot_unreadable, package_lag_high, snapshot_package_count_mismatch, orphaned_permission_entries, and object_count_mismatch in addition to prior failed and snapshot_version_unexpected.

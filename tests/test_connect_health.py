@@ -588,3 +588,27 @@ def test_connect_health_recovery_hint_on_package_missing(tmp_path: Path):
     data = json.loads(r_json.stdout)
     assert "package_missing" in data["reasons"]
     assert any("package path" in h for h in data.get("recovery_hints", []))
+
+
+def test_connect_health_recovery_hint_on_queue_age_high(tmp_path: Path):
+    """JSON includes recovery_hint when oldest queued event age exceeds threshold."""
+    from okc.connect.sync_engine import SyncEngine
+    from datetime import datetime, timezone, timedelta
+
+    db = tmp_path / "sync.db"
+    engine = SyncEngine(str(db))
+    old_time = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+    with engine._conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO events (event_id, source, kind, payload, tenant_id, silo_id, status, attempts, enqueued_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'queued', 0, ?)
+            """,
+            ("evt-old", "local", "create", "{}", "t", "s", old_time),
+        )
+
+    r = _run_health("--db", str(db), "--json")
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert "queue_age_high" in data["reasons"]
+    assert any("queue" in h.lower() or "stuck" in h.lower() for h in data.get("recovery_hints", []))
