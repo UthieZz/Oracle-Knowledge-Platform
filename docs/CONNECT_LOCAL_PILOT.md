@@ -47,6 +47,26 @@ python scripts/run_connect_worker.py \
 
 Stop with SIGINT/SIGTERM; queue and cursor survive restart.
 
+### Reproducible Docker start (P3 packaging)
+
+Build once:
+
+```bash
+docker build -t okp-pilot .
+```
+
+Run the worker with volumes for config, watched folder, and persistent state:
+
+```bash
+docker run --rm -it \
+  -v $(pwd)/pilot.json:/app/pilot.json \
+  -v /path/to/watched/docs:/data/watched \
+  -v /var/okp:/var/okp \
+  okp-pilot python scripts/run_connect_worker.py --config /app/pilot.json
+```
+
+Adjust host paths. The image default CMD shows --help. Health and recovery CLIs work the same inside the container.
+
 ## Inspect health
 Text mode now also surfaces a cursor summary (count + samples) so operators can confirm last successful positions without --json.
 
