@@ -394,3 +394,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - Targeted health suite: 20 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 provenance consistency visibility and P3 operator diagnostics for the local-folder pilot.
+
+## 2026-11-11 — Health CLI recovery_hint for strict-check missing permissions (P1/P3)
+
+- collect_health now emits a recovery_hint when objects_without_explicit_permission triggers WARNING under --strict-check.
+- Guidance points operators to assign explicit permission entries before production strict mode.
+- pytest tests/test_connect_health.py → 25 passed (strict-check regression extended).
+- Knowledge Core IR and Connect contracts unchanged.
+- Completes recovery_hints coverage for the production-oriented permission readiness check.

@@ -188,6 +188,8 @@ def test_connect_health_strict_check_warns_on_missing_permission(tmp_path: Path)
     assert r2.returncode == 1
     assert "status=WARNING" in r2.stdout
     assert "objects_without_explicit_permission" in r2.stdout
+    assert "recovery_hint=" in r2.stdout
+    assert "assign explicit permission" in r2.stdout
 
 
 def test_connect_health_warns_on_object_count_mismatch(tmp_path: Path):

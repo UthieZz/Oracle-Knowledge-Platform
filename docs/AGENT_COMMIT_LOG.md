@@ -365,3 +365,11 @@
 - Verification: pytest tests/test_connect_health.py → 22 passed (new regression included).
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P3 by making snapshot format compatibility inspectable without manual file inspection.
+
+## 2026-11-11 — Health CLI recovery_hint for strict-check missing permissions (P1/P3)
+
+- Problem: --strict-check WARNING on objects_without_explicit_permission had no structured recovery_hint, unlike other WARNING reasons.
+- Change: collect_health populates a recovery_hint advising assignment of explicit permission entries (or permission_change events) before enabling strict mode.
+- Verification: pytest tests/test_connect_health.py → 25 passed (existing strict-check test extended to assert the hint).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1/P3 by making the production-readiness permission gap actionable from health output.

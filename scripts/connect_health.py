@@ -220,6 +220,8 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
         recovery_hints.append("review permission map for entries without living objects; may indicate incomplete delete cleanup")
     if "object_count_mismatch" in reasons:
         recovery_hints.append("package metadata object_count disagrees with actual objects; inspect for interrupted persist")
+    if "objects_without_explicit_permission" in reasons:
+        recovery_hints.append("assign explicit permission entries (or permission_change events) for objects lacking them before enabling strict mode in production")
 
     summary = {
         "status": status,
