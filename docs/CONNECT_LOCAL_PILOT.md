@@ -1,6 +1,6 @@
 # OKP Connect — Local-Folder Pilot Operator Guide
 
-**Status:** Implemented and targeted-tested for the local path (as of 2026-11-09).  
+**Status:** Implemented and targeted-tested for the local path (as of 2026-11-11).  
 **Scope:** Local-folder source → durable SyncEngine → KnowledgeAccumulator → living KnowledgePackage.  
 **Not:** Complete authorization, Studio deployment, or production multi-tenant claims.
 
@@ -54,8 +54,9 @@ Text mode now also surfaces a cursor summary (count + samples) so operators can 
 python scripts/connect_health.py --config pilot.json
 ```
 
-Text output includes status, queue counts, package object count, permissions summary, and lag.  
-Exit code 1 on any WARNING (failed events, missing/unreadable package or snapshot, high lag/age, orphaned permissions, snapshot/package count mismatch, unexpected snapshot version, etc.). When failed events are present, text output includes a recovery_hint pointing at connect_recover.py. When snapshot_version_unexpected is present, a recovery_hint recommends deleting the snapshot file so the connector rebuilds a clean version=1 snapshot.
+Text output includes status, queue counts, package object count, permissions summary, lag, cursors, and recovery_hints.  
+Exit code 1 on any WARNING (failed events, missing/unreadable package or snapshot, high lag/age, orphaned permissions, snapshot/package count mismatch, unexpected snapshot version, high waiting_retry, no_ready_events, etc.).  
+All current WARNING reasons emit structured recovery_hints in both text (recovery_hint= lines) and JSON (recovery_hints array). Hints point to recovery CLI, worker checks, or concrete recovery actions (e.g., delete unreadable snapshot and restart).
 
 JSON:
 
