@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI warns on permissions missing event provenance (P1/P3)
+
+- Positive permissions_missing_event_provenance now elevates status=WARNING and exit 1.
+- recovery_hint guides operators to ensure future permission_change events carry recorded_from_event.
+- Existing provenance regression updated; targeted health suite 25 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 provenance completeness visibility for the local-folder pilot.
+
 ## 2026-11-11 — Health CLI recovery_hints for remaining queue warnings (P3)
 
 - collect_health now emits recovery_hints for queue_age_high, waiting_retry_high, and no_ready_events.

@@ -365,6 +365,7 @@ def test_connect_health_reports_permission_event_provenance(tmp_path: Path):
     assert r.returncode == 1
     assert "status=WARNING" in r.stdout
     assert "orphaned_permission_entries" in r.stdout
+    assert "permissions_missing_event_provenance" in r.stdout
     assert "permissions_with_event_provenance=1" in r.stdout
     assert "permissions_entries=2" in r.stdout
     assert "permissions_missing_event_provenance=1" in r.stdout
@@ -373,6 +374,7 @@ def test_connect_health_reports_permission_event_provenance(tmp_path: Path):
     data = json.loads(r_json.stdout)
     assert data["status"] == "WARNING"
     assert "orphaned_permission_entries" in data["reasons"]
+    assert "permissions_missing_event_provenance" in data["reasons"]
     assert data["package"]["permissions_with_event_provenance"] == 1
     assert data["package"]["permissions_entries"] == 2
     assert data["package"]["permissions_missing_event_provenance"] == 1

@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI warns on permissions missing event provenance (P1/P3)
+
+- Problem: permission entries without recorded_from_event were counted but did not elevate status, unlike orphaned entries.
+- Change: positive permissions_missing_event_provenance now appends reason and sets status=WARNING (exit 1). Structured recovery_hint added.
+- Verification: existing provenance test updated to assert the new reason; pytest tests/test_connect_health.py → 25 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by making provenance completeness gaps actionable for operators.
+
 ## 2026-11-11 — Health CLI recovery_hints for remaining queue warnings (P3)
 
 - Problem: queue_age_high, waiting_retry_high, and no_ready_events WARNING states had no structured recovery_hints, unlike other common reasons.

@@ -182,6 +182,11 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
         reasons.append("orphaned_permission_entries")
         status = "WARNING"
 
+    # missing event provenance on permission entries is a completeness gap
+    if pkg.get("readable") and pkg.get("permissions_missing_event_provenance", 0) > 0:
+        reasons.append("permissions_missing_event_provenance")
+        status = "WARNING"
+
     # snapshot tracked files vs package objects (both must be readable)
     if (
         snapshot_path
@@ -218,6 +223,8 @@ def collect_health(db_path: str, package_path: str | None = None, snapshot_path:
         recovery_hints.append("verify connector and accumulator are processing the same root; consider restart after clearing snapshot if divergence persists")
     if "orphaned_permission_entries" in reasons:
         recovery_hints.append("review permission map for entries without living objects; may indicate incomplete delete cleanup")
+    if "permissions_missing_event_provenance" in reasons:
+        recovery_hints.append("permission entries lack recorded_from_event; ensure future permission_change events carry provenance or backfill if required")
     if "object_count_mismatch" in reasons:
         recovery_hints.append("package metadata object_count disagrees with actual objects; inspect for interrupted persist")
     if "objects_without_explicit_permission" in reasons:

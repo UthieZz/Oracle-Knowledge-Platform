@@ -55,7 +55,7 @@ python scripts/connect_health.py --config pilot.json
 ```
 
 Text output includes status, queue counts, package object count, permissions summary, lag, cursors, and recovery_hints.  
-Exit code 1 on any WARNING (failed events, missing/unreadable package or snapshot, high lag/age, orphaned permissions, snapshot/package count mismatch, unexpected snapshot version, high waiting_retry, no_ready_events, etc.).  
+Exit code 1 on any WARNING (failed events, missing/unreadable package or snapshot, high lag/age, orphaned permissions, permissions missing event provenance, snapshot/package count mismatch, unexpected snapshot version, high waiting_retry, no_ready_events, etc.).  
 All current WARNING reasons emit structured recovery_hints in both text (recovery_hint= lines) and JSON (recovery_hints array). Hints point to recovery CLI, worker checks, or concrete recovery actions (e.g., delete unreadable snapshot and restart).
 
 JSON:
