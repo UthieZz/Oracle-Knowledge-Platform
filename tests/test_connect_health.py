@@ -541,6 +541,8 @@ def test_connect_health_warns_on_unexpected_snapshot_version(tmp_path: Path):
     assert r.returncode == 1
     assert "status=WARNING" in r.stdout
     assert "snapshot_version_unexpected" in r.stdout
+    assert "recovery_hint=" in r.stdout
+    assert "delete the snapshot file" in r.stdout
 
     r_json = _run_health("--db", str(db), "--snapshot", str(snap_path), "--json")
     data = json.loads(r_json.stdout)

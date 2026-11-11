@@ -1,3 +1,11 @@
+## 2026-11-11 — Health CLI recovery hint for unexpected snapshot version (P3)
+
+- Problem: snapshot_version_unexpected WARNING was not actionable; operators had to infer that a non-1 version may lose sequence on restart and how to recover.
+- Change: text health output now emits recovery_hint recommending deletion of the snapshot file so the connector rebuilds a clean version=1 snapshot with current sequence on next worker start.
+- Verification: pytest tests/test_connect_health.py → 22 passed (existing unexpected-version regression extended to assert the hint).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the snapshot-format warning operator-actionable without manual inspection.
+
 ## 2026-11-10 — Baseline verification of Connect suite on current main (P0/P1/P3)
 
 - Environment: fresh clone of main@29ba759.

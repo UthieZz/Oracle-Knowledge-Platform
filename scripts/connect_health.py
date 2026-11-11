@@ -279,6 +279,9 @@ def main() -> None:
             db_display = summary.get("db_path", "<db>")
             print(f"recovery_hint=python scripts/connect_recover.py --db {db_display} --list")
             print("  (or --config if using shared config; --reset / --reset-all to recover)")
+        # Actionable hint for unexpected snapshot format (may lose sequence on restart)
+        if "snapshot_version_unexpected" in summary.get("reasons", []):
+            print("recovery_hint=delete the snapshot file and restart the worker so the connector rebuilds a version=1 snapshot with current sequence")
 
     if summary["status"] == "WARNING":
         sys.exit(1)
