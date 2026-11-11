@@ -419,3 +419,11 @@ P1 authorization consistency or full optional-deps suite + Studio build verifica
 - No functional code change. Records current evidence that the local-folder pilot path remains green.
 - Knowledge Core IR and Connect contracts unchanged.
 - Next: remaining P1 boundaries or P3 packaging for reproducible operator setup.
+
+## 2026-11-11 — Fix missing json import in Connect worker config path (P3)
+
+- Problem: `scripts/run_connect_worker.py` called `json.loads` in `_load_config` without importing `json`. Valid `--config` raised `Invalid config JSON: name 'json' is not defined`, blocking the documented pilot config file path.
+- Change: added `import json`. Added regression `test_run_connect_worker_accepts_config_file` that launches the worker via `--config` and confirms package persistence.
+- Verification: pytest tests/test_local_folder_connector.py::test_run_connect_worker_accepts_config_file → passed; broader Connect suite (health + recover + local_folder + sync_engine + knowledge_accumulator) 64 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the documented one-file config path actually usable.

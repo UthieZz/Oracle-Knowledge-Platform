@@ -367,3 +367,37 @@ def test_local_folder_real_process_restart_deletion_converges_package(tmp_path):
             markers.append(rid)
     assert any("keep.txt" in m for m in markers)
     assert not any("gone.txt" in m for m in markers)
+
+
+def test_run_connect_worker_accepts_config_file(tmp_path):
+    """Regression: --config must load without NameError (json import was missing)."""
+    import subprocess
+    import json as json_mod
+    root = tmp_path / "watched"
+    root.mkdir()
+    (root / "a.txt").write_text("hello", encoding="utf-8")
+    cfg = tmp_path / "pilot.json"
+    db = str(tmp_path / "sync.db")
+    pkg = str(tmp_path / "living.json")
+    cfg.write_text(json_mod.dumps({
+        "folder": str(root),
+        "tenant": "t",
+        "silo": "s",
+        "db": db,
+        "package": pkg,
+        "poll": 0.5,
+    }), encoding="utf-8")
+    script = str(Path(__file__).resolve().parent.parent / "scripts" / "run_connect_worker.py")
+    proc = subprocess.Popen(
+        [sys.executable, script, "--config", str(cfg)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parent.parent)},
+    )
+    import time
+    time.sleep(1.5)
+    proc.terminate()
+    proc.wait(timeout=5)
+    # Must have started (no NameError on json) and persisted something or at least not crashed immediately
+    assert Path(pkg).exists() or proc.returncode is not None
+    # Stronger: package should exist after brief run if connector works
+    assert Path(pkg).exists()

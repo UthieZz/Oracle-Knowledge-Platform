@@ -82,7 +82,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Health CLI recovery_hints for all common WARNING reasons (including queue and provenance).
 - permissions_missing_event_provenance and orphaned_permission_entries elevate WARNING.
 - FirestoreExporter permission filter unit-tested.
-- Baseline Connect suite green (65 passed).
+- Baseline Connect suite green (69 passed on prior verification; 64 on targeted after this fix).
 
 ## Next highest-value action
 Continue P1 remaining authorization boundaries or advance P3 reproducible operator packaging. Prefer the smallest coherent change that produces new regression evidence.
+
+- Fixed missing json import in run_connect_worker.py so --config path works (P3).

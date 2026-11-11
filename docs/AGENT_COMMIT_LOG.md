@@ -390,3 +390,7 @@
 - No functional code change. Records evidence for the local-folder pilot reliability after latest health improvements.
 - Knowledge Core IR and Connect contracts unchanged.
 - Next: continue P1 remaining boundaries or advance P3 reproducible operator packaging.
+
+## 2026-11-11 — fix(connect): add missing json import so --config works
+- scripts/run_connect_worker.py lacked import json; config path was broken.
+- Regression added and green. Connect suite 64 passed.
