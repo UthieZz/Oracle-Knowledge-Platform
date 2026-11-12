@@ -12,7 +12,7 @@ It is knowledge infrastructure—not simply a chatbot or conversation archive.
 
 The near-term product objective is a dependable, demonstrable vertical slice: connect an approved source, synchronize changes in the background, maintain a governed KnowledgePackage, retrieve grounded evidence, and make operational state inspectable.
 
-## Current implementation snapshot — 2026-11-11
+## Current implementation snapshot — 2026-11-12
 
 ### Knowledge Core and application path
 - Multi-source importer architecture and PluginRegistry present.
@@ -20,6 +20,8 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 - Provenance, source IDs, tenant/silo preserved through processing.
 - Permission model documented; explicit deny honored; strict mode available; default pilot keeps missing entries visible for compatibility.
 - FirestoreExporter applies permission filter (unit-tested).
+- MultiSourceExporter applies permission filter to content, indexes, and manifests (unit-tested).
+- ProvenanceLedgerExporter and RelationshipIndexExporter exclude explicit-deny knowledge objects (unit-tested).
 - Studio AuthGate and firestore.rules present (deployed behavior not fully verified).
 
 ### OKP Connect local-folder pilot
@@ -32,7 +34,7 @@ Implemented and targeted-tested (recent runs: health suite 25 passed; broader Co
 - Operator guide: docs/CONNECT_LOCAL_PILOT.md (includes Docker volume-mounted start example).
 - Dockerfile updated for Connect worker entrypoint and volume packaging.
 
-Knowledge Core IR and Connect contracts unchanged by recent health/recovery/packaging work.
+Knowledge Core IR and Connect contracts unchanged by recent health/recovery/packaging/export work.
 
 ### Ownership
 - Connect path owns okc/ and Pydantic KnowledgePackage.
@@ -48,8 +50,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 **Acceptance:** package converges to source after worker stop/restart with concurrent source changes; no silent loss or duplicate objects.
 
 ### P1 — Security / provenance / authorization consistency
-**Status:** Partial. Explicit permission_change (read=False/True) enforced on retrieval, context gateway (strict), and Firestore export. Orphaned and missing-event-provenance elevate health WARNING. Lifecycle semantics documented in docs/PERMISSION_MODEL.md.  
-**Gaps:** remaining boundaries (e.g., other exporters, admin paths, cache invalidation); full fail-closed production mode not default.  
+**Status:** Partial. Explicit permission_change (read=False/True) enforced on retrieval, context gateway (strict), Firestore export, MultiSourceExporter, ProvenanceLedgerExporter, and RelationshipIndexExporter. Orphaned and missing-event-provenance elevate health WARNING. Lifecycle semantics documented in docs/PERMISSION_MODEL.md.  
+**Gaps:** remaining boundaries (e.g., admin paths, cache invalidation, other legacy surfaces); full fail-closed production mode not default.  
 **Next:** identify and close one verified weak boundary with regression.  
 **Acceptance:** no cross-tenant/silo leakage; revocation survives updates; missing permission denied under strict mode across all delivery paths; provenance complete on permission decisions.
 
@@ -79,8 +81,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Small, reversible, tested changes. Protect unrelated work.
 - Do not claim B2B readiness without evidence.
 
-## Recent verified advances (2026-11-10/11)
-- MultiSourceExporter (legacy src/ path) now excludes conversations with explicit read=False in package.metadata["permissions"] from content files, indexes, platform.json, unit manifests, and root compilation totals (aligned with okc filter). Regression extended. Advances P1 remaining delivery boundary.
+## Recent verified advances (2026-11-12)
+- ProvenanceLedgerExporter and RelationshipIndexExporter now exclude knowledge_objects with explicit read=False in package.metadata["permissions"] (aligned with other delivery boundaries). New regressions added and passed.
+- MultiSourceExporter (legacy src/ path) now excludes conversations with explicit read=False from content files, indexes, platform.json, unit manifests, and root compilation totals. Regression extended.
 - Health CLI recovery_hints for all common WARNING reasons (including queue and provenance).
 - permissions_missing_event_provenance and orphaned_permission_entries elevate WARNING.
 - FirestoreExporter permission filter unit-tested.
