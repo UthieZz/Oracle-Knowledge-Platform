@@ -1,3 +1,11 @@
+## 2026-11-12 — MultiSourceExporter permission filter (P1)
+
+- Problem: legacy MultiSourceExporter (src/exporters, used by ExportService) wrote all conversations regardless of package.metadata["permissions"]. Explicit denials were not enforced on this delivery path.
+- Change: added _is_forbidden helper; _export_package_unit filters conversations (and derived entities/attachments) before writing. Explicit read=False excluded; missing entries remain visible (pilot default).
+- Verification: new regression tests.test_multi_source_exporter.TestMultiSourceExporter.test_permission_filter_excludes_denied; full suite 5 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by closing one remaining authorized-delivery boundary on the legacy export surface.
+
 ## 2026-11-11 — Health CLI warns on permissions missing event provenance (P1/P3)
 
 - Problem: permission entries without recorded_from_event were counted but did not elevate status, unlike orphaned entries.

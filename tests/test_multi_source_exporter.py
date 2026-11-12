@@ -166,5 +166,26 @@ class TestMultiSourceExporter(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.output_dir, "manifest.json")))
 
 
+    def test_permission_filter_excludes_denied(self):
+        """Explicit read=False on a conversation id excludes it from MultiSourceExporter output."""
+        package = create_multi_source_package()
+        package.update_metadata("permissions", {
+            "conv_gemini_1": {"read": False, "recorded_from_event": "evt-1"}
+        })
+        exporter = MultiSourceExporter(output_dir=self.output_dir, mode="Unified")
+        exporter.export(package)
+
+        # Gemini conversation should be absent from knowledge_objects
+        ko_dir = os.path.join(self.output_dir, "knowledge_objects")
+        files = os.listdir(ko_dir)
+        gemini_files = [f for f in files if "Gemini" in f or "Quantum" in f]
+        self.assertEqual(len(gemini_files), 0, f"Denied conversation still exported: {gemini_files}")
+
+        # Other conversations still present
+        chatgpt_files = [f for f in files if "PEP" in f or "ChatGPT" in f or "style" in f.lower()]
+        self.assertGreater(len(chatgpt_files), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
+

@@ -80,6 +80,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-10/11)
+- MultiSourceExporter (legacy src/ path) now excludes conversations with explicit read=False in package.metadata["permissions"] (aligned with okc filter). Regression added. Advances P1 remaining delivery boundary.
 - Health CLI recovery_hints for all common WARNING reasons (including queue and provenance).
 - permissions_missing_event_provenance and orphaned_permission_entries elevate WARNING.
 - FirestoreExporter permission filter unit-tested.

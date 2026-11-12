@@ -143,6 +143,23 @@ class MultiSourceExporter(Exporter):
     def _sanitize_name(name: str) -> str:
         return re.sub(r'[^a-zA-Z0-9_\-]+', '_', name).strip('_') or "Platform"
 
+    def _is_forbidden(self, conv, package: KnowledgePackage, strict_permissions: bool = False) -> bool:
+        """Return True if the conversation should be excluded under the permission model.
+        Aligns with okc path: explicit read=False always excluded; optional strict mode
+        treats missing entry as denied. Keys are conversation ids (source identity).
+        """
+        raw_permissions = package.metadata.get("permissions", {}) if hasattr(package, "metadata") else {}
+        permissions = raw_permissions if isinstance(raw_permissions, dict) else {}
+        cid = str(getattr(conv, "id", "") or "")
+        if not cid:
+            return False
+        perm = permissions.get(cid)
+        if perm is not None and isinstance(perm, dict) and perm.get("read") is False:
+            return True
+        if strict_permissions and perm is None:
+            return True
+        return False
+
     def _export_package_unit(
         self,
         target_dir: str,
@@ -160,7 +177,12 @@ class MultiSourceExporter(Exporter):
         os.makedirs(ko_dir, exist_ok=True)
         os.makedirs(sa_dir, exist_ok=True)
 
-        conv_ids = {conv.id for conv in conversations if hasattr(conv, "id")}
+        # Apply permission filter (explicit deny always excluded; pilot default keeps missing visible)
+        filtered_conversations = [
+            c for c in conversations
+            if not self._is_forbidden(c, package)
+        ]
+        conv_ids = {conv.id for conv in filtered_conversations if hasattr(conv, "id")}
 
         # Filter entities, topics, and attachments for this platform
         platform_entities = [
@@ -171,10 +193,10 @@ class MultiSourceExporter(Exporter):
         ]
 
         # Write topic/knowledge object markdown files
-        self._write_knowledge_objects(ko_dir, conversations, platform_entities, platform_attachments)
+        self._write_knowledge_objects(ko_dir, filtered_conversations, platform_entities, platform_attachments)
 
         # Write sources archive
-        source_files = self._write_sources_archive(sa_dir, conversations)
+        source_files = self._write_sources_archive(sa_dir, filtered_conversations)
 
         # Write INDEX.md
         self._write_index_md(
