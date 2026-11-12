@@ -78,6 +78,47 @@ class TestProvenanceLedgerExporter(unittest.TestCase):
         self.assertEqual(payload["complete"], 0)
         self.assertEqual(payload["incomplete"], ["orphan"])
 
+    def test_excludes_explicit_deny(self):
+        package = KnowledgePackage()
+        package.metadata["permissions"] = {
+            "denied": {"read": False, "recorded_from_event": "evt1"},
+            "allowed": {"read": True, "recorded_from_event": "evt2"},
+        }
+        package.add_knowledge_object(
+            KnowledgeObject(
+                id="denied",
+                title="Secret",
+                content="hidden",
+                source_platform="Test",
+                source_file="test.json",
+                created_at="2026-01-01T00:00:00Z",
+                updated_at="2026-01-01T00:00:00Z",
+                provenance={"conversation_id": "denied"},
+                evidence=[],
+            )
+        )
+        package.add_knowledge_object(
+            KnowledgeObject(
+                id="allowed",
+                title="Public",
+                content="visible",
+                source_platform="Test",
+                source_file="test.json",
+                created_at="2026-01-01T00:00:00Z",
+                updated_at="2026-01-01T00:00:00Z",
+                provenance={"conversation_id": "allowed"},
+                evidence=[],
+            )
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            ProvenanceLedgerExporter(output_dir=tmp).export(package)
+            with open(os.path.join(tmp, "provenance_ledger.json"), encoding="utf-8") as fh:
+                payload = json.load(fh)
+        ids = [o["object_id"] for o in payload["objects"]]
+        self.assertNotIn("denied", ids)
+        self.assertIn("allowed", ids)
+        self.assertEqual(payload["total"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
