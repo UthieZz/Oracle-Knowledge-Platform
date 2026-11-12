@@ -105,6 +105,48 @@ def test_hybrid_rag_tenant_isolation():
     assert len(hits_blocked) == 0
 
 
+def test_hybrid_rag_excludes_explicit_deny():
+    eng = HybridRAGEngine()
+    prov_allowed = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        source_record_ids=["src:allowed"],
+        tenant_id="tenant_a",
+        silo_id="silo_1",
+    )
+    prov_denied = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        source_record_ids=["src:denied"],
+        tenant_id="tenant_a",
+        silo_id="silo_1",
+    )
+    obj_allowed = KnowledgeObject(
+        object_id="allowed",
+        title="Visible",
+        provenance=prov_allowed,
+        content="Python SQLite notes that should be searchable.",
+    )
+    obj_denied = KnowledgeObject(
+        object_id="denied",
+        title="Hidden",
+        provenance=prov_denied,
+        content="Secret denied content that must not appear in search.",
+    )
+    pkg = KnowledgePackage(
+        package_id="p1",
+        objects=[obj_allowed, obj_denied],
+        metadata={"permissions": {"denied": {"read": False}}},
+    )
+    eng.index_package(pkg)
+    hits = eng.search("Python SQLite", tenant_id="tenant_a", silo_id="silo_1")
+    assert len(hits) >= 1
+    assert all("Secret denied" not in h["text"] for h in hits)
+    assert any("Python SQLite" in h["text"] for h in hits)
+    # Confirm denied object was not indexed
+    assert all(h["parent_object_id"] != "denied" for h in hits)
+
+
 def test_sqlite_export_roundtrip(tmp_path: Path):
     db = tmp_path / "test.db"
     prov = Provenance(

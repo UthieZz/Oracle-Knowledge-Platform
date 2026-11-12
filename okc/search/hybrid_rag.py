@@ -22,9 +22,17 @@ class HybridRAGEngine:
         norm = math.sqrt(sum(v * v for v in vec))
         return [v / norm for v in vec]
 
-    def index_package(self, package: KnowledgePackage) -> None:
-        """Chunks and builds multi-modal search indices for a KnowledgePackage."""
+    def index_package(self, package: KnowledgePackage, strict_permissions: bool = False) -> None:
+        """Chunks and builds multi-modal search indices for a KnowledgePackage.
+
+        Permission filtering (aligned with KnowledgePackageRetriever and exporters):
+        - Explicit read=False entries are always excluded (fail-closed for recorded denials).
+        - strict_permissions=False (default, pilot): objects without a permission entry are indexed.
+        - strict_permissions=True: objects with a source identity but no permission entry are excluded.
+        """
         for obj in package.objects:
+            if self._is_forbidden(obj, package, strict_permissions):
+                continue
             chunks = self.chunker.chunk_object(obj)
             for chunk in chunks:
                 vector = self._generate_dummy_embedding(chunk.text)
@@ -35,6 +43,29 @@ class HybridRAGEngine:
                     "vector": vector,
                     "metadata": chunk.metadata,
                 })
+
+    def _is_forbidden(
+        self, obj, package: KnowledgePackage, strict_permissions: bool
+    ) -> bool:
+        """Return True if the object should be excluded from the index under the permission model."""
+        raw_permissions = package.metadata.get("permissions", {})
+        permissions = raw_permissions if isinstance(raw_permissions, dict) else {}
+        src_ids = [
+            rid[4:] for rid in obj.provenance.source_record_ids
+            if rid.startswith("src:")
+        ]
+        if not src_ids:
+            return False  # No source identity → no permission gate
+        has_explicit = False
+        for src_id in src_ids:
+            perm = permissions.get(src_id)
+            if perm is not None:
+                has_explicit = True
+                if perm.get("read") is False:
+                    return True
+        if strict_permissions and not has_explicit:
+            return True
+        return False
 
     def _cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
         return sum(a * b for a, b in zip(vec_a, vec_b))

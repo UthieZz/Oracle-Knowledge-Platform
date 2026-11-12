@@ -82,6 +82,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-12)
+- HybridRAGEngine.index_package now excludes objects with explicit read=False (same filter as retriever/exporters). Denied content is not indexed or searchable. New regression passed.
 - ProvenanceLedgerExporter and RelationshipIndexExporter now exclude knowledge_objects with explicit read=False in package.metadata["permissions"] (aligned with other delivery boundaries). New regressions added and passed.
 - MultiSourceExporter (legacy src/ path) now excludes conversations with explicit read=False from content files, indexes, platform.json, unit manifests, and root compilation totals. Regression extended.
 - Health CLI recovery_hints for all common WARNING reasons (including queue and provenance).
@@ -91,7 +92,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Dockerfile and operator guide updated with reproducible Docker start for the local-folder Connect worker (P3).
 
 ## Next highest-value action
-Continue P1 remaining authorization boundaries or advance further P3 diagnostics under optional dependencies. Prefer the smallest coherent change that produces new regression evidence.
+Continue P1 remaining authorization boundaries (e.g., other in-memory indexes, caches, or Studio surfaces) or advance further P3 diagnostics under optional dependencies. Prefer the smallest coherent change that produces new regression evidence.
 
 - Fixed missing json import in run_connect_worker.py so --config path works (P3).
 - Docker packaging for Connect pilot documented (P3).

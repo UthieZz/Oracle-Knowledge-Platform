@@ -1,3 +1,11 @@
+## 2026-11-12 — HybridRAGEngine excludes explicit-deny objects from index (P1)
+
+- Problem: HybridRAGEngine.index_package indexed every object in the package. Explicit read=False permission entries did not prevent denied content from entering the in-memory search index or appearing in subsequent search results.
+- Change: index_package now accepts optional strict_permissions (default False) and skips objects whose source identity has an explicit read=False entry (same logic as KnowledgePackageRetriever and SQLiteExporter). Missing entries remain indexed under pilot default.
+- Verification: added tests/test_okc_v2.py::test_hybrid_rag_excludes_explicit_deny; existing tenant-isolation test remains green. Targeted pytest 2 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by closing the hybrid-search delivery boundary so recorded denials are not retrievable via RAG.
+
 ## 2026-11-12 — ProvenanceLedgerExporter and RelationshipIndexExporter exclude explicit-deny (P1)
 
 - Problem: these legacy portable exporters wrote all knowledge_objects to JSON regardless of package.metadata["permissions"]. Explicit denials leaked object existence, titles, and relationships on the delivery surface.

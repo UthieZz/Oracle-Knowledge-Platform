@@ -1,3 +1,11 @@
+## 2026-11-12 — HybridRAGEngine excludes explicit-deny (P1)
+
+- HybridRAGEngine.index_package now filters objects with explicit read=False before chunking and indexing.
+- Denied content is not present in the in-memory index or search results.
+- New regression tests/test_okc_v2.py::test_hybrid_rag_excludes_explicit_deny passed; tenant isolation unchanged.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency on the hybrid-search path.
+
 ## 2026-11-11 — Health CLI warns on permissions missing event provenance (P1/P3)
 
 - Positive permissions_missing_event_provenance now elevates status=WARNING and exit 1.
