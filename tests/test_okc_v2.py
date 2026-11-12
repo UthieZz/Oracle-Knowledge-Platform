@@ -147,6 +147,50 @@ def test_hybrid_rag_excludes_explicit_deny():
     assert all(h["parent_object_id"] != "denied" for h in hits)
 
 
+def test_hybrid_rag_strict_excludes_missing_permission():
+    """P1: HybridRAG strict_permissions=True excludes objects that have a source identity but no permission entry.
+    Aligns indexing behavior with KnowledgePackageRetriever strict mode.
+    """
+    eng = HybridRAGEngine()
+    prov_explicit = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        source_record_ids=["src:explicit"],
+        tenant_id="tenant_a",
+        silo_id="silo_1",
+    )
+    prov_missing = Provenance(
+        source_platform="chatgpt",
+        source_file="f.json",
+        source_record_ids=["src:missing"],
+        tenant_id="tenant_a",
+        silo_id="silo_1",
+    )
+    obj_explicit = KnowledgeObject(
+        object_id="explicit",
+        title="Allowed",
+        provenance=prov_explicit,
+        content="Python SQLite notes that should be searchable.",
+    )
+    obj_missing = KnowledgeObject(
+        object_id="missing",
+        title="No entry",
+        provenance=prov_missing,
+        content="Unpermissioned content that must be excluded under strict.",
+    )
+    pkg = KnowledgePackage(
+        package_id="p1",
+        objects=[obj_explicit, obj_missing],
+        metadata={"permissions": {"explicit": {"read": True}}},
+    )
+    eng.index_package(pkg, strict_permissions=True)
+    hits = eng.search("Python SQLite", tenant_id="tenant_a", silo_id="silo_1")
+    assert len(hits) >= 1
+    assert all("Unpermissioned content" not in h["text"] for h in hits)
+    assert any("Python SQLite" in h["text"] for h in hits)
+    assert all(h["parent_object_id"] != "missing" for h in hits)
+
+
 def test_sqlite_export_roundtrip(tmp_path: Path):
     db = tmp_path / "test.db"
     prov = Provenance(

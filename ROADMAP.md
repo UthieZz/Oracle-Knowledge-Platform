@@ -82,6 +82,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-12)
+- HybridRAGEngine.index_package(strict_permissions=True) excludes objects with source identity but no permission entry. New regression tests/test_okc_v2.py::test_hybrid_rag_strict_excludes_missing_permission passed.
 - Baseline Connect + permission suite re-verified on current main (a156c62): 70 passed. No regressions from recent P1 filters.
 - HybridRAGEngine.index_package now excludes objects with explicit read=False (same filter as retriever/exporters). Denied content is not indexed or searchable. New regression passed.
 - ProvenanceLedgerExporter and RelationshipIndexExporter now exclude knowledge_objects with explicit read=False in package.metadata["permissions"] (aligned with other delivery boundaries). New regressions added and passed.

@@ -1,3 +1,11 @@
+## 2026-11-12 — HybridRAG strict mode excludes missing permissions (P1)
+
+- HybridRAGEngine.index_package(strict_permissions=True) now excludes objects that have a source identity but lack an explicit permission entry (aligned with KnowledgePackageRetriever strict mode).
+- New regression tests/test_okc_v2.py::test_hybrid_rag_strict_excludes_missing_permission passed.
+- Explicit-deny filter and tenant isolation remain green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency on the hybrid-search path under fail-closed mode.
+
 ## 2026-11-12 — Baseline verification of Connect + permission suite on current main (P0/P1/P3)
 
 - Environment: fresh clone of main@a156c62 (HybridRAG explicit-deny filter).
