@@ -1,3 +1,11 @@
+## 2026-11-12 — Local OKC server respects OKP_STRICT_PERMISSIONS (P1/P3)
+
+- Problem: the local Flask upload/compile path in okc/server/app.py always indexed and exported with pilot default (strict_permissions=False). Operators had no way to enable fail-closed mode for that surface without source changes.
+- Change: pipeline now reads OKP_STRICT_PERMISSIONS env and forwards the flag to HybridRAGEngine.index_package and SQLiteExporter.export. Default unchanged.
+- Verification: py_compile succeeded; no new unit test (surface is optional local API). Baseline Connect suite remains 70 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 authorization consistency on the local server delivery path and P3 operability.
+
 ## 2026-11-12 — HybridRAG strict mode excludes missing permissions (P1)
 
 - Problem: HybridRAGEngine.index_package under strict_permissions=True was not yet regression-tested for objects that possess a source identity but lack any permission entry. Aligning the fail-closed path with KnowledgePackageRetriever prevents unpermissioned content from entering the in-memory index.
