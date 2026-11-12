@@ -136,11 +136,12 @@ def _run_pipeline(job_id: str) -> None:
 
         _set_job(job_id, status="running", progress=75, message="Hybrid RAG indexing")
         rag = HybridRAGEngine()
-        rag.index_package(package)
+        strict = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
+        rag.index_package(package, strict_permissions=strict)
 
         _set_job(job_id, status="running", progress=90, message="Persisting to SQLite")
         exporter_cls = registry.get("exporter", "sqlite_exporter").plugin
-        exporter_cls(db_path=DB_PATH).export(package, tenant_id=tenant_id, silo_id=silo_id)
+        exporter_cls(db_path=DB_PATH).export(package, tenant_id=tenant_id, silo_id=silo_id, strict_permissions=strict)
 
         _set_job(
             job_id,
