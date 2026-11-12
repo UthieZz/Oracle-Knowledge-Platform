@@ -1,3 +1,11 @@
+## 2026-11-12 — Baseline verification of Connect + permission suite (P0/P1/P3)
+
+- Environment: fresh clone of main@a156c62.
+- Checks: targeted Connect + agent context + permission-related suite → 70 passed.
+- Confirms recent P1 filters (HybridRAG, exporters, retriever) introduce no regressions.
+- No functional code change. Records current evidence for future runs.
+- Knowledge Core IR and Connect contracts unchanged.
+
 ## 2026-11-12 — HybridRAGEngine excludes explicit-deny objects from index (P1)
 
 - Problem: HybridRAGEngine.index_package indexed every object in the package. Explicit read=False permission entries did not prevent denied content from entering the in-memory search index or appearing in subsequent search results.

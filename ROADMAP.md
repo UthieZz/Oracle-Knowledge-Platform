@@ -25,7 +25,7 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 - Studio AuthGate and firestore.rules present (deployed behavior not fully verified).
 
 ### OKP Connect local-folder pilot
-Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related); targeted after json import fix: 64 passed):
+Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related); targeted after json import fix: 64 passed; current-main Connect + permission suite 70 passed on 2026-11-12 verification):
 - LocalFolderConnector with persistent snapshot (restart deletion detection, sequence for event_ids).
 - SQLite SyncEngine (WAL, dedup, retry/backoff, cursor advances only on success).
 - KnowledgeAccumulator (source|tenant|silo namespacing, persist/rollback, cross-scope isolation).
@@ -82,6 +82,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-12)
+- Baseline Connect + permission suite re-verified on current main (a156c62): 70 passed. No regressions from recent P1 filters.
 - HybridRAGEngine.index_package now excludes objects with explicit read=False (same filter as retriever/exporters). Denied content is not indexed or searchable. New regression passed.
 - ProvenanceLedgerExporter and RelationshipIndexExporter now exclude knowledge_objects with explicit read=False in package.metadata["permissions"] (aligned with other delivery boundaries). New regressions added and passed.
 - MultiSourceExporter (legacy src/ path) now excludes conversations with explicit read=False from content files, indexes, platform.json, unit manifests, and root compilation totals. Regression extended.

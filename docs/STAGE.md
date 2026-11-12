@@ -1,3 +1,12 @@
+## 2026-11-12 — Baseline verification of Connect + permission suite on current main (P0/P1/P3)
+
+- Environment: fresh clone of main@a156c62 (HybridRAG explicit-deny filter).
+- Checks: pytest tests/test_connect_health.py tests/test_knowledge_accumulator.py tests/test_sync_engine.py tests/test_local_folder_connector.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_connect_recover.py tests/test_agent_context_gateway.py → 70 passed.
+- Permission filters on retrieval, HybridRAG index, SQLite/Firestore/MultiSource/ProvenanceLedger/RelationshipIndex exporters remain effective; no regressions introduced by recent P1 work.
+- No functional code change. Records current evidence that the local-folder pilot and authorization boundaries stay green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Next: remaining P1 boundaries or P3 packaging refinements.
+
 ## 2026-11-12 — HybridRAGEngine excludes explicit-deny (P1)
 
 - HybridRAGEngine.index_package now filters objects with explicit read=False before chunking and indexing.
