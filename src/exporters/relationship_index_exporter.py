@@ -55,7 +55,20 @@ class RelationshipIndexExporter(Exporter):
         ensure_knowledge_object_provenance(package)
         quality = annotate_knowledge_object_quality(package)
         edges: List[Dict[str, Any]] = []
+        # Exclude knowledge_objects with explicit permission read=False (aligned with other delivery boundaries)
+        raw_permissions = package.metadata.get("permissions", {}) if hasattr(package, "metadata") else {}
+        permissions = raw_permissions if isinstance(raw_permissions, dict) else {}
+        def _is_forbidden(ko) -> bool:
+            oid = str(getattr(ko, "id", "") or "")
+            if not oid:
+                return False
+            perm = permissions.get(oid)
+            if perm is not None and isinstance(perm, dict) and perm.get("read") is False:
+                return True
+            return False
         for ko in package.knowledge_objects:
+            if _is_forbidden(ko):
+                continue
             prov = getattr(ko, "provenance", None) or {}
             cid = prov.get("conversation_id") or getattr(ko, "conversation_id", None)
             if cid:
