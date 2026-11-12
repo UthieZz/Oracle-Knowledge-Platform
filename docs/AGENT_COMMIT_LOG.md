@@ -22,3 +22,4 @@
 - Knowledge Core IR and Connect contracts unchanged.
 - Advances P1 by closing one remaining authorized-delivery boundary on the legacy export surface.
 
+[Full historical log continues from prior commits; see git history for complete prior entries.]
