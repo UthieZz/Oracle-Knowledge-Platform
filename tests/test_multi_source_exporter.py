@@ -185,6 +185,26 @@ class TestMultiSourceExporter(unittest.TestCase):
         chatgpt_files = [f for f in files if "PEP" in f or "ChatGPT" in f or "style" in f.lower()]
         self.assertGreater(len(chatgpt_files), 0)
 
+        # INDEX.md and package manifest must not list the denied conversation
+        index_path = os.path.join(self.output_dir, "INDEX.md")
+        with open(index_path, "r", encoding="utf-8") as f:
+            index_text = f.read()
+        self.assertNotIn("Gemini Quantum", index_text)
+        self.assertNotIn("conv_gemini_1", index_text)
+
+        # Unit manifest under unified/ (root manifest is separate summary)
+        unit_manifest_path = os.path.join(self.output_dir, "unified", "manifest.json")
+        with open(unit_manifest_path, "r", encoding="utf-8") as f:
+            unit_manifest = json.load(f)
+        self.assertEqual(unit_manifest["summary"]["conversations"], 2)  # 3 total - 1 denied
+        self.assertNotIn("conv_gemini_1", json.dumps(unit_manifest))
+
+        # Root manifest totals must also exclude denied
+        root_manifest_path = os.path.join(self.output_dir, "manifest.json")
+        with open(root_manifest_path, "r", encoding="utf-8") as f:
+            root_manifest = json.load(f)
+        self.assertEqual(root_manifest["compilation_run"]["total_conversations"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

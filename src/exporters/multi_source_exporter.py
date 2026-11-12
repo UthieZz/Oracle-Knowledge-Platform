@@ -70,6 +70,13 @@ class MultiSourceExporter(Exporter):
         # Group data by platform dynamically
         platform_map = self._group_by_platform(package)
 
+        # Filter platform map for root manifest (explicit denials excluded)
+        filtered_platform_map: Dict[str, List[Any]] = {}
+        for plat, convs in platform_map.items():
+            filtered = [c for c in convs if not self._is_forbidden(c, package)]
+            if filtered:
+                filtered_platform_map[plat] = filtered
+
         # 1. Export Unified if mode is Unified or Both
         if self.mode in ("Unified", "Both"):
             unified_dir = os.path.join(self.output_dir, "unified")
@@ -108,8 +115,8 @@ class MultiSourceExporter(Exporter):
                     is_unified=False,
                 )
 
-        # 3. Generate Top-Level Root Manifest
-        self._write_root_manifest(package, platform_map, timestamp)
+        # 3. Generate Top-Level Root Manifest (post-filter counts)
+        self._write_root_manifest(package, filtered_platform_map, timestamp)
 
         return package
 
@@ -202,7 +209,7 @@ class MultiSourceExporter(Exporter):
         self._write_index_md(
             filepath=os.path.join(target_dir, "INDEX.md"),
             package_title=package_title,
-            conversations=conversations,
+            conversations=filtered_conversations,
             entities=platform_entities,
             attachments=platform_attachments,
         )
@@ -212,7 +219,7 @@ class MultiSourceExporter(Exporter):
             self._write_platform_json(
                 filepath=os.path.join(target_dir, "platform.json"),
                 platform_name=platform_name,
-                conversations=conversations,
+                conversations=filtered_conversations,
                 entities=platform_entities,
                 attachments=platform_attachments,
             )
@@ -221,7 +228,7 @@ class MultiSourceExporter(Exporter):
         self._write_package_manifest(
             filepath=os.path.join(target_dir, "manifest.json"),
             platform_name=platform_name,
-            conversations=conversations,
+            conversations=filtered_conversations,
             entities=platform_entities,
             attachments=platform_attachments,
             source_files=source_files,
@@ -376,23 +383,35 @@ class MultiSourceExporter(Exporter):
         filepath = os.path.join(self.output_dir, "manifest.json")
 
         platforms_summary = {}
+        total_conversations = 0
+        total_messages = 0
+        total_entities = 0
+        total_attachments = 0
         for plat_name, convs in platform_map.items():
             conv_ids = {c.id for c in convs if hasattr(c, "id")}
+            n_conv = len(convs)
+            n_msg = sum(len(c.messages) for c in convs)
+            n_ent = len([e for e in package.entities if getattr(e, "conversation_id", None) in conv_ids])
+            n_att = len([a for a in package.attachment_knowledge if getattr(a, "conversation_id", None) in conv_ids])
             platforms_summary[plat_name] = {
-                "conversations": len(convs),
-                "messages": sum(len(c.messages) for c in convs),
-                "entities": len([e for e in package.entities if getattr(e, "conversation_id", None) in conv_ids]),
-                "attachments": len([a for a in package.attachment_knowledge if getattr(a, "conversation_id", None) in conv_ids]),
+                "conversations": n_conv,
+                "messages": n_msg,
+                "entities": n_ent,
+                "attachments": n_att,
             }
+            total_conversations += n_conv
+            total_messages += n_msg
+            total_entities += n_ent
+            total_attachments += n_att
 
         root_manifest = {
             "compilation_run": {
                 "exported_at": timestamp,
                 "export_mode": self.mode,
-                "total_conversations": len(package.conversations),
-                "total_messages": sum(len(c.messages) for c in package.conversations),
-                "total_entities": len(package.entities),
-                "total_attachments": len(package.attachment_knowledge),
+                "total_conversations": total_conversations,
+                "total_messages": total_messages,
+                "total_entities": total_entities,
+                "total_attachments": total_attachments,
                 "total_platforms": len(platform_map),
             },
             "platforms": platforms_summary,

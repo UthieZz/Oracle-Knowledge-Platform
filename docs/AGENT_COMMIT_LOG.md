@@ -1,3 +1,11 @@
+## 2026-11-12 — MultiSourceExporter indexes and manifests exclude denied (P1)
+
+- Problem: after the content-file filter, INDEX.md, platform.json, unit manifests, and root compilation totals still listed or counted conversations with explicit read=False. This leaked existence and counts of denied objects on the legacy export surface.
+- Change: _export_package_unit now passes filtered_conversations to all write methods (index, platform.json, package manifest). export() builds a filtered_platform_map for _write_root_manifest; root totals are computed from the filtered map.
+- Verification: extended tests/test_multi_source_exporter.py::test_permission_filter_excludes_denied to assert INDEX.md and unit/root manifests exclude the denied conversation; suite 5 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1 by closing the remaining metadata-leak on the MultiSourceExporter delivery boundary.
+
 ## 2026-11-12 — MultiSourceExporter permission filter (P1)
 
 - Problem: legacy MultiSourceExporter (src/exporters, used by ExportService) wrote all conversations regardless of package.metadata["permissions"]. Explicit denials were not enforced on this delivery path.

@@ -1,6 +1,6 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-11  
+**Updated:** 2026-11-12  
 **Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.  
 Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.  
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
@@ -80,7 +80,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-10/11)
-- MultiSourceExporter (legacy src/ path) now excludes conversations with explicit read=False in package.metadata["permissions"] (aligned with okc filter). Regression added. Advances P1 remaining delivery boundary.
+- MultiSourceExporter (legacy src/ path) now excludes conversations with explicit read=False in package.metadata["permissions"] from content files, indexes, platform.json, unit manifests, and root compilation totals (aligned with okc filter). Regression extended. Advances P1 remaining delivery boundary.
 - Health CLI recovery_hints for all common WARNING reasons (including queue and provenance).
 - permissions_missing_event_provenance and orphaned_permission_entries elevate WARNING.
 - FirestoreExporter permission filter unit-tested.
