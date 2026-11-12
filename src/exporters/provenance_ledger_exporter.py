@@ -58,7 +58,20 @@ class ProvenanceLedgerExporter(Exporter):
         repair = ensure_knowledge_object_provenance(package)
         check = provenance_report(package)
         entries: List[Dict[str, Any]] = []
+        # Exclude knowledge_objects with explicit permission read=False (aligned with other delivery boundaries)
+        raw_permissions = package.metadata.get("permissions", {}) if hasattr(package, "metadata") else {}
+        permissions = raw_permissions if isinstance(raw_permissions, dict) else {}
+        def _is_forbidden(ko) -> bool:
+            oid = str(getattr(ko, "id", "") or "")
+            if not oid:
+                return False
+            perm = permissions.get(oid)
+            if perm is not None and isinstance(perm, dict) and perm.get("read") is False:
+                return True
+            return False
         for ko in package.knowledge_objects:
+            if _is_forbidden(ko):
+                continue
             prov = dict(getattr(ko, "provenance", None) or {})
             missing = [key for key in REQUIRED_PROVENANCE_KEYS if not prov.get(key)]
             entries.append(
