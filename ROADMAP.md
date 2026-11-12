@@ -23,6 +23,7 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 - MultiSourceExporter applies permission filter to content, indexes, and manifests (unit-tested).
 - ProvenanceLedgerExporter and RelationshipIndexExporter exclude explicit-deny knowledge objects (unit-tested).
 - Studio AuthGate and firestore.rules present (deployed behavior not fully verified).
+- Local OKC server (okc/server/app.py) honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export on upload/compile path.
 
 ### OKP Connect local-folder pilot
 Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related); targeted after json import fix: 64 passed; current-main Connect + permission suite 70 passed on 2026-11-12 verification):
@@ -50,7 +51,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 **Acceptance:** package converges to source after worker stop/restart with concurrent source changes; no silent loss or duplicate objects.
 
 ### P1 — Security / provenance / authorization consistency
-**Status:** Partial. Explicit permission_change (read=False/True) enforced on retrieval, context gateway (strict), Firestore export, MultiSourceExporter, ProvenanceLedgerExporter, and RelationshipIndexExporter. Orphaned and missing-event-provenance elevate health WARNING. Lifecycle semantics documented in docs/PERMISSION_MODEL.md.  
+**Status:** Partial. Explicit permission_change (read=False/True) enforced on retrieval, context gateway (strict), Firestore export, MultiSourceExporter, ProvenanceLedgerExporter, and RelationshipIndexExporter. Orphaned and missing-event-provenance elevate health WARNING. Lifecycle semantics documented in docs/PERMISSION_MODEL.md. Local server path now configurable via OKP_STRICT_PERMISSIONS.  
 **Gaps:** remaining boundaries (e.g., admin paths, cache invalidation, other legacy surfaces); full fail-closed production mode not default.  
 **Next:** identify and close one verified weak boundary with regression.  
 **Acceptance:** no cross-tenant/silo leakage; revocation survives updates; missing permission denied under strict mode across all delivery paths; provenance complete on permission decisions.
@@ -61,7 +62,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 **Acceptance:** documented active/obsolete paths; no competing IRs.
 
 ### P3 — Local pilot operability
-**Status:** Strong progress. Config files, recovery CLI, health recovery_hints, cursor/snapshot visibility, operator guide, Docker packaging example.  
+**Status:** Strong progress. Config files, recovery CLI, health recovery_hints, cursor/snapshot visibility, operator guide, Docker packaging example. Local server now supports strict mode via env.  
 **Next:** diagnostics under optional deps or further one-command packaging refinements.  
 **Acceptance:** operator can start, inspect, recover, and stop the local-folder pilot from documented steps without source inspection.
 
@@ -82,6 +83,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-12)
+- Local OKC server (okc/server/app.py) now honors OKP_STRICT_PERMISSIONS env for HybridRAG index and SQLite export on the upload/compile path (P1/P3). Default remains pilot mode.
 - HybridRAGEngine.index_package(strict_permissions=True) excludes objects with source identity but no permission entry. New regression tests/test_okc_v2.py::test_hybrid_rag_strict_excludes_missing_permission passed.
 - Baseline Connect + permission suite re-verified on current main (a156c62): 70 passed. No regressions from recent P1 filters.
 - HybridRAGEngine.index_package now excludes objects with explicit read=False (same filter as retriever/exporters). Denied content is not indexed or searchable. New regression passed.
