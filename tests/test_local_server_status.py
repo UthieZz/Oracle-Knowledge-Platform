@@ -65,6 +65,10 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert data["ok"] is True
     assert data["service"] == "okc-local-api"
     assert data["strict_permissions"] is True
+    assert "upload_dir_writable" in data
+    assert "db_parent_writable" in data
+    assert isinstance(data["upload_dir_writable"], bool)
+    assert isinstance(data["db_parent_writable"], bool)
 
 
 def test_health_reports_pilot_by_default(client, monkeypatch):
@@ -73,3 +77,5 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["strict_permissions"] is False
+    assert "upload_dir_writable" in data
+    assert "db_parent_writable" in data
