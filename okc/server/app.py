@@ -198,14 +198,15 @@ def pipeline_status():
     if not job:
         return jsonify({"error": f"unknown job_id: {job_id}"}), 404
 
-    return jsonify(
-        {
-            "job_id": job_id,
-            "status": job.get("status", "idle"),
-            "progress": int(job.get("progress") or 0),
-            "message": job.get("message") or "",
-        }
-    )
+    payload = {
+        "job_id": job_id,
+        "status": job.get("status", "idle"),
+        "progress": int(job.get("progress") or 0),
+        "message": job.get("message") or "",
+    }
+    if "strict_permissions" in job:
+        payload["strict_permissions"] = bool(job["strict_permissions"])
+    return jsonify(payload)
 
 
 @app.get("/api/health")

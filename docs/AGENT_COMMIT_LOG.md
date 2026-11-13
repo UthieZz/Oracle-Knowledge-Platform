@@ -1,3 +1,11 @@
+## 2026-11-13 — Local server status API exposes strict_permissions field (P1/P3)
+
+- Problem: after storing strict_permissions in the job record and including mode in the message, the /api/pipeline/status response still omitted the structured boolean. Clients had to parse the message string.
+- Change: pipeline_status now includes `strict_permissions` in the JSON payload when the key exists on the job.
+- Verification: py_compile of okc/server/app.py succeeded.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the permission mode directly observable on the local compile job status surface.
+
 ## 2026-11-13 — Local server job status reports permission mode (P1/P3)
 
 - Problem: after the OKP_STRICT_PERMISSIONS change, operators had no visibility in the job status whether the compile path ran in pilot or strict mode.

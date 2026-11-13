@@ -83,6 +83,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-13)
+- Local OKC server job status API now returns structured `strict_permissions` boolean when present (in addition to mode in message). Operators and API clients can observe the mode without parsing text (P1/P3).
 - Local OKC server job completion now reports permission mode (pilot|strict) in status message and job record. Operators can verify OKP_STRICT_PERMISSIONS was honored (P1/P3).
 
 ## Recent verified advances (2026-11-12)
