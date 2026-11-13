@@ -1,3 +1,11 @@
+## 2026-11-13 — Regression for local server status API strict_permissions field (P1/P3)
+
+- Problem: recent status API change that exposes strict_permissions was verified only by py_compile; no automated regression locked the JSON contract.
+- Change: added tests/test_local_server_status.py covering presence of the boolean when set and omission when absent.
+- Verification: pytest tests/test_local_server_status.py → 2 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P1/P3 by providing durable evidence that operators and API clients observe the permission mode on the local compile job status surface.
+
 ## 2026-11-13 — Local server status API exposes strict_permissions field (P1/P3)
 
 - Problem: after storing strict_permissions in the job record and including mode in the message, the /api/pipeline/status response still omitted the structured boolean. Clients had to parse the message string.
