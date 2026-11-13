@@ -143,13 +143,15 @@ def _run_pipeline(job_id: str) -> None:
         exporter_cls = registry.get("exporter", "sqlite_exporter").plugin
         exporter_cls(db_path=DB_PATH).export(package, tenant_id=tenant_id, silo_id=silo_id, strict_permissions=strict)
 
+        mode = "strict" if strict else "pilot"
         _set_job(
             job_id,
             status="completed",
             progress=100,
-            message=f"Completed: {len(package.objects)} objects",
+            message=f"Completed: {len(package.objects)} objects (mode={mode})",
             object_count=len(package.objects),
             package_id=package.package_id,
+            strict_permissions=strict,
         )
     except Exception as exc:
         _set_job(
