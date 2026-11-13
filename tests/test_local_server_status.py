@@ -55,3 +55,21 @@ def test_pipeline_status_omits_strict_permissions_when_absent(client):
     assert resp.status_code == 200
     data = resp.get_json()
     assert "strict_permissions" not in data
+
+
+def test_health_reports_strict_permissions(client, monkeypatch):
+    monkeypatch.setenv("OKP_STRICT_PERMISSIONS", "1")
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["service"] == "okc-local-api"
+    assert data["strict_permissions"] is True
+
+
+def test_health_reports_pilot_by_default(client, monkeypatch):
+    monkeypatch.delenv("OKP_STRICT_PERMISSIONS", raising=False)
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["strict_permissions"] is False

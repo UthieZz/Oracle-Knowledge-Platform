@@ -1,3 +1,10 @@
+## 2026-11-13 — Local server health reports permission mode (P1/P3)
+
+- /api/health now returns strict_permissions boolean reflecting OKP_STRICT_PERMISSIONS.
+- Operators can confirm mode without initiating a compile job.
+- New regressions in tests/test_local_server_status.py passed.
+- Knowledge Core IR and Connect contracts unchanged.
+
 ## 2026-11-12 — HybridRAG strict mode excludes missing permissions (P1)
 
 - HybridRAGEngine.index_package(strict_permissions=True) now excludes objects that have a source identity but lack an explicit permission entry (aligned with KnowledgePackageRetriever strict mode).

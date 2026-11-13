@@ -1,3 +1,11 @@
+## 2026-11-13 — Local server health endpoint reports strict_permissions mode (P1/P3)
+
+- Problem: operators could observe the permission mode only after a compile job completed. The /api/health surface gave no indication of the current OKP_STRICT_PERMISSIONS setting.
+- Change: /api/health now includes a structured `strict_permissions` boolean derived from the environment at request time.
+- Verification: pytest tests/test_local_server_status.py → 4 passed (new health regressions included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 operability and P1 visibility for the local compile surface.
+
 ## 2026-11-13 — Regression for local server status API strict_permissions field (P1/P3)
 
 - Problem: recent status API change that exposes strict_permissions was verified only by py_compile; no automated regression locked the JSON contract.

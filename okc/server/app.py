@@ -211,7 +211,12 @@ def pipeline_status():
 
 @app.get("/api/health")
 def health():
-    return jsonify({"ok": True, "service": "okc-local-api"})
+    strict = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
+    return jsonify({
+        "ok": True,
+        "service": "okc-local-api",
+        "strict_permissions": strict,
+    })
 
 
 def main() -> None:
