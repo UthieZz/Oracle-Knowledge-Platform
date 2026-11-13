@@ -26,7 +26,7 @@
 - Default invocation (no flag) remains OK so the pilot is not broken by the presence of unpermissioned objects.
 - Health also reports `permissions_with_event_provenance` and `permissions_missing_event_provenance` so operators can confirm that recorded permission decisions carry their originating event id and see incomplete provenance at a glance.
 - Health also reports `orphaned_permission_entries` (permission keys with no matching living object) so operators can detect incomplete cleanup or corruption. Positive count elevates status to WARNING (exit 1).
-- Local OKC server (`okc/server/app.py`) `/api/health` returns a structured `strict_permissions` boolean reflecting the current `OKP_STRICT_PERMISSIONS` environment setting. Operators can confirm the mode active for the local upload/compile path without starting a job. Job status API also exposes the boolean when the job has completed under that mode.
+- Local OKC server (`okc/server/app.py`) `/api/health` returns a structured `strict_permissions` boolean reflecting the current `OKP_STRICT_PERMISSIONS` environment setting, plus basic readiness signals (`upload_dir_writable`, `db_parent_writable`). Operators can confirm the mode and local path readiness without starting a job. Job status API also exposes the boolean when the job has completed under that mode.
 
 ## Deletion and restoration semantics (verified by regressions)
 
