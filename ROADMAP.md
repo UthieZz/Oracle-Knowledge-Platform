@@ -1,6 +1,6 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-12  
+**Updated:** 2026-11-13  
 **Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.  
 Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.  
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
@@ -12,7 +12,7 @@ It is knowledge infrastructure—not simply a chatbot or conversation archive.
 
 The near-term product objective is a dependable, demonstrable vertical slice: connect an approved source, synchronize changes in the background, maintain a governed KnowledgePackage, retrieve grounded evidence, and make operational state inspectable.
 
-## Current implementation snapshot — 2026-11-12
+## Current implementation snapshot — 2026-11-13
 
 ### Knowledge Core and application path
 - Multi-source importer architecture and PluginRegistry present.
@@ -23,10 +23,10 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 - MultiSourceExporter applies permission filter to content, indexes, and manifests (unit-tested).
 - ProvenanceLedgerExporter and RelationshipIndexExporter exclude explicit-deny knowledge objects (unit-tested).
 - Studio AuthGate and firestore.rules present (deployed behavior not fully verified).
-- Local OKC server (okc/server/app.py) honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export on upload/compile path.
+- Local OKC server (okc/server/app.py) honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export on upload/compile path; job status now reports the mode used.
 
 ### OKP Connect local-folder pilot
-Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related); targeted after json import fix: 64 passed; current-main Connect + permission suite 70 passed on 2026-11-12 verification):
+Implemented and targeted-tested (recent runs: health suite 25 passed; broader Connect suite 69 passed on 2026-11-11 verification (health 25 + related); targeted after json import fix: 64 passed; current-main Connect + permission suite 70 passed on 2026-11-12 verification; re-verified 70 passed on 2026-11-13 clone):
 - LocalFolderConnector with persistent snapshot (restart deletion detection, sequence for event_ids).
 - SQLite SyncEngine (WAL, dedup, retry/backoff, cursor advances only on success).
 - KnowledgeAccumulator (source|tenant|silo namespacing, persist/rollback, cross-scope isolation).
@@ -51,7 +51,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 **Acceptance:** package converges to source after worker stop/restart with concurrent source changes; no silent loss or duplicate objects.
 
 ### P1 — Security / provenance / authorization consistency
-**Status:** Partial. Explicit permission_change (read=False/True) enforced on retrieval, context gateway (strict), Firestore export, MultiSourceExporter, ProvenanceLedgerExporter, and RelationshipIndexExporter. Orphaned and missing-event-provenance elevate health WARNING. Lifecycle semantics documented in docs/PERMISSION_MODEL.md. Local server path now configurable via OKP_STRICT_PERMISSIONS.  
+**Status:** Partial. Explicit permission_change (read=False/True) enforced on retrieval, context gateway (strict), Firestore export, MultiSourceExporter, ProvenanceLedgerExporter, and RelationshipIndexExporter. Orphaned and missing-event-provenance elevate health WARNING. Lifecycle semantics documented in docs/PERMISSION_MODEL.md. Local server path now configurable via OKP_STRICT_PERMISSIONS; job status reports the mode.  
 **Gaps:** remaining boundaries (e.g., admin paths, cache invalidation, other legacy surfaces); full fail-closed production mode not default.  
 **Next:** identify and close one verified weak boundary with regression.  
 **Acceptance:** no cross-tenant/silo leakage; revocation survives updates; missing permission denied under strict mode across all delivery paths; provenance complete on permission decisions.
@@ -62,7 +62,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 **Acceptance:** documented active/obsolete paths; no competing IRs.
 
 ### P3 — Local pilot operability
-**Status:** Strong progress. Config files, recovery CLI, health recovery_hints, cursor/snapshot visibility, operator guide, Docker packaging example. Local server now supports strict mode via env.  
+**Status:** Strong progress. Config files, recovery CLI, health recovery_hints, cursor/snapshot visibility, operator guide, Docker packaging example. Local server now supports strict mode via env and reports it in job status.  
 **Next:** diagnostics under optional deps or further one-command packaging refinements.  
 **Acceptance:** operator can start, inspect, recover, and stop the local-folder pilot from documented steps without source inspection.
 
@@ -81,6 +81,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Preserve pipeline: IMPORT → NORMALIZE → PROCESS → ENRICH → VALIDATE → COMPILE → PACKAGE.
 - Small, reversible, tested changes. Protect unrelated work.
 - Do not claim B2B readiness without evidence.
+
+## Recent verified advances (2026-11-13)
+- Local OKC server job completion now reports permission mode (pilot|strict) in status message and job record. Operators can verify OKP_STRICT_PERMISSIONS was honored (P1/P3).
 
 ## Recent verified advances (2026-11-12)
 - Local OKC server (okc/server/app.py) now honors OKP_STRICT_PERMISSIONS env for HybridRAG index and SQLite export on the upload/compile path (P1/P3). Default remains pilot mode.
