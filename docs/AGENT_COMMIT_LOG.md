@@ -1,3 +1,11 @@
+## 2026-11-13 — Local server job status reports permission mode (P1/P3)
+
+- Problem: after the OKP_STRICT_PERMISSIONS change, operators had no visibility in the job status whether the compile path ran in pilot or strict mode.
+- Change: completed job message now includes (mode=pilot|strict) and stores strict_permissions boolean in the job record.
+- Verification: py_compile of okc/server/app.py succeeded. Baseline Connect suite re-verified 70 passed on this clone.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 operability for the local upload/compile surface and confirms P1 flag is applied and observable.
+
 ## 2026-11-12 — Local OKC server respects OKP_STRICT_PERMISSIONS (P1/P3)
 
 - Problem: the local Flask upload/compile path in okc/server/app.py always indexed and exported with pilot default (strict_permissions=False). Operators had no way to enable fail-closed mode for that surface without source changes.
