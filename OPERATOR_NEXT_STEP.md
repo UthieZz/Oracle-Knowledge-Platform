@@ -47,6 +47,7 @@ curl -s http://127.0.0.1:5000/api/health | python -m json.tool
 # expect "strict_permissions": false (or true if OKP_STRICT_PERMISSIONS=1)
 # also "upload_dir_writable": true and "db_parent_writable": true under normal local conditions
 # "db_exists": true after first successful compile that persists to SQLite
+# "upload_dir_absolute" and "db_path_absolute" show the resolved paths in use
 # "tenant_configured" and "silo_configured" true when OKP_TENANT_ID / OKP_SILO_ID are set
 # "google_credentials_configured": true when GOOGLE_APPLICATION_CREDENTIALS is set
 # "active_jobs_count": current in-memory jobs (0 when idle)

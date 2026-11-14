@@ -74,7 +74,11 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.0-local"
+    assert data["api_version"] == "0.2.1-local"
+    assert "upload_dir_absolute" in data
+    assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
+    assert "db_path_absolute" in data
+    assert isinstance(data["db_path_absolute"], str) and data["db_path_absolute"]
     assert "google_credentials_configured" in data
     assert isinstance(data["google_credentials_configured"], bool)
     assert "active_jobs_count" in data
@@ -100,7 +104,11 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.0-local"
+    assert data["api_version"] == "0.2.1-local"
+    assert "upload_dir_absolute" in data
+    assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
+    assert "db_path_absolute" in data
+    assert isinstance(data["db_path_absolute"], str) and data["db_path_absolute"]
     assert "google_credentials_configured" in data
     assert isinstance(data["google_credentials_configured"], bool)
     assert "active_jobs_count" in data
@@ -118,7 +126,11 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.0-local"
+    assert data["api_version"] == "0.2.1-local"
+    assert "upload_dir_absolute" in data
+    assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
+    assert "db_path_absolute" in data
+    assert isinstance(data["db_path_absolute"], str) and data["db_path_absolute"]
     assert "google_credentials_configured" in data
     assert isinstance(data["google_credentials_configured"], bool)
     assert "active_jobs_count" in data
@@ -158,7 +170,11 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.0-local"
+    assert data["api_version"] == "0.2.1-local"
+    assert "upload_dir_absolute" in data
+    assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
+    assert "db_path_absolute" in data
+    assert isinstance(data["db_path_absolute"], str) and data["db_path_absolute"]
     assert "google_credentials_configured" in data
     assert isinstance(data["google_credentials_configured"], bool)
     assert "active_jobs_count" in data

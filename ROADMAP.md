@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-14)
+- Local OKC server /api/health now reports `upload_dir_absolute` and `db_path_absolute` (P3). Operators can confirm the exact resolved filesystem locations used by the local pilot without source or env inspection. New regression asserts added. API version bumped to 0.2.1-local.
+
 - Local OKC server /api/health now reports `google_credentials_configured` and `active_jobs_count` (P3). Operators can confirm whether GOOGLE_APPLICATION_CREDENTIALS is set and see the current in-memory job count without inspecting process state. New regression asserts added.
 - Local OKC server /api/health now reports `db_exists` boolean for local SQLite persistence state (P3). Operators can confirm whether the DB file has been created without filesystem inspection. New regression asserts added.
 - Local OKC server /api/health now reports `python_version`, `platform`, and `api_version` for environment and code-identity diagnostics (P3). Operators can confirm runtime without source inspection. New regression asserts added. Documented in PERMISSION_MODEL.md.

@@ -1,3 +1,11 @@
+## 2026-11-14 — Health reports absolute upload and DB paths (P3)
+
+- Problem: operators diagnosing local OKC server path configuration had no structured signal of the exact resolved filesystem locations used for uploads and SQLite persistence.
+- Change: /api/health now includes `upload_dir_absolute` and `db_path_absolute` (str(Path.resolve())). API_VERSION bumped to 0.2.1-local.
+- Verification: pytest tests/test_local_server_status.py → 7 passed (new asserts included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the concrete local paths observable from the health surface without source or shell inspection.
+
 ## 2026-11-14 — Health reports google_credentials_configured and active_jobs_count (P3)
 
 - Problem: operators diagnosing local OKC server readiness for Firestore publishing and job load had no structured signals for GOOGLE_APPLICATION_CREDENTIALS presence or current in-memory job count.
