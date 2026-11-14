@@ -69,6 +69,8 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "db_parent_writable" in data
     assert isinstance(data["upload_dir_writable"], bool)
     assert isinstance(data["db_parent_writable"], bool)
+    assert "db_exists" in data
+    assert isinstance(data["db_exists"], bool)
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
@@ -85,6 +87,8 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert data["strict_permissions"] is False
     assert "upload_dir_writable" in data
     assert "db_parent_writable" in data
+    assert "db_exists" in data
+    assert isinstance(data["db_exists"], bool)
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
@@ -99,6 +103,8 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     data = resp.get_json()
     assert data["tenant_configured"] is True
     assert data["silo_configured"] is True
+    assert "db_exists" in data
+    assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
     assert data["api_version"] == "0.2.0-local"
     assert "python_version" in data
@@ -113,6 +119,8 @@ def test_health_reports_tenant_silo_absent_by_default(client, monkeypatch):
     data = resp.get_json()
     assert data["tenant_configured"] is False
     assert data["silo_configured"] is False
+    assert "db_exists" in data
+    assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
     assert data["api_version"] == "0.2.0-local"
     assert "python_version" in data

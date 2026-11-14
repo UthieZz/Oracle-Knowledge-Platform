@@ -227,11 +227,14 @@ def health():
 
     db_parent = Path(DB_PATH).parent
     db_ready = False
+    db_exists = False
     try:
         db_parent.mkdir(parents=True, exist_ok=True)
         db_ready = os.access(db_parent, os.W_OK)
+        db_exists = Path(DB_PATH).is_file()
     except Exception:
         db_ready = False
+        db_exists = False
 
     return jsonify({
         "ok": True,
@@ -239,6 +242,7 @@ def health():
         "strict_permissions": strict,
         "upload_dir_writable": upload_ready,
         "db_parent_writable": db_ready,
+        "db_exists": db_exists,
         "tenant_configured": bool(os.environ.get("OKP_TENANT_ID", "").strip()),
         "silo_configured": bool(os.environ.get("OKP_SILO_ID", "").strip()),
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
