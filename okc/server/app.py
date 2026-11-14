@@ -13,6 +13,7 @@ Run:
 from __future__ import annotations
 
 import os
+import sys
 import threading
 import traceback
 import uuid
@@ -239,6 +240,8 @@ def health():
         "db_parent_writable": db_ready,
         "tenant_configured": bool(os.environ.get("OKP_TENANT_ID", "").strip()),
         "silo_configured": bool(os.environ.get("OKP_SILO_ID", "").strip()),
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "platform": sys.platform,
     })
 
 
