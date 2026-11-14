@@ -236,7 +236,7 @@ def health():
         db_ready = False
         db_exists = False
 
-    return jsonify({
+    payload = {
         "ok": True,
         "service": "okc-local-api",
         "strict_permissions": strict,
@@ -248,7 +248,11 @@ def health():
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         "platform": sys.platform,
         "api_version": API_VERSION,
-    })
+        "google_credentials_configured": bool(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "").strip()),
+    }
+    with _jobs_lock:
+        payload["active_jobs_count"] = len(_jobs)
+    return jsonify(payload)
 
 
 def main() -> None:

@@ -75,8 +75,16 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "platform" in data
     assert "api_version" in data
     assert data["api_version"] == "0.2.0-local"
+    assert "google_credentials_configured" in data
+    assert isinstance(data["google_credentials_configured"], bool)
+    assert "active_jobs_count" in data
+    assert isinstance(data["active_jobs_count"], int)
     assert isinstance(data["python_version"], str)
     assert isinstance(data["platform"], str)
+    assert "google_credentials_configured" in data
+    assert isinstance(data["google_credentials_configured"], bool)
+    assert "active_jobs_count" in data
+    assert isinstance(data["active_jobs_count"], int)
 
 
 def test_health_reports_pilot_by_default(client, monkeypatch):
@@ -93,6 +101,10 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "platform" in data
     assert "api_version" in data
     assert data["api_version"] == "0.2.0-local"
+    assert "google_credentials_configured" in data
+    assert isinstance(data["google_credentials_configured"], bool)
+    assert "active_jobs_count" in data
+    assert isinstance(data["active_jobs_count"], int)
 
 
 def test_health_reports_tenant_silo_configured(client, monkeypatch):
@@ -107,11 +119,35 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
     assert data["api_version"] == "0.2.0-local"
+    assert "google_credentials_configured" in data
+    assert isinstance(data["google_credentials_configured"], bool)
+    assert "active_jobs_count" in data
+    assert isinstance(data["active_jobs_count"], int)
     assert "python_version" in data
     assert "platform" in data
 
 
-def test_health_reports_tenant_silo_absent_by_default(client, monkeypatch):
+def test_health_reports_google_credentials_and_active_jobs(client, monkeypatch):
+    monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", "/tmp/fake-sa.json")
+    # Seed one job so count is non-zero
+    server_app._set_job("job_health_count", status="idle")
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["google_credentials_configured"] is True
+    assert data["active_jobs_count"] == 1
+    # Clean up
+    with server_app._jobs_lock:
+        server_app._jobs.clear()
+
+
+def test_health_reports_google_credentials_absent(client, monkeypatch):
+    monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["google_credentials_configured"] is False
+    assert data["active_jobs_count"] == 0
     monkeypatch.delenv("OKP_TENANT_ID", raising=False)
     monkeypatch.delenv("OKP_SILO_ID", raising=False)
     resp = client.get("/api/health")
@@ -123,5 +159,9 @@ def test_health_reports_tenant_silo_absent_by_default(client, monkeypatch):
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
     assert data["api_version"] == "0.2.0-local"
+    assert "google_credentials_configured" in data
+    assert isinstance(data["google_credentials_configured"], bool)
+    assert "active_jobs_count" in data
+    assert isinstance(data["active_jobs_count"], int)
     assert "python_version" in data
     assert "platform" in data

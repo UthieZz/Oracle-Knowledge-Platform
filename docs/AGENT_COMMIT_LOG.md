@@ -1,3 +1,11 @@
+## 2026-11-14 — Health reports google_credentials_configured and active_jobs_count (P3)
+
+- Problem: operators diagnosing local OKC server readiness for Firestore publishing and job load had no structured signals for GOOGLE_APPLICATION_CREDENTIALS presence or current in-memory job count.
+- Change: /api/health now includes `google_credentials_configured` boolean (non-empty check on GOOGLE_APPLICATION_CREDENTIALS) and `active_jobs_count` (len of process-local job registry under lock).
+- Verification: pytest tests/test_local_server_status.py → 7 passed (new asserts and tests included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making Firestore credential gate and local job visibility observable from the health surface without env or process inspection.
+
 ## 2026-11-14 — Health reports db_exists (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal whether the SQLite database file already exists on disk.
