@@ -79,3 +79,23 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert data["strict_permissions"] is False
     assert "upload_dir_writable" in data
     assert "db_parent_writable" in data
+
+
+def test_health_reports_tenant_silo_configured(client, monkeypatch):
+    monkeypatch.setenv("OKP_TENANT_ID", "acme")
+    monkeypatch.setenv("OKP_SILO_ID", "default")
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["tenant_configured"] is True
+    assert data["silo_configured"] is True
+
+
+def test_health_reports_tenant_silo_absent_by_default(client, monkeypatch):
+    monkeypatch.delenv("OKP_TENANT_ID", raising=False)
+    monkeypatch.delenv("OKP_SILO_ID", raising=False)
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["tenant_configured"] is False
+    assert data["silo_configured"] is False

@@ -237,6 +237,8 @@ def health():
         "strict_permissions": strict,
         "upload_dir_writable": upload_ready,
         "db_parent_writable": db_ready,
+        "tenant_configured": bool(os.environ.get("OKP_TENANT_ID", "").strip()),
+        "silo_configured": bool(os.environ.get("OKP_SILO_ID", "").strip()),
     })
 
 

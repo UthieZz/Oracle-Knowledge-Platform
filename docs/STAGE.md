@@ -15,7 +15,7 @@
 
 ## Local OKC server (okc/server/app.py)
 - Upload/compile path honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export.
-- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable).
+- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable) + tenant_configured / silo_configured booleans.
 - Job status reports mode used.
 - Regressions in tests/test_local_server_status.py green.
 

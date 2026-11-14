@@ -46,4 +46,5 @@ PYTHONPATH=. python -m okc.server.app
 curl -s http://127.0.0.1:5000/api/health | python -m json.tool
 # expect "strict_permissions": false (or true if OKP_STRICT_PERMISSIONS=1)
 # also "upload_dir_writable": true and "db_parent_writable": true under normal local conditions
+# "tenant_configured" and "silo_configured" true when OKP_TENANT_ID / OKP_SILO_ID are set
 ```
