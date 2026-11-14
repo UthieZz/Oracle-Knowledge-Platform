@@ -32,6 +32,7 @@ from okc.search.hybrid_rag import HybridRAGEngine
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
 DB_PATH = os.environ.get("OKC_SQLITE_PATH", "okp_local.db")
 ALLOWED_EXT = {".json", ".pdf", ".png", ".jpg", ".jpeg", ".mp3", ".wav", ".txt", ".md"}
+API_VERSION = "0.2.0-local"  # Diagnostic version for local pilot operators (P3)
 
 app = Flask(__name__)
 CORS(app)
@@ -242,6 +243,7 @@ def health():
         "silo_configured": bool(os.environ.get("OKP_SILO_ID", "").strip()),
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         "platform": sys.platform,
+        "api_version": API_VERSION,
     })
 
 

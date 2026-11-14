@@ -83,7 +83,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-14)
-- Local OKC server /api/health now reports `python_version` and `platform` for environment diagnostics (P3). Operators can confirm runtime without source inspection. New regression asserts added. Documented in PERMISSION_MODEL.md.
+- Local OKC server /api/health now reports `python_version`, `platform`, and `api_version` for environment and code-identity diagnostics (P3). Operators can confirm runtime without source inspection. New regression asserts added. Documented in PERMISSION_MODEL.md.
 - Local OKC server /api/health now reports `tenant_configured` and `silo_configured` booleans (P3). Operators can confirm required OKP_TENANT_ID / OKP_SILO_ID env presence without starting a job. New regressions added. Documented in PERMISSION_MODEL.md operator visibility.
 
 - Restored ROADMAP.md and AGENT_COMMIT_LOG.md after accidental placeholder overwrite in 87abccb. Source of truth for agents re-established. No functional change.

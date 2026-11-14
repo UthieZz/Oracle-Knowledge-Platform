@@ -1,3 +1,11 @@
+## 2026-11-14 — Health reports api_version (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal of the running API/code version beyond Python and platform.
+- Change: /api/health now includes `api_version` constant ("0.2.0-local") for code-identity diagnostics.
+- Verification: pytest tests/test_local_server_status.py → 6 passed (new asserts included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the running local API version observable from the health surface without source inspection.
+
 ## 2026-11-14 — Health reports python_version and platform (P3)
 
 - Problem: operators diagnosing local OKC server environment had no structured signal of the running Python version or platform.
