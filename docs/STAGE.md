@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-13
+# OKP Stage — 2026-11-15
 
-**Basis:** Current main (38bbb90 + local readiness health). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (process/cwd/path-config health diagnostics). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -15,7 +15,7 @@
 
 ## Local OKC server (okc/server/app.py)
 - Upload/compile path honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export.
-- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable, db_exists) + tenant_configured / silo_configured + google_credentials_configured + active_jobs_count + upload_dir_absolute / db_path_absolute.
+- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable, db_exists) + tenant_configured / silo_configured + google_credentials_configured + active_jobs_count + upload_dir_absolute / db_path_absolute + process_id / cwd_absolute + upload_dir_configured / sqlite_path_configured.
 - Job status reports mode used.
 - Regressions in tests/test_local_server_status.py green.
 
