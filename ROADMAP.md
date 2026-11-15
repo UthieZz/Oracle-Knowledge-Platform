@@ -1,6 +1,6 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-14  
+**Updated:** 2026-11-15  
 **Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.  
 Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.  
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
@@ -81,6 +81,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Preserve pipeline: IMPORT → NORMALIZE → PROCESS → ENRICH → VALIDATE → COMPILE → PACKAGE.
 - Small, reversible, tested changes. Protect unrelated work.
 - Do not claim B2B readiness without evidence.
+
+## Recent verified advances (2026-11-15)
+- Local OKC server /api/health now reports `process_id`, `cwd_absolute`, `upload_dir_configured`, and `sqlite_path_configured` (P3). Operators can confirm process identity, working directory for relative paths, and whether upload/DB paths were overridden via env without shell inspection. New regression asserts added. API version bumped to 0.2.2-local.
 
 ## Recent verified advances (2026-11-14)
 - Local OKC server /api/health now reports `upload_dir_absolute` and `db_path_absolute` (P3). Operators can confirm the exact resolved filesystem locations used by the local pilot without source or env inspection. New regression asserts added. API version bumped to 0.2.1-local.
