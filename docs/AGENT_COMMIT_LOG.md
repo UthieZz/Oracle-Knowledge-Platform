@@ -1,3 +1,11 @@
+## 2026-11-15 — Health reports disk free space (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal of free disk space on the volumes holding uploads and the SQLite DB, risking silent failures on exhaustion.
+- Change: /api/health now includes `upload_dir_free_mb` and `db_parent_free_mb` (int or null if unreadable). API_VERSION bumped to 0.2.4-local.
+- Verification: pytest tests/test_local_server_status.py → 7 passed (new asserts included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making disk free space observable from the health surface without shell inspection.
+
 ## 2026-11-15 — Health reports plugin registry readiness (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal that the plugin registry loaded successfully or how many importers/plugins were registered.

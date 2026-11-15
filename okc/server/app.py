@@ -13,6 +13,7 @@ Run:
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import threading
 import traceback
@@ -32,7 +33,7 @@ from okc.search.hybrid_rag import HybridRAGEngine
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
 DB_PATH = os.environ.get("OKC_SQLITE_PATH", "okp_local.db")
 ALLOWED_EXT = {".json", ".pdf", ".png", ".jpg", ".jpeg", ".mp3", ".wav", ".txt", ".md"}
-API_VERSION = "0.2.3-local"  # Diagnostic version for local pilot operators (P3)
+API_VERSION = "0.2.4-local"  # Diagnostic version for local pilot operators (P3)
 
 app = Flask(__name__)
 CORS(app)
@@ -236,15 +237,23 @@ def health():
         db_ready = False
         db_exists = False
 
+    def _free_mb(path: Path) -> int | None:
+        try:
+            return shutil.disk_usage(path).free // (1024 * 1024)
+        except Exception:
+            return None
+
     payload = {
         "ok": True,
         "service": "okc-local-api",
         "strict_permissions": strict,
         "upload_dir_writable": upload_ready,
         "upload_dir_absolute": str(UPLOAD_DIR.resolve()),
+        "upload_dir_free_mb": _free_mb(UPLOAD_DIR),
         "db_parent_writable": db_ready,
         "db_exists": db_exists,
         "db_path_absolute": str(Path(DB_PATH).resolve()),
+        "db_parent_free_mb": _free_mb(db_parent),
         "tenant_configured": bool(os.environ.get("OKP_TENANT_ID", "").strip()),
         "silo_configured": bool(os.environ.get("OKP_SILO_ID", "").strip()),
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",

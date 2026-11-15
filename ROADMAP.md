@@ -83,6 +83,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-15)
+- Local OKC server /api/health now reports `upload_dir_free_mb` and `db_parent_free_mb` (P3). Operators can detect approaching disk exhaustion on upload and persistence volumes without shell inspection. New regression asserts added. API version bumped to 0.2.4-local.
+
+
 - Local OKC server /api/health now reports `registry_ready`, `registered_plugins_count`, and `registered_importers_count` (P3). Operators can confirm the plugin registry loaded and see importer/plugin counts without starting a job. New regression asserts added. API version bumped to 0.2.3-local.
 - Local OKC server /api/health now reports `process_id`, `cwd_absolute`, `upload_dir_configured`, and `sqlite_path_configured` (P3). Operators can confirm process identity, working directory for relative paths, and whether upload/DB paths were overridden via env without shell inspection. New regression asserts added. API version bumped to 0.2.2-local.
 
