@@ -32,7 +32,7 @@ from okc.search.hybrid_rag import HybridRAGEngine
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
 DB_PATH = os.environ.get("OKC_SQLITE_PATH", "okp_local.db")
 ALLOWED_EXT = {".json", ".pdf", ".png", ".jpg", ".jpeg", ".mp3", ".wav", ".txt", ".md"}
-API_VERSION = "0.2.2-local"  # Diagnostic version for local pilot operators (P3)
+API_VERSION = "0.2.3-local"  # Diagnostic version for local pilot operators (P3)
 
 app = Flask(__name__)
 CORS(app)
@@ -256,6 +256,16 @@ def health():
         "upload_dir_configured": bool(os.environ.get("OKC_UPLOAD_DIR", "").strip()),
         "sqlite_path_configured": bool(os.environ.get("OKC_SQLITE_PATH", "").strip()),
     }
+    # Plugin registry readiness (P3 diagnostics under loadable components)
+    try:
+        reg = default_okc_registry()
+        payload["registry_ready"] = True
+        payload["registered_plugins_count"] = len(reg.list())
+        payload["registered_importers_count"] = len(reg.list("importer"))
+    except Exception:
+        payload["registry_ready"] = False
+        payload["registered_plugins_count"] = 0
+        payload["registered_importers_count"] = 0
     with _jobs_lock:
         payload["active_jobs_count"] = len(_jobs)
     return jsonify(payload)

@@ -1,3 +1,11 @@
+## 2026-11-15 — Health reports plugin registry readiness (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal that the plugin registry loaded successfully or how many importers/plugins were registered.
+- Change: /api/health now includes `registry_ready` boolean, `registered_plugins_count`, and `registered_importers_count`. API_VERSION bumped to 0.2.3-local.
+- Verification: pytest tests/test_local_server_status.py → 7 passed (new asserts included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making registry load and importer availability observable from the health surface without job or source inspection.
+
 ## 2026-11-15 — Health reports process identity, cwd, and path config flags (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signals for the running process id, current working directory (relevant for relative path resolution), or whether OKC_UPLOAD_DIR / OKC_SQLITE_PATH were explicitly configured vs defaults.
