@@ -1,3 +1,11 @@
+## 2026-11-15 — Health reports process identity, cwd, and path config flags (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signals for the running process id, current working directory (relevant for relative path resolution), or whether OKC_UPLOAD_DIR / OKC_SQLITE_PATH were explicitly configured vs defaults.
+- Change: /api/health now includes `process_id` (os.getpid()), `cwd_absolute` (resolved Path.cwd()), `upload_dir_configured` and `sqlite_path_configured` booleans (non-empty env check). API_VERSION bumped to 0.2.2-local.
+- Verification: pytest tests/test_local_server_status.py → 7 passed (new asserts included).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making process identity, cwd, and path-override presence observable from the health surface without shell inspection.
+
 ## 2026-11-14 — Health reports absolute upload and DB paths (P3)
 
 - Problem: operators diagnosing local OKC server path configuration had no structured signal of the exact resolved filesystem locations used for uploads and SQLite persistence.
