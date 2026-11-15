@@ -74,7 +74,7 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.1-local"
+    assert data["api_version"] == "0.2.2-local"
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "db_path_absolute" in data
@@ -83,6 +83,14 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert isinstance(data["google_credentials_configured"], bool)
     assert "active_jobs_count" in data
     assert isinstance(data["active_jobs_count"], int)
+    assert "process_id" in data
+    assert isinstance(data["process_id"], int) and data["process_id"] > 0
+    assert "cwd_absolute" in data
+    assert isinstance(data["cwd_absolute"], str) and data["cwd_absolute"]
+    assert "upload_dir_configured" in data
+    assert isinstance(data["upload_dir_configured"], bool)
+    assert "sqlite_path_configured" in data
+    assert isinstance(data["sqlite_path_configured"], bool)
     assert isinstance(data["python_version"], str)
     assert isinstance(data["platform"], str)
     assert "google_credentials_configured" in data
@@ -104,7 +112,7 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.1-local"
+    assert data["api_version"] == "0.2.2-local"
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "db_path_absolute" in data
@@ -126,7 +134,7 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.1-local"
+    assert data["api_version"] == "0.2.2-local"
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "db_path_absolute" in data
@@ -170,7 +178,7 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.1-local"
+    assert data["api_version"] == "0.2.2-local"
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "db_path_absolute" in data
