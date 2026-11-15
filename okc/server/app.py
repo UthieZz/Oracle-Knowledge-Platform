@@ -16,6 +16,7 @@ import os
 import shutil
 import sys
 import threading
+import time
 import traceback
 import uuid
 from datetime import datetime, timezone
@@ -33,7 +34,10 @@ from okc.search.hybrid_rag import HybridRAGEngine
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
 DB_PATH = os.environ.get("OKC_SQLITE_PATH", "okp_local.db")
 ALLOWED_EXT = {".json", ".pdf", ".png", ".jpg", ".jpeg", ".mp3", ".wav", ".txt", ".md"}
-API_VERSION = "0.2.4-local"  # Diagnostic version for local pilot operators (P3)
+API_VERSION = "0.2.5-local"  # Diagnostic version for local pilot operators (P3)
+
+# Process lifetime diagnostics (P3)
+_PROCESS_START_TIME = time.time()
 
 app = Flask(__name__)
 CORS(app)
@@ -262,6 +266,8 @@ def health():
         "google_credentials_configured": bool(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "").strip()),
         "process_id": os.getpid(),
         "cwd_absolute": str(Path.cwd().resolve()),
+        "process_start_time_utc": datetime.fromtimestamp(_PROCESS_START_TIME, timezone.utc).isoformat(),
+        "uptime_seconds": int(time.time() - _PROCESS_START_TIME),
         "upload_dir_configured": bool(os.environ.get("OKC_UPLOAD_DIR", "").strip()),
         "sqlite_path_configured": bool(os.environ.get("OKC_SQLITE_PATH", "").strip()),
     }
