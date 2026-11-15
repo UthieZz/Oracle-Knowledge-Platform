@@ -53,4 +53,5 @@ curl -s http://127.0.0.1:5000/api/health | python -m json.tool
 # "google_credentials_configured": true when GOOGLE_APPLICATION_CREDENTIALS is set
 # "active_jobs_count": current in-memory jobs (0 when idle)
 # "upload_dir_free_mb" and "db_parent_free_mb" show free space (MB) on the volumes holding uploads and the SQLite DB
+# "process_start_time_utc" and "uptime_seconds" show process lifetime
 ```

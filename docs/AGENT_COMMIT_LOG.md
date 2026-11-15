@@ -1,3 +1,11 @@
+## 2026-11-15 — Health reports process start time and uptime (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal of process lifetime (start time and uptime).
+- Change: /api/health now includes `process_start_time_utc` and `uptime_seconds`. API_VERSION bumped to 0.2.5-local. Tests updated to assert the new fields and correct version.
+- Verification: pytest tests/test_local_server_status.py → 7 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making process lifetime observable from the health surface without external tooling.
+
 ## 2026-11-15 — Health reports disk free space (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal of free disk space on the volumes holding uploads and the SQLite DB, risking silent failures on exhaustion.

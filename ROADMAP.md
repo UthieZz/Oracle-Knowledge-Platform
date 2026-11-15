@@ -83,6 +83,10 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-15)
+
+## Recent verified advances (2026-11-15)
+- Local OKC server /api/health now reports `process_start_time_utc` and `uptime_seconds` (P3). Operators can observe process lifetime without external tooling. API version 0.2.5-local. New regression asserts. Tests updated to match.
+
 - Local OKC server /api/health now reports `upload_dir_free_mb` and `db_parent_free_mb` (P3). Operators can detect approaching disk exhaustion on upload and persistence volumes without shell inspection. New regression asserts added. API version bumped to 0.2.4-local.
 
 
