@@ -1,3 +1,11 @@
+## 2026-11-15 — Health reports listen host and port (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal of the configured bind address and port.
+- Change: /api/health now includes `listen_host` and `listen_port` (from OKC_API_HOST / OKC_API_PORT or defaults). API_VERSION bumped to 0.2.6-local. Tests updated to assert the new fields and correct version.
+- Verification: pytest tests/test_local_server_status.py → 7 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the network binding observable from the health surface without process or env inspection.
+
 ## 2026-11-15 — Health reports process start time and uptime (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal of process lifetime (start time and uptime).

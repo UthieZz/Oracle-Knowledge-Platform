@@ -74,7 +74,11 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.5-local"
+    assert data["api_version"] == "0.2.6-local"
+    assert "listen_host" in data
+    assert isinstance(data["listen_host"], str) and data["listen_host"]
+    assert "listen_port" in data
+    assert isinstance(data["listen_port"], int) and data["listen_port"] > 0
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "upload_dir_free_mb" in data
@@ -126,7 +130,11 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.5-local"
+    assert data["api_version"] == "0.2.6-local"
+    assert "listen_host" in data
+    assert isinstance(data["listen_host"], str) and data["listen_host"]
+    assert "listen_port" in data
+    assert isinstance(data["listen_port"], int) and data["listen_port"] > 0
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "upload_dir_free_mb" in data
@@ -162,7 +170,11 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.5-local"
+    assert data["api_version"] == "0.2.6-local"
+    assert "listen_host" in data
+    assert isinstance(data["listen_host"], str) and data["listen_host"]
+    assert "listen_port" in data
+    assert isinstance(data["listen_port"], int) and data["listen_port"] > 0
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "upload_dir_free_mb" in data
@@ -210,7 +222,11 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.5-local"
+    assert data["api_version"] == "0.2.6-local"
+    assert "listen_host" in data
+    assert isinstance(data["listen_host"], str) and data["listen_host"]
+    assert "listen_port" in data
+    assert isinstance(data["listen_port"], int) and data["listen_port"] > 0
     assert "upload_dir_absolute" in data
     assert isinstance(data["upload_dir_absolute"], str) and data["upload_dir_absolute"]
     assert "upload_dir_free_mb" in data

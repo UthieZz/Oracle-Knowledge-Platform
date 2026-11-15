@@ -83,6 +83,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-15)
+- Local OKC server /api/health now reports `listen_host` and `listen_port` (P3). Operators can confirm the binding address and port without process inspection. New regression asserts. API version bumped to 0.2.6-local.
+
+## Recent verified advances (2026-11-15)
 
 ## Recent verified advances (2026-11-15)
 - Local OKC server /api/health now reports `process_start_time_utc` and `uptime_seconds` (P3). Operators can observe process lifetime without external tooling. API version 0.2.5-local. New regression asserts. Tests updated to match.
