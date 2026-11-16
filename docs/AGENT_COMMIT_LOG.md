@@ -1,3 +1,11 @@
+## 2026-11-16 — Health reports active threads and CPU count (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal of active thread count (relevant for background pipeline jobs) or available CPUs.
+- Change: /api/health now includes `active_threads_count` (threading.active_count()) and `cpu_count` (os.cpu_count() or 0). API_VERSION bumped to 0.2.8-local. Tests updated to assert the new fields and correct version.
+- Verification: pytest tests/test_local_server_status.py → 7 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making thread usage and CPU availability observable from the health surface without external tooling.
+
 ## 2026-11-16 — Health reports memory RSS (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal of process memory consumption (resident set size).
