@@ -64,6 +64,68 @@ def _get_job(job_id: str) -> Dict[str, Any] | None:
         return dict(_jobs.get(job_id) or {}) or None
 
 
+def _run_pipeline(job_id: str) -> None:
+    job = _get_job(job_id) or {}
+    file_path = job.get("file_path")
+    tenant_id = job.get("tenant_id")
+    silo_id = job.get("silo_id")
+    if not file_path:
+        _set_job(job_id, status="failed", progress=100, message="missing file_path")
+        return
+
+    try:
+        registry = default_okc_registry()
+        _set_job(job_id, status="running", progress=10, message="Importing source into v2 IR")
+        importer_spec = registry.importer_for(file_path)
+        if importer_spec is None:
+            suffix = Path(file_path).suffix.lower() or "(no extension)"
+            raise PluginRegistryError(
+                f"No importer registered for {suffix}. "
+                "Supported source imports: .json conversation export, .txt, .md. "
+                "PDF, image, and audio stay attachment processors and are not package importers."
+            )
+        package = importer_spec.plugin.process(file_path, tenant_id=tenant_id, silo_id=silo_id)
+
+        _set_job(job_id, status="running", progress=35, message="Attachment processing")
+        package = AttachmentProcessingPass(registry=registry).execute(package)
+
+        _set_job(job_id, status="running", progress=55, message="Entity extraction")
+        analyzer = registry.get("analyzer", "entity_extractor").plugin
+        package = analyzer.run(package)
+
+        _set_job(job_id, status="running", progress=65, message="Structural compilation")
+        compiler = registry.get("compiler", "package_compiler").plugin
+        package = compiler.compile(package)
+
+        _set_job(job_id, status="running", progress=75, message="Hybrid RAG indexing")
+        rag = HybridRAGEngine()
+        strict = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
+        rag.index_package(package, strict_permissions=strict)
+
+        _set_job(job_id, status="running", progress=90, message="Persisting to SQLite")
+        exporter_cls = registry.get("exporter", "sqlite_exporter").plugin
+        exporter_cls(db_path=DB_PATH).export(package, tenant_id=tenant_id, silo_id=silo_id, strict_permissions=strict)
+
+        mode = "strict" if strict else "pilot"
+        _set_job(
+            job_id,
+            status="completed",
+            progress=100,
+            message=f"Completed: {len(package.objects)} objects (mode={mode})",
+            object_count=len(package.objects),
+            package_id=package.package_id,
+            strict_permissions=strict,
+        )
+    except Exception as exc:
+        _set_job(
+            job_id,
+            status="failed",
+            progress=100,
+            message=str(exc),
+            error=traceback.format_exc(),
+        )
+
+
 @app.post("/api/import/upload")
 def import_upload():
     if "file" not in request.files:
@@ -102,37 +164,26 @@ def import_upload():
 
 @app.post("/api/compile")
 def compile_job():
-    data = request.get_json(silent=True) or {}
-    job_id = data.get("job_id")
+    body = request.get_json(silent=True) or {}
+    job_id = body.get("job_id")
     if not job_id:
         return jsonify({"error": "job_id required"}), 400
+
     job = _get_job(job_id)
     if not job:
-        return jsonify({"error": "job not found"}), 404
+        return jsonify({"error": f"unknown job_id: {job_id}"}), 404
 
-    file_path = job.get("file_path")
-    if not file_path or not Path(file_path).is_file():
-        return jsonify({"error": "source file missing"}), 400
+    if job.get("status") == "running":
+        return jsonify({"job_id": job_id, "status": "running"})
 
-    strict = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
-    _set_job(job_id, status="running", progress=10, message="Compiling", strict_permissions=strict)
+    # Allow tenant/silo override at compile time
+    tenant_id = body.get("tenant_id") or job.get("tenant_id")
+    silo_id = body.get("silo_id") or job.get("silo_id")
+    _set_job(job_id, tenant_id=tenant_id, silo_id=silo_id, status="running", progress=5, message="Queued")
 
-    def _run():
-        try:
-            # Placeholder for full pipeline; real compile path lives in okc.compiler
-            # For local pilot this endpoint records the mode and completes.
-            time.sleep(0.1)
-            _set_job(
-                job_id,
-                status="completed",
-                progress=100,
-                message=f"Completed: 0 objects (mode={'strict' if strict else 'pilot'})",
-                strict_permissions=strict,
-            )
-        except Exception as exc:
-            _set_job(job_id, status="failed", progress=100, message=str(exc), error=traceback.format_exc())
+    thread = threading.Thread(target=_run_pipeline, args=(job_id,), daemon=True)
+    thread.start()
 
-    threading.Thread(target=_run, daemon=True).start()
     return jsonify({"job_id": job_id, "status": "running"})
 
 
