@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-16)
+- Local OKC server /api/health now reports `open_file_descriptors_count` (P3). Operators can observe open file descriptor usage (useful for detecting leaks in long-running pilot processes) without external tooling. API version 0.2.11-local. New regression asserts. Tests updated to match.
+
 - Local OKC server /api/health now reports `registered_importer_names` (sorted list of importer plugin names) (P3). Operators can confirm exactly which source importers are available without starting a job or reading code. API version 0.2.10-local. New regression asserts. Tests updated to match.
 
 - Local OKC server /api/health now reports `active_threads_count` and `cpu_count` (P3). Operators can observe thread usage (relevant for background pipeline jobs) and CPU availability without external tooling. API version 0.2.8-local. New regression asserts. Tests updated to match.

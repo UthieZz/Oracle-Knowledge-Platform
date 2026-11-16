@@ -35,7 +35,7 @@ from okc.search.hybrid_rag import HybridRAGEngine
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
 DB_PATH = os.environ.get("OKC_SQLITE_PATH", "okp_local.db")
 ALLOWED_EXT = {".json", ".pdf", ".png", ".jpg", ".jpeg", ".mp3", ".wav", ".txt", ".md"}
-API_VERSION = "0.2.10-local"  # Diagnostic version for local pilot operators (P3)
+API_VERSION = "0.2.11-local"  # Diagnostic version for local pilot operators (P3)
 
 # Process lifetime diagnostics (P3)
 _PROCESS_START_TIME = time.time()
@@ -264,6 +264,7 @@ def health():
         "active_threads_count": threading.active_count(),
         "cpu_count": os.cpu_count() or 0,
         "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
+        "open_file_descriptors_count": len(os.listdir("/proc/self/fd")) if os.path.exists("/proc/self/fd") else None,
         "upload_dir_configured": bool(os.environ.get("OKC_UPLOAD_DIR", "").strip()),
         "sqlite_path_configured": bool(os.environ.get("OKC_SQLITE_PATH", "").strip()),
     }

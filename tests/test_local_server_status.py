@@ -74,7 +74,7 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.10-local"
+    assert data["api_version"] == "0.2.11-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -107,6 +107,8 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert isinstance(data["cpu_count"], int) and data["cpu_count"] >= 1
     assert "load_average" in data
     assert data["load_average"] is None or (isinstance(data["load_average"], list) and len(data["load_average"]) == 3 and all(isinstance(x, (int, float)) and x >= 0 for x in data["load_average"]))
+    assert "open_file_descriptors_count" in data
+    assert data["open_file_descriptors_count"] is None or (isinstance(data["open_file_descriptors_count"], int) and data["open_file_descriptors_count"] >= 0)
     assert "upload_dir_configured" in data
     assert isinstance(data["upload_dir_configured"], bool)
     assert "sqlite_path_configured" in data
@@ -142,7 +144,7 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.10-local"
+    assert data["api_version"] == "0.2.11-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -171,6 +173,8 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert isinstance(data["cpu_count"], int) and data["cpu_count"] >= 1
     assert "load_average" in data
     assert data["load_average"] is None or (isinstance(data["load_average"], list) and len(data["load_average"]) == 3 and all(isinstance(x, (int, float)) and x >= 0 for x in data["load_average"]))
+    assert "open_file_descriptors_count" in data
+    assert data["open_file_descriptors_count"] is None or (isinstance(data["open_file_descriptors_count"], int) and data["open_file_descriptors_count"] >= 0)
     assert "registry_ready" in data
     assert isinstance(data["registry_ready"], bool)
     assert "registered_plugins_count" in data
@@ -194,7 +198,7 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.10-local"
+    assert data["api_version"] == "0.2.11-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -246,7 +250,7 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.10-local"
+    assert data["api_version"] == "0.2.11-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data

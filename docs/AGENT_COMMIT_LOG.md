@@ -1,3 +1,11 @@
+## 2026-11-16 — Health reports open file descriptors count (P3)
+
+- Problem: operators diagnosing long-running local OKC server processes had no structured signal of open file descriptor usage, making resource-leak detection harder without external tools.
+- Change: /api/health now includes `open_file_descriptors_count` (len of /proc/self/fd when available, else None). API_VERSION bumped to 0.2.11-local. Tests updated to assert the new field and correct version.
+- Verification: pytest tests/test_local_server_status.py → 7 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making FD usage observable from the health surface without shell access.
+
 ## 2026-11-16 — Health reports registered importer names (P3)
 
 - Problem: operators diagnosing local OKC server could see importer count but not the actual names of available source importers without inspecting code or starting a job.
