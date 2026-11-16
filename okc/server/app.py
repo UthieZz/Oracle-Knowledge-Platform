@@ -35,7 +35,7 @@ from okc.search.hybrid_rag import HybridRAGEngine
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
 DB_PATH = os.environ.get("OKC_SQLITE_PATH", "okp_local.db")
 ALLOWED_EXT = {".json", ".pdf", ".png", ".jpg", ".jpeg", ".mp3", ".wav", ".txt", ".md"}
-API_VERSION = "0.2.9-local"  # Diagnostic version for local pilot operators (P3)
+API_VERSION = "0.2.10-local"  # Diagnostic version for local pilot operators (P3)
 
 # Process lifetime diagnostics (P3)
 _PROCESS_START_TIME = time.time()
@@ -272,11 +272,14 @@ def health():
         reg = default_okc_registry()
         payload["registry_ready"] = True
         payload["registered_plugins_count"] = len(reg.list())
-        payload["registered_importers_count"] = len(reg.list("importer"))
+        importers = reg.list("importer")
+        payload["registered_importers_count"] = len(importers)
+        payload["registered_importer_names"] = sorted(s.name for s in importers)
     except Exception:
         payload["registry_ready"] = False
         payload["registered_plugins_count"] = 0
         payload["registered_importers_count"] = 0
+        payload["registered_importer_names"] = []
     with _jobs_lock:
         payload["active_jobs_count"] = len(_jobs)
     return jsonify(payload)

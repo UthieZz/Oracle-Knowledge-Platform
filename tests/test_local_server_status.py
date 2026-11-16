@@ -74,7 +74,7 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.9-local"
+    assert data["api_version"] == "0.2.10-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -117,6 +117,10 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert isinstance(data["registered_plugins_count"], int) and data["registered_plugins_count"] >= 2
     assert "registered_importers_count" in data
     assert isinstance(data["registered_importers_count"], int) and data["registered_importers_count"] >= 1
+    assert "registered_importer_names" in data
+    assert isinstance(data["registered_importer_names"], list)
+    assert all(isinstance(n, str) and n for n in data["registered_importer_names"])
+    assert len(data["registered_importer_names"]) == data["registered_importers_count"]
     assert isinstance(data["python_version"], str)
     assert isinstance(data["platform"], str)
     assert "google_credentials_configured" in data
@@ -138,7 +142,7 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.9-local"
+    assert data["api_version"] == "0.2.10-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -173,6 +177,10 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert isinstance(data["registered_plugins_count"], int) and data["registered_plugins_count"] >= 2
     assert "registered_importers_count" in data
     assert isinstance(data["registered_importers_count"], int) and data["registered_importers_count"] >= 1
+    assert "registered_importer_names" in data
+    assert isinstance(data["registered_importer_names"], list)
+    assert all(isinstance(n, str) and n for n in data["registered_importer_names"])
+    assert len(data["registered_importer_names"]) == data["registered_importers_count"]
 
 
 def test_health_reports_tenant_silo_configured(client, monkeypatch):
@@ -186,7 +194,7 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.9-local"
+    assert data["api_version"] == "0.2.10-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -238,7 +246,7 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.9-local"
+    assert data["api_version"] == "0.2.10-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data

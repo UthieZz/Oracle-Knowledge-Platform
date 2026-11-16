@@ -1,3 +1,11 @@
+## 2026-11-16 — Health reports registered importer names (P3)
+
+- Problem: operators diagnosing local OKC server could see importer count but not the actual names of available source importers without inspecting code or starting a job.
+- Change: /api/health now includes `registered_importer_names` (sorted list of plugin names from the registry). API_VERSION bumped to 0.2.10-local. Tests updated to assert the new field, its type, non-empty strings, and length match to count.
+- Verification: pytest tests/test_local_server_status.py → 7 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the available ingestion surface observable from the health endpoint.
+
 ## 2026-11-16 — Health reports system load average (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal of system load (1/5/15-minute averages), making overload detection harder without external tools.

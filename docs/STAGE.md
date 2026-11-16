@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-16
 
-**Basis:** Current main (thread/CPU health diagnostics). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (importer-names health diagnostic). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -24,7 +24,7 @@
 - src/ remains for legacy compiler/UI and Gemini importer (functional, not stub).
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
-- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable, db_exists) + tenant_configured / silo_configured + google_credentials_configured + active_jobs_count + upload_dir_absolute / db_path_absolute + process_id / cwd_absolute + upload_dir_configured / sqlite_path_configured + registry_ready / registered_plugins_count / registered_importers_count + upload_dir_free_mb / db_parent_free_mb + process_start_time_utc / uptime_seconds + listen_host / listen_port + memory_rss_mb + active_threads_count + cpu_count.
+- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable, db_exists) + tenant_configured / silo_configured + google_credentials_configured + active_jobs_count + upload_dir_absolute / db_path_absolute + process_id / cwd_absolute + upload_dir_configured / sqlite_path_configured + registry_ready / registered_plugins_count / registered_importers_count / registered_importer_names + upload_dir_free_mb / db_parent_free_mb + process_start_time_utc / uptime_seconds + listen_host / listen_port + memory_rss_mb + active_threads_count + cpu_count + load_average.
 
 ## Next
 Continue P1 remaining authorization boundaries or further P3 diagnostics. Prefer smallest coherent change with new regression evidence.
