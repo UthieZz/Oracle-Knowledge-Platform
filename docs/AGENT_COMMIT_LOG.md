@@ -1,3 +1,12 @@
+## 2026-11-16 — Health reports Python executable path (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal of the exact Python interpreter path without process inspection.
+- Change: /api/health now includes `python_executable` (sys.executable). API_VERSION bumped to 0.2.12-local. Tests updated to assert the new field and correct version.
+- Verification: pytest tests/test_local_server_status.py → 7 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making the runtime interpreter observable from the health surface without shell access.
+
+
 ## 2026-11-16 — Health reports open file descriptors count (P3)
 
 - Problem: operators diagnosing long-running local OKC server processes had no structured signal of open file descriptor usage, making resource-leak detection harder without external tools.

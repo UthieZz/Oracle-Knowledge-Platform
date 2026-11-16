@@ -72,9 +72,11 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "python_version" in data
+    assert "python_executable" in data
+    assert isinstance(data["python_executable"], str) and data["python_executable"]
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.11-local"
+    assert data["api_version"] == "0.2.12-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -142,9 +144,11 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "python_version" in data
+    assert "python_executable" in data
+    assert isinstance(data["python_executable"], str) and data["python_executable"]
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.11-local"
+    assert data["api_version"] == "0.2.12-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -198,7 +202,7 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.11-local"
+    assert data["api_version"] == "0.2.12-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -216,6 +220,8 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "active_jobs_count" in data
     assert isinstance(data["active_jobs_count"], int)
     assert "python_version" in data
+    assert "python_executable" in data
+    assert isinstance(data["python_executable"], str) and data["python_executable"]
     assert "platform" in data
 
 
@@ -250,7 +256,7 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.11-local"
+    assert data["api_version"] == "0.2.12-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -268,4 +274,6 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "active_jobs_count" in data
     assert isinstance(data["active_jobs_count"], int)
     assert "python_version" in data
+    assert "python_executable" in data
+    assert isinstance(data["python_executable"], str) and data["python_executable"]
     assert "platform" in data

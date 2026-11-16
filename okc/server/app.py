@@ -35,7 +35,7 @@ from okc.search.hybrid_rag import HybridRAGEngine
 UPLOAD_DIR = Path(os.environ.get("OKC_UPLOAD_DIR", "uploads/okc"))
 DB_PATH = os.environ.get("OKC_SQLITE_PATH", "okp_local.db")
 ALLOWED_EXT = {".json", ".pdf", ".png", ".jpg", ".jpeg", ".mp3", ".wav", ".txt", ".md"}
-API_VERSION = "0.2.11-local"  # Diagnostic version for local pilot operators (P3)
+API_VERSION = "0.2.12-local"  # Diagnostic version for local pilot operators (P3)
 
 # Process lifetime diagnostics (P3)
 _PROCESS_START_TIME = time.time()
@@ -251,6 +251,7 @@ def health():
         "tenant_configured": bool(os.environ.get("OKP_TENANT_ID", "").strip()),
         "silo_configured": bool(os.environ.get("OKP_SILO_ID", "").strip()),
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "python_executable": sys.executable,
         "platform": sys.platform,
         "api_version": API_VERSION,
         "listen_host": os.environ.get("OKC_API_HOST", "127.0.0.1"),
