@@ -1,3 +1,11 @@
+## 2026-11-16 — Health reports memory RSS (P3)
+
+- Problem: operators diagnosing local OKC server had no structured signal of process memory consumption (resident set size).
+- Change: /api/health now includes `memory_rss_mb` (from resource.getrusage ru_maxrss / 1024). API_VERSION bumped to 0.2.7-local. Tests updated to assert the new field and correct version.
+- Verification: pytest tests/test_local_server_status.py → 7 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances P3 by making process memory usage observable from the health surface without external tooling.
+
 ## 2026-11-15 — Health reports listen host and port (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal of the configured bind address and port.

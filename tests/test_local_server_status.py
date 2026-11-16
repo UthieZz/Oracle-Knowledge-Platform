@@ -74,7 +74,7 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.6-local"
+    assert data["api_version"] == "0.2.7-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -99,6 +99,8 @@ def test_health_reports_strict_permissions(client, monkeypatch):
     assert isinstance(data["process_start_time_utc"], str) and data["process_start_time_utc"]
     assert "uptime_seconds" in data
     assert isinstance(data["uptime_seconds"], int) and data["uptime_seconds"] >= 0
+    assert "memory_rss_mb" in data
+    assert isinstance(data["memory_rss_mb"], int) and data["memory_rss_mb"] >= 0
     assert "upload_dir_configured" in data
     assert isinstance(data["upload_dir_configured"], bool)
     assert "sqlite_path_configured" in data
@@ -130,7 +132,7 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert "python_version" in data
     assert "platform" in data
     assert "api_version" in data
-    assert data["api_version"] == "0.2.6-local"
+    assert data["api_version"] == "0.2.7-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -151,6 +153,8 @@ def test_health_reports_pilot_by_default(client, monkeypatch):
     assert isinstance(data["process_start_time_utc"], str) and data["process_start_time_utc"]
     assert "uptime_seconds" in data
     assert isinstance(data["uptime_seconds"], int) and data["uptime_seconds"] >= 0
+    assert "memory_rss_mb" in data
+    assert isinstance(data["memory_rss_mb"], int) and data["memory_rss_mb"] >= 0
     assert "registry_ready" in data
     assert isinstance(data["registry_ready"], bool)
     assert "registered_plugins_count" in data
@@ -170,7 +174,7 @@ def test_health_reports_tenant_silo_configured(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.6-local"
+    assert data["api_version"] == "0.2.7-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data
@@ -222,7 +226,7 @@ def test_health_reports_google_credentials_absent(client, monkeypatch):
     assert "db_exists" in data
     assert isinstance(data["db_exists"], bool)
     assert "api_version" in data
-    assert data["api_version"] == "0.2.6-local"
+    assert data["api_version"] == "0.2.7-local"
     assert "listen_host" in data
     assert isinstance(data["listen_host"], str) and data["listen_host"]
     assert "listen_port" in data

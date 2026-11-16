@@ -1,6 +1,6 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-15  
+**Updated:** 2026-11-16  
 **Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.  
 Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.  
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
@@ -81,6 +81,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Preserve pipeline: IMPORT → NORMALIZE → PROCESS → ENRICH → VALIDATE → COMPILE → PACKAGE.
 - Small, reversible, tested changes. Protect unrelated work.
 - Do not claim B2B readiness without evidence.
+
+## Recent verified advances (2026-11-16)
+- Local OKC server /api/health now reports `memory_rss_mb` (P3). Operators can observe process resident set size without external tooling. API version 0.2.7-local. New regression asserts. Tests updated to match.
 
 ## Recent verified advances (2026-11-15)
 - Local OKC server /api/health now reports `listen_host` and `listen_port` (P3). Operators can confirm the binding address and port without process inspection. New regression asserts. API version bumped to 0.2.6-local.
