@@ -50,16 +50,20 @@ class ContextOrchestrator:
 
         Does not interpret evidence, resolve dimensions, or invent affordances.
         """
+        if evidence_spans is None and package is not None:
+            spans = extract_evidence_spans(package)
+        else:
+            spans = evidence_spans or []
+        evidence_refs = None
+        if self.snapshot_store and spans:
+            evidence_refs = [s.get("span_id") for s in spans if s.get("span_id")]
         envelope = self.query_engine.create_envelope(
             envelope_id=envelope_id,
             query_id=query_id,
             package_ref=package_ref,
             parameters=initial_parameters,
+            evidence_refs=evidence_refs,
         )
-        if evidence_spans is None and package is not None:
-            spans = extract_evidence_spans(package)
-        else:
-            spans = evidence_spans or []
         affordances = self.compatibility.generate_affordances(
             envelope, evidence_spans=spans, retrieval_paths=retrieval_paths or {}
         )

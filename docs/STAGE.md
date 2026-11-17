@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-17
 
-**Basis:** Current main (Context-Aware Reasoning Query Context Engine + snapshot wiring). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (Context-Aware Reasoning package adapter + initial snapshot on process_query). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -25,17 +25,14 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
-- Orchestrator: minimal ContextOrchestrator (okc/context/orchestrator.py) coordinates engine + compatibility + answer stage without domain logic (I-11). Suite H1 present. 33 passed. No deviation.
+- Orchestrator: ContextOrchestrator coordinates create → affordances → answer without domain logic (I-11). When snapshot store present and package/spans supplied, create_envelope attaches immutable initial snapshot (I-10). Suite I2 present. 35 passed. No deviation.
+- Package adapter: extract_evidence_spans maps KnowledgePackage to evidence spans (existing only + explicit metadata constraints). Suite I1 present.
 - First gate: models, ContextRegistry, EvidenceCompatibilityEngine under okc/context/; Suites A–E deterministic tests executable.
 - Answer Stage: minimal AnswerStage (okc/context/answer.py) producing locked structured output with independent completion flags, assumption/unresolved/conflict disclosure, pre-authorized affordances only. Suite F regressions present. No deviation from contracts.
-- Query Context Engine: QueryContextEngine (okc/context/query_engine.py) owns envelope revisions with parent lineage. Assumptions never auto-promote; only explicit user confirmation or new evidence does. When an EvidenceSnapshotStore is attached, promote_with_evidence always creates a new immutable snapshot (I-10). Suite G regressions present (including G5). No deviation from contracts.
-- Evidence Snapshot Store: EvidenceSnapshotStore owns immutable snapshots; create rejects re-use of same id. Wired into QueryContextEngine for evidence promotion.
-- Orchestrator: ContextOrchestrator coordinates create → affordances → answer without domain logic.
+- Query Context Engine: QueryContextEngine owns envelope revisions with parent lineage. Assumptions never auto-promote; only explicit user confirmation or new evidence does. promote_with_evidence and create_envelope (when refs supplied) create immutable snapshots when store attached (I-10). Suite G + I2 present. No deviation from contracts.
+- Evidence Snapshot Store: EvidenceSnapshotStore owns immutable snapshots; create rejects re-use of same id. Wired into QueryContextEngine for evidence promotion and initial attachment.
 
 ## Next
-Continue remaining P1 authorization boundaries or further Context-Aware Reasoning integration. Prefer smallest coherent change with new regression evidence against locked contracts.
-
-
-Continue Context-Aware Reasoning (orchestrator wiring or remaining P1 authorization boundaries). Prefer smallest coherent change with new regression evidence against locked contracts.
+Continue remaining P1 authorization boundaries or further Context-Aware Reasoning integration (e.g. expansion path). Prefer smallest coherent change with new regression evidence against locked contracts.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.

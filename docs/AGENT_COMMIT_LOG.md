@@ -1,3 +1,11 @@
+## 2026-11-17 — Context-Aware Reasoning initial evidence snapshot on package path (I-10)
+
+- Problem: process_query created envelope without attaching an immutable evidence snapshot even when snapshot store was present and package/adapter supplied spans.
+- Change: QueryContextEngine.create_envelope accepts optional evidence_refs; when store attached, creates fresh immutable snapshot and sets evidence_set_ref (I-10). ContextOrchestrator passes span_ids extracted from package or supplied spans. Suite I2 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 35 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by ensuring initial evidence path produces immutable snapshot. No deviation from I-10 / I-11.
+
 ## 2026-11-17 — Context-Aware Reasoning package evidence adapter (real IR path)
 
 - Problem: Orchestrator accepted only caller-supplied evidence_spans; no path from canonical KnowledgePackage to compatibility without embedding logic.

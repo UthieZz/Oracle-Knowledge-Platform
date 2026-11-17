@@ -8,7 +8,7 @@ Evidence retrieval (I-10) creates a new immutable snapshot when a store is attac
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from okc.context.models import (
     ParameterStatus,
@@ -36,7 +36,26 @@ class QueryContextEngine:
         query_id: str,
         package_ref: str,
         parameters: Optional[Dict[str, QueryParameter]] = None,
+        evidence_refs: Optional[List[str]] = None,
     ) -> QueryContextEnvelope:
+        """Create initial envelope. If snapshot store attached and evidence_refs given,
+        creates an immutable initial snapshot (I-10) and sets evidence_set_ref.
+        """
+        evidence_set_ref: Optional[str] = None
+        if self._snapshot_store is not None and evidence_refs:
+            preferred_id = f"snap-{envelope_id}-1"
+            candidate = preferred_id
+            suffix = 0
+            while self._snapshot_store.exists(candidate):
+                suffix += 1
+                candidate = f"{preferred_id}-{suffix}"
+            snap = self._snapshot_store.create_snapshot(
+                snapshot_id=candidate,
+                evidence_refs=evidence_refs,
+                parent_snapshot_id=None,
+            )
+            evidence_set_ref = snap.snapshot_id
+
         return QueryContextEnvelope(
             envelope_id=envelope_id,
             revision=1,
@@ -44,6 +63,7 @@ class QueryContextEngine:
             query_id=query_id,
             package_ref=package_ref,
             parameters=parameters or {},
+            evidence_set_ref=evidence_set_ref,
         )
 
     def create_revision(
