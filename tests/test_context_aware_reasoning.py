@@ -260,7 +260,7 @@ def test_E1_assumption_never_auto_promotes(registry: ContextRegistry) -> None:
             "historical_period": QueryParameter(
                 dimension_id="historical_period",
                 status=ParameterStatus.MISSING,
-                assumption="modern",
+                value="modern", assumption="modern",
                 source="assumption",
             )
         },
@@ -345,7 +345,7 @@ def test_F1_independent_flags_assumption_disclosed_incomplete(registry: ContextR
             "historical_period": QueryParameter(
                 dimension_id="historical_period",
                 status=ParameterStatus.MISSING,
-                assumption="modern",
+                value="modern", assumption="modern",
                 source="assumption",
             )
         },
@@ -389,7 +389,7 @@ def test_F3_preauthorized_affordances_only(registry: ContextRegistry) -> None:
             "historical_period": QueryParameter(
                 dimension_id="historical_period",
                 status=ParameterStatus.MISSING,
-                assumption="modern",
+                value="modern", assumption="modern",
             )
         },
     )
@@ -516,3 +516,36 @@ def test_G4_lineage_preserved_across_multiple_revisions() -> None:
     assert e3.revision == 3 and e3.parent_revision == 2
     # Assumption from e2 not auto-promoted; e3 has resolved via user
     assert e3.parameters["historical_period"].status == ParameterStatus.RESOLVED
+
+
+# Suite H — Orchestrator coordination (no domain logic)
+def test_H1_orchestrator_coordinates_without_domain_logic(registry: ContextRegistry) -> None:
+    """I-11: orchestrator passes references; does not interpret or mutate domain state."""
+    from okc.context import ContextOrchestrator
+
+    orch = ContextOrchestrator(registry)
+    initial = {
+        "historical_period": QueryParameter(
+            dimension_id="historical_period",
+            status=ParameterStatus.MISSING,
+            value="modern", assumption="modern",
+            source="assumption",
+        )
+    }
+    spans = [{"constraints": {"historical_period": "modern"}}]
+    envelope, affordances, result = orch.process_query(
+        query_id="q-h1",
+        package_ref="pkg1",
+        envelope_id="e-h1",
+        initial_parameters=initial,
+        evidence_spans=spans,
+    )
+    assert envelope.revision == 1
+    assert envelope.parameters["historical_period"].assumption == "modern"
+    assert envelope.parameters["historical_period"].status == ParameterStatus.MISSING
+    assert len(affordances) == 1
+    assert affordances[0].availability == AffordanceAvailability.AVAILABLE
+    assert result.completion.answer_delivered is True
+    assert result.completion.contextually_complete is False
+    assert result.expansion_affordances == affordances  # no mutation
+    # Orchestrator did not promote or invent

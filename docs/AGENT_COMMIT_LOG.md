@@ -1,3 +1,12 @@
+## 2026-11-17 — Context-Aware Reasoning orchestrator minimal increment (I-11)
+
+- Problem: QueryContextEngine, CompatibilityEngine, and AnswerStage existed independently; no thin coordinator to demonstrate locked pipeline without embedding domain logic.
+- Change: Added okc/context/orchestrator.py (ContextOrchestrator). Coordinates create_envelope → generate_affordances → produce. Exports from package. Suite H1 regression added verifying no mutation, pre-authorized affordances passed through, independent completion flags.
+- Verification: pytest tests/test_context_aware_reasoning.py → 33 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by one smallest coherent increment. No deviation.
+
+
 ## 2026-11-17 — Context-Aware Reasoning snapshot wiring into QueryContextEngine (I-10)
 
 - Problem: EvidenceSnapshotStore existed but was not used by QueryContextEngine; promote_with_evidence only accepted a caller-supplied ref without enforcing new immutable snapshot creation on evidence application.

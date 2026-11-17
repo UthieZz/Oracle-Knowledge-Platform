@@ -15,6 +15,7 @@ from okc.context.compatibility import EvidenceCompatibilityEngine
 from okc.context.answer import AnswerStage, AnswerResult
 from okc.context.query_engine import QueryContextEngine
 from okc.context.snapshot_store import EvidenceSnapshot, EvidenceSnapshotStore
+from okc.context.orchestrator import ContextOrchestrator
 
 __all__ = [
     "AffordanceAvailability",
@@ -26,6 +27,7 @@ __all__ = [
     "EvidenceCompatibilityEngine",
     "EvidenceSnapshot",
     "EvidenceSnapshotStore",
+    "ContextOrchestrator",
     "ExpansionAffordance",
     "ParameterStatus",
     "QueryContextEngine",

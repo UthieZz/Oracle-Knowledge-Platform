@@ -83,7 +83,10 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-17)
-- Context-Aware Reasoning snapshot wiring: QueryContextEngine now accepts optional EvidenceSnapshotStore. promote_with_evidence always creates a new immutable snapshot (I-10) when store is attached; preferred id used if free, else unique suffix. Suite G5 added. 32 passed. No deviation from locked contracts. Next: orchestrator or remaining P1 boundaries.
+- Context-Aware Reasoning orchestrator minimal increment: ContextOrchestrator under okc/context/orchestrator.py coordinates QueryContextEngine + EvidenceCompatibilityEngine + AnswerStage. Creates envelope, requests pre-authorized affordances, produces structured answer. No domain logic (I-11). Suite H1 added. 33 passed. No deviation from locked contracts. Next: remaining P1 boundaries or further integration.
+
+
+- Context-Aware Reasoning snapshot wiring: QueryContextEngine now accepts optional EvidenceSnapshotStore. promote_with_evidence always creates a new immutable snapshot (I-10) when store is attached; preferred id used if free, else unique suffix. Suite G5 added. 32 passed. No deviation from locked contracts. Next: remaining P1 boundaries or further integration.
 
 - Context-Aware Reasoning Evidence Snapshot Store minimal increment: EvidenceSnapshotStore under okc/context/snapshot_store.py owns immutable snapshots. create_snapshot always produces a new frozen object with parent lineage; re-creation of same id rejected; get returns original. Suite E3 now verifies immutability and new-on-retrieval. 31 passed. No deviation from locked contracts (I-10). Next: wire store into QueryContextEngine or remaining P1 boundaries.
 - Context-Aware Reasoning Query Context Engine minimal increment: QueryContextEngine under okc/context/query_engine.py owns envelope creation and revisions with parent lineage. Assumptions never auto-promote to RESOLVED; only explicit user confirmation or new evidence does. New evidence updates snapshot ref. Suite G regressions added. 31 passed. No deviation from locked contracts. Next: evidence snapshot store or remaining P1 boundaries.
@@ -145,6 +148,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Dockerfile and operator guide updated with reproducible Docker start for the local-folder Connect worker (P3).
 
 ## Next highest-value action
+Continue remaining P1 authorization boundaries or further Context-Aware Reasoning integration (e.g., real evidence retrieval path). Prefer smallest coherent change with new regression evidence against locked contracts.
+
+
 Continue Context-Aware Reasoning (orchestrator wiring of QueryContextEngine + snapshot store) or remaining P1 authorization boundaries. Prefer the smallest coherent change that produces new regression evidence against locked contracts.
 
 - Fixed missing json import in run_connect_worker.py so --config path works (P3).

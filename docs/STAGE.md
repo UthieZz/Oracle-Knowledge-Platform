@@ -25,12 +25,17 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
+- Orchestrator: minimal ContextOrchestrator (okc/context/orchestrator.py) coordinates engine + compatibility + answer stage without domain logic (I-11). Suite H1 present. 33 passed. No deviation.
 - First gate: models, ContextRegistry, EvidenceCompatibilityEngine under okc/context/; Suites A–E deterministic tests executable.
 - Answer Stage: minimal AnswerStage (okc/context/answer.py) producing locked structured output with independent completion flags, assumption/unresolved/conflict disclosure, pre-authorized affordances only. Suite F regressions present. No deviation from contracts.
 - Query Context Engine: QueryContextEngine (okc/context/query_engine.py) owns envelope revisions with parent lineage. Assumptions never auto-promote; only explicit user confirmation or new evidence does. When an EvidenceSnapshotStore is attached, promote_with_evidence always creates a new immutable snapshot (I-10). Suite G regressions present (including G5). No deviation from contracts.
 - Evidence Snapshot Store: EvidenceSnapshotStore owns immutable snapshots; create rejects re-use of same id. Wired into QueryContextEngine for evidence promotion.
+- Orchestrator: ContextOrchestrator coordinates create → affordances → answer without domain logic.
 
 ## Next
+Continue remaining P1 authorization boundaries or further Context-Aware Reasoning integration. Prefer smallest coherent change with new regression evidence against locked contracts.
+
+
 Continue Context-Aware Reasoning (orchestrator wiring or remaining P1 authorization boundaries). Prefer smallest coherent change with new regression evidence against locked contracts.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.
