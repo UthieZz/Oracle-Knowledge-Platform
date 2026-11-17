@@ -126,3 +126,49 @@ class ContextOrchestrator:
             evidence_summary=evidence_summary,
             conflicts=conflicts,
         )
+
+    def retrieve_for_affordance(
+        self,
+        envelope: QueryContextEnvelope,
+        affordance: ExpansionAffordance,
+        package: Optional[KnowledgePackage] = None,
+        extra_spans: Optional[List[Dict[str, Any]]] = None,
+    ) -> QueryContextEnvelope:
+        """Coordinate retrieval for a RETRIEVABLE affordance.
+
+        Uses package adapter or supplied spans only. Creates new immutable snapshot
+        and revision via promote_with_evidence. No domain logic, no status mutation
+        beyond what the engine already does for evidence. (I-10, I-09, I-11)
+        """
+        if affordance.availability != "retrievable":
+            raise ValueError("retrieve_for_affordance only accepts RETRIEVABLE affordances")
+        if affordance.source_envelope_id != envelope.envelope_id or affordance.source_revision != envelope.revision:
+            raise ValueError("affordance does not match envelope revision")
+
+        spans = extra_spans or []
+        if package is not None:
+            spans = extract_evidence_spans(package) + spans
+        # Filter to spans that could support the target (presence only; no interpretation)
+        relevant = [s for s in spans if s.get("span_id")]
+        if not relevant:
+            raise ValueError("no retrievable evidence spans available")
+
+        evidence_refs = [s["span_id"] for s in relevant]
+        # Prefer first matching constraint if present; otherwise use affordance target as evidence value
+        evidence_value = affordance.target_value
+        for s in relevant:
+            constraints = s.get("constraints") or {}
+            if affordance.dimension_id in constraints:
+                evidence_value = constraints[affordance.dimension_id]
+                break
+
+        if not self.snapshot_store:
+            raise ValueError("snapshot store required for retrieval path")
+
+        return self.query_engine.promote_with_evidence(
+            envelope,
+            dimension_id=affordance.dimension_id,
+            evidence_value=evidence_value,
+            evidence_refs=evidence_refs,
+        )
+

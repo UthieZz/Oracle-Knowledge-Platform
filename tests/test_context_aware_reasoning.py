@@ -730,3 +730,77 @@ def test_I4_answer_from_revised_envelope_no_domain_logic(registry: ContextRegist
     assert result.context.revision == revised.revision
     assert result.completion.answer_delivered is True
     assert isinstance(result.expansion_affordances, list)
+
+
+def test_I5_retrieve_for_affordance_creates_new_snapshot_and_revision(registry: ContextRegistry) -> None:
+    """I-10 / I-09: retrieval path for RETRIEVABLE affordance produces new immutable snapshot and revision."""
+    from okc.models.knowledge_package import (
+        KnowledgePackage,
+        KnowledgeObject,
+        Provenance,
+        EvidenceSpan,
+    )
+    from okc.context import (
+        ContextOrchestrator,
+        EvidenceSnapshotStore,
+        QueryParameter,
+        ParameterStatus,
+        AffordanceAvailability,
+    )
+
+    prov = Provenance(source_platform="test", source_file="t.md", tenant_id="t1", silo_id="s1")
+    span = EvidenceSpan(
+        span_id="sp-ret",
+        message_id="m1",
+        role="user",
+        timestamp="2026-01-01T00:00:00Z",
+        content="modern evidence",
+    )
+    obj = KnowledgeObject(
+        object_id="obj1",
+        title="t",
+        provenance=prov,
+        evidence=[span],
+        content="modern evidence",
+        metadata={},
+    )
+    pkg = KnowledgePackage(package_id="pkg-i5", objects=[obj])
+    pkg.metadata = {"context_constraints": {"obj1": {"historical_period": "modern"}}}
+
+    store = EvidenceSnapshotStore()
+    orch = ContextOrchestrator(registry, snapshot_store=store)
+
+    # Start with missing parameter; supply retrieval path so affordance is RETRIEVABLE
+    initial = {
+        "historical_period": QueryParameter(
+            dimension_id="historical_period",
+            status=ParameterStatus.MISSING,
+        )
+    }
+    envelope, affordances, _ = orch.process_query(
+        query_id="q-i5",
+        package_ref="pkg-i5",
+        envelope_id="e-i5",
+        initial_parameters=initial,
+        package=pkg,
+        retrieval_paths={"historical_period": "package"},
+    )
+    assert len(affordances) == 1
+    aff = affordances[0]
+    assert aff.availability == AffordanceAvailability.RETRIEVABLE
+    assert envelope.evidence_set_ref is not None  # initial snapshot
+
+    revised = orch.retrieve_for_affordance(envelope, aff, package=pkg)
+    assert revised.revision == envelope.revision + 1
+    assert revised.parent_revision == envelope.revision
+    assert revised.parameters["historical_period"].status == ParameterStatus.RESOLVED
+    assert revised.parameters["historical_period"].value == "modern"
+    assert revised.evidence_set_ref is not None
+    assert revised.evidence_set_ref != envelope.evidence_set_ref
+    snap = store.get(revised.evidence_set_ref)
+    assert snap is not None
+    assert "sp-ret" in snap.evidence_refs
+    assert snap.parent_snapshot_id == envelope.evidence_set_ref
+    # Original envelope unchanged
+    assert envelope.revision == 1
+    assert envelope.parameters["historical_period"].status == ParameterStatus.MISSING

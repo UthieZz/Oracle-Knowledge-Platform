@@ -27,7 +27,7 @@ def extract_evidence_spans(package: KnowledgePackage) -> List[Dict[str, Any]]:
     for obj in package.objects:
         obj_constraints = {}
         if hasattr(obj, "metadata") and isinstance(getattr(obj, "metadata", None), dict):
-            obj_constraints = obj.metadata.get("constraints", {})
+            obj_constraints = obj.metadata.get("constraints") or obj.metadata.get("context_constraints", {})
         # Prefer object-level if present; else package-level keyed by object_id
         constraints = obj_constraints or pkg_constraints.get(obj.object_id, {})
 
