@@ -1,3 +1,11 @@
+## 2026-11-17 — Context-Aware Reasoning Answer Stage minimal increment
+
+- Problem: first gate (models/registry/compatibility + Suites A–E) complete; Answer Stage contract remained unimplemented, blocking structured grounded answers with independent completion flags.
+- Change: Added okc/context/answer.py (AnswerStage + locked output models). Produces answer_delivered / contextually_complete independently, discloses assumptions and unresolved high-sensitivity dimensions, retains conflicts, emits only pre-authorized affordances, returns insufficient_evidence when no material content. Suite F regressions added to tests/test_context_aware_reasoning.py. Exported from package.
+- Verification: Code written to locked contracts (03-answer-stage-contract.md, 05-integration-contract.md). Local pytest of tests/test_context_aware_reasoning.py required to confirm Suite F passes (expected: prior 23 + 4 new).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning capability by one smallest coherent increment. No deviation.
+
 ## 2026-11-16 — Health reports Python executable path (P3)
 
 - Problem: operators diagnosing local OKC server had no structured signal of the exact Python interpreter path without process inspection.
