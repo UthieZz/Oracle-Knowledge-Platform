@@ -13,6 +13,7 @@ from okc.context import (
     ContextDimension,
     ContextRegistry,
     EvidenceCompatibilityEngine,
+    EvidenceSnapshotStore,
     ExpansionAffordance,
     ParameterStatus,
     QueryContextEngine,
@@ -275,8 +276,23 @@ def test_E2_promotion_requires_evidence_or_user() -> None:
 
 
 def test_E3_snapshots_immutable() -> None:
-    # Evidence snapshots are immutable by design; new retrieval creates new snapshot ref
-    assert True  # full snapshot store is later increment
+    store = EvidenceSnapshotStore()
+    snap1 = store.create_snapshot("snap-1", evidence_refs=["ev-a", "ev-b"])
+    retrieved = store.get("snap-1")
+    assert retrieved is snap1
+    assert retrieved.evidence_refs == ("ev-a", "ev-b")
+    # Cannot mutate (tuple)
+    with pytest.raises(AttributeError):
+        retrieved.evidence_refs.append("ev-c")
+    # New retrieval / expansion creates new snapshot
+    snap2 = store.create_snapshot(
+        "snap-2", evidence_refs=["ev-a", "ev-b", "ev-c"], parent_snapshot_id="snap-1"
+    )
+    assert store.get("snap-1").evidence_refs == ("ev-a", "ev-b")
+    assert snap2.parent_snapshot_id == "snap-1"
+    # Re-create same id forbidden
+    with pytest.raises(ValueError):
+        store.create_snapshot("snap-1", evidence_refs=["other"])
 
 
 def test_E4_revision_lineage() -> None:

@@ -1,3 +1,11 @@
+## 2026-11-17 — Context-Aware Reasoning Evidence Snapshot Store minimal increment
+
+- Problem: Suite E3 was a placeholder; evidence snapshots required for I-10 (retrieval creates new immutable snapshot) were unowned.
+- Change: Added okc/context/snapshot_store.py (EvidenceSnapshot frozen model + EvidenceSnapshotStore). create_snapshot rejects duplicate ids, stores immutable tuple of refs with optional parent. get returns original. Suite E3 now verifies immutability and new-on-retrieval. Exported from package.
+- Verification: pytest tests/test_context_aware_reasoning.py → 31 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by one smallest coherent increment. No deviation.
+
 ## 2026-11-17 — Context-Aware Reasoning Query Context Engine minimal increment
 
 - Problem: Answer Stage and compatibility present; envelope revision management, assumption non-promotion, and lineage still lacked an owning engine, leaving Suite E as placeholders.
