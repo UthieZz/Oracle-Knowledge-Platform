@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-17)
+- Context-Aware Reasoning package evidence adapter: extract_evidence_spans under okc/context/package_adapter.py maps KnowledgePackage objects to evidence span dicts (existing spans + explicit metadata constraints only). ContextOrchestrator accepts optional package and uses adapter when evidence_spans omitted. Suite I1 added. 34 passed. No inference, no domain logic. Next: remaining P1 boundaries or further retrieval integration.
+
 - Context-Aware Reasoning orchestrator minimal increment: ContextOrchestrator under okc/context/orchestrator.py coordinates QueryContextEngine + EvidenceCompatibilityEngine + AnswerStage. Creates envelope, requests pre-authorized affordances, produces structured answer. No domain logic (I-11). Suite H1 added. 33 passed. No deviation from locked contracts. Next: remaining P1 boundaries or further integration.
 
 

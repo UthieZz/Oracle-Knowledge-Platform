@@ -16,6 +16,7 @@ from okc.context.answer import AnswerStage, AnswerResult
 from okc.context.query_engine import QueryContextEngine
 from okc.context.snapshot_store import EvidenceSnapshot, EvidenceSnapshotStore
 from okc.context.orchestrator import ContextOrchestrator
+from okc.context.package_adapter import extract_evidence_spans
 
 __all__ = [
     "AffordanceAvailability",
@@ -28,6 +29,7 @@ __all__ = [
     "EvidenceSnapshot",
     "EvidenceSnapshotStore",
     "ContextOrchestrator",
+    "extract_evidence_spans",
     "ExpansionAffordance",
     "ParameterStatus",
     "QueryContextEngine",

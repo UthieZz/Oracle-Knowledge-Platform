@@ -1,3 +1,11 @@
+## 2026-11-17 — Context-Aware Reasoning package evidence adapter (real IR path)
+
+- Problem: Orchestrator accepted only caller-supplied evidence_spans; no path from canonical KnowledgePackage to compatibility without embedding logic.
+- Change: Added okc/context/package_adapter.py (extract_evidence_spans). Pure extraction of existing EvidenceSpan + explicit constraints from package/object metadata. No inference. ContextOrchestrator.process_query now accepts optional KnowledgePackage; uses adapter when evidence_spans is None. Exported. Suite I1 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 34 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by one smallest coherent increment toward real evidence retrieval. No deviation from I-02 / I-11.
+
 ## 2026-11-17 — Context-Aware Reasoning orchestrator minimal increment (I-11)
 
 - Problem: QueryContextEngine, CompatibilityEngine, and AnswerStage existed independently; no thin coordinator to demonstrate locked pipeline without embedding domain logic.

@@ -16,6 +16,8 @@ from okc.context.models import ExpansionAffordance, QueryContextEnvelope, QueryP
 from okc.context.query_engine import QueryContextEngine
 from okc.context.registry import ContextRegistry
 from okc.context.snapshot_store import EvidenceSnapshotStore
+from okc.models.knowledge_package import KnowledgePackage
+from okc.context.package_adapter import extract_evidence_spans
 
 
 class ContextOrchestrator:
@@ -39,6 +41,7 @@ class ContextOrchestrator:
         envelope_id: str,
         initial_parameters: Optional[Dict[str, QueryParameter]] = None,
         evidence_spans: Optional[List[Dict[str, Any]]] = None,
+        package: Optional[KnowledgePackage] = None,
         retrieval_paths: Optional[Dict[str, str]] = None,
         conflicts: Optional[List[str]] = None,
         evidence_summary: Optional[Dict[str, List[str]]] = None,
@@ -53,7 +56,10 @@ class ContextOrchestrator:
             package_ref=package_ref,
             parameters=initial_parameters,
         )
-        spans = evidence_spans or []
+        if evidence_spans is None and package is not None:
+            spans = extract_evidence_spans(package)
+        else:
+            spans = evidence_spans or []
         affordances = self.compatibility.generate_affordances(
             envelope, evidence_spans=spans, retrieval_paths=retrieval_paths or {}
         )

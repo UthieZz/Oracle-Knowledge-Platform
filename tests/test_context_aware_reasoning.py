@@ -549,3 +549,66 @@ def test_H1_orchestrator_coordinates_without_domain_logic(registry: ContextRegis
     assert result.completion.contextually_complete is False
     assert result.expansion_affordances == affordances  # no mutation
     # Orchestrator did not promote or invent
+
+
+# Suite I — Package adapter integration (real evidence from canonical IR)
+def test_I1_orchestrator_uses_package_evidence_spans_without_inference(registry: ContextRegistry) -> None:
+    """I-02 / integration: package supplies existing evidence; no invented constraints."""
+    from okc.models.knowledge_package import (
+        KnowledgePackage,
+        KnowledgeObject,
+        Provenance,
+        EvidenceSpan,
+    )
+    from okc.context import ContextOrchestrator, extract_evidence_spans
+
+    prov = Provenance(
+        source_platform="test",
+        source_file="test.md",
+        tenant_id="t1",
+        silo_id="s1",
+    )
+    span = EvidenceSpan(
+        span_id="sp1",
+        message_id="m1",
+        role="user",
+        timestamp="2026-01-01T00:00:00Z",
+        content="The period is modern.",
+    )
+    obj = KnowledgeObject(
+        object_id="obj1",
+        title="test",
+        provenance=prov,
+        evidence=[span],
+        content="The period is modern.",
+    )
+    pkg = KnowledgePackage(package_id="pkg-i1", objects=[obj])
+    # Explicit constraint in package metadata
+    pkg.metadata["context_constraints"] = {"obj1": {"historical_period": "modern"}}
+
+    extracted = extract_evidence_spans(pkg)
+    assert len(extracted) == 1
+    assert extracted[0]["constraints"] == {"historical_period": "modern"}
+    assert extracted[0]["provenance"]["tenant_id"] == "t1"
+
+    orch = ContextOrchestrator(registry)
+    initial = {
+        "historical_period": QueryParameter(
+            dimension_id="historical_period",
+            status=ParameterStatus.MISSING,
+            value="modern",  # candidate for compatibility check
+        )
+    }
+    envelope, affordances, result = orch.process_query(
+        query_id="q-i1",
+        package_ref="pkg-i1",
+        envelope_id="e-i1",
+        initial_parameters=initial,
+        package=pkg,  # evidence_spans omitted → adapter used
+    )
+    assert len(affordances) == 1
+    assert affordances[0].availability == AffordanceAvailability.AVAILABLE
+    # Answer stage receives pre-authorized affordances; delivery depends on content/assumptions
+    assert result.expansion_affordances == affordances
+    # No inference: status remains missing until explicit promotion
+    assert envelope.parameters["historical_period"].status == ParameterStatus.MISSING
