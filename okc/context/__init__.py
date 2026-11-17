@@ -12,9 +12,12 @@ from okc.context.models import (
 )
 from okc.context.registry import ContextRegistry
 from okc.context.compatibility import EvidenceCompatibilityEngine
+from okc.context.answer import AnswerStage, AnswerResult
 
 __all__ = [
     "AffordanceAvailability",
+    "AnswerResult",
+    "AnswerStage",
     "CompatibilityState",
     "ContextDimension",
     "ContextRegistry",
