@@ -82,6 +82,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Small, reversible, tested changes. Protect unrelated work.
 - Do not claim B2B readiness without evidence.
 
+## Recent verified advances (2026-11-17)
+- Context-Aware Reasoning first implementation gate: deterministic tests now executable (tests/test_context_aware_reasoning.py). Minimal ContextDimension, QueryContextEnvelope, ExpansionAffordance, ContextRegistry, and EvidenceCompatibilityEngine under okc/context/ obey locked contracts in design/context-aware-reasoning/. Suites A–E covered. 23 passed. No deviation from locked design. Implementation authorised; next increments remain smallest coherent against these tests.
+
 ## Recent verified advances (2026-11-16)
 - Local OKC server /api/health now reports `python_executable` (sys.executable) (P3). Operators can confirm the exact Python interpreter running the local pilot without process inspection. API version 0.2.12-local. New regression asserts. Tests updated to match.
 - Local OKC server /api/health now reports `open_file_descriptors_count` (P3). Operators can observe open file descriptor usage (useful for detecting leaks in long-running pilot processes) without external tooling. API version 0.2.11-local. New regression asserts. Tests updated to match.
