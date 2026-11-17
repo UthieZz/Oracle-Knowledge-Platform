@@ -8,6 +8,7 @@ import pytest
 
 from okc.context import (
     AffordanceAvailability,
+    AnswerStage,
     CompatibilityState,
     ContextDimension,
     ContextRegistry,
@@ -312,3 +313,106 @@ def test_E6_unconstrained_alone_cannot_establish_completeness(registry: ContextR
     state = engine.classify({}, "historical_period", "modern")
     assert state == CompatibilityState.UNCONSTRAINED
     # Cannot count toward resolution
+
+
+# Suite F — Answer Stage (minimal next increment)
+
+def test_F1_independent_flags_assumption_disclosed_incomplete(registry: ContextRegistry) -> None:
+    stage = AnswerStage(registry)
+    env = QueryContextEnvelope(
+        envelope_id="e8",
+        revision=1,
+        query_id="q8",
+        package_ref="pkg1",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+                assumption="modern",
+                source="assumption",
+            )
+        },
+    )
+    result = stage.produce(env, affordances=[])
+    assert result.completion.answer_delivered is True  # useful under assumption
+    assert result.completion.contextually_complete is False  # high-sens unresolved
+    assert result.context.applied_assumptions
+    assert "historical_period" in result.context.unresolved_dimensions
+    assert any(c.support_status == "assumption" for c in result.answer.claims)
+
+
+def test_F2_insufficient_evidence(registry: ContextRegistry) -> None:
+    stage = AnswerStage(registry)
+    env = QueryContextEnvelope(
+        envelope_id="e9",
+        revision=1,
+        query_id="q9",
+        package_ref="pkg1",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+            )
+        },
+    )
+    result = stage.produce(env, affordances=[])
+    assert result.completion.answer_delivered is False
+    assert result.completion.contextually_complete is False
+    assert result.completion.reason == "insufficient_evidence"
+
+
+def test_F3_preauthorized_affordances_only(registry: ContextRegistry) -> None:
+    stage = AnswerStage(registry)
+    env = QueryContextEnvelope(
+        envelope_id="e10",
+        revision=1,
+        query_id="q10",
+        package_ref="pkg1",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+                assumption="modern",
+            )
+        },
+    )
+    aff = ExpansionAffordance(
+        affordance_id="aff-test",
+        dimension_id="historical_period",
+        target_value="modern",
+        availability=AffordanceAvailability.AVAILABLE,
+        effect="add_evidence",
+        source_envelope_id="e10",
+        source_revision=1,
+    )
+    result = stage.produce(env, affordances=[aff])
+    assert len(result.expansion_affordances) == 1
+    assert result.expansion_affordances[0].affordance_id == "aff-test"
+    # Stage does not invent or alter eligibility
+
+
+def test_F4_conflicts_force_incomplete_and_disclosed(registry: ContextRegistry) -> None:
+    stage = AnswerStage(registry)
+    env = QueryContextEnvelope(
+        envelope_id="e11",
+        revision=1,
+        query_id="q11",
+        package_ref="pkg1",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.RESOLVED,
+                value="modern",
+                source="evidence",
+            )
+        },
+    )
+    result = stage.produce(
+        env,
+        affordances=[],
+        evidence_summary={"supporting": ["span1"]},
+        conflicts=["historical_period"],
+    )
+    assert result.completion.answer_delivered is True
+    assert result.completion.contextually_complete is False
+    assert "historical_period" in result.context.conflicted_dimensions
