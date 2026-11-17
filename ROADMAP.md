@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-17)
+- Context-Aware Reasoning user confirmation path: ContextOrchestrator.confirm_parameter delegates to promote_with_user_confirmation. Produces new immutable revision with parent lineage (I-09). Status becomes RESOLVED with source="user". No domain logic (I-11). Suite I6 added. 39 passed. No deviation from locked contracts. Next: remaining P1 boundaries or further retrieval integration.
+
 - Context-Aware Reasoning retrieval path: ContextOrchestrator.retrieve_for_affordance coordinates package/spans → promote_with_evidence for RETRIEVABLE affordances (new immutable snapshot + revision). No domain logic (I-11). Suite I5 added. 38 passed. No deviation from locked contracts. Next: remaining P1 boundaries or further retrieval integration.
 - Context-Aware Reasoning expansion answer loop: ContextOrchestrator.answer_from_envelope coordinates compatibility + AnswerStage on an existing revised envelope (after apply_expansion). No envelope mutation, no domain logic (I-11). Suite I4 added. 38 passed. No deviation from locked contracts. Next: remaining P1 boundaries or further retrieval integration.
 

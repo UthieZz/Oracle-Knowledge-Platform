@@ -1,3 +1,11 @@
+## 2026-11-17 — Context-Aware Reasoning explicit user confirmation path (I-09 / I-11)
+
+- Problem: QueryContextEngine.promote_with_user_confirmation existed but orchestrator had no coordinated path for explicit user confirmation of a parameter.
+- Change: Added ContextOrchestrator.confirm_parameter. Delegates only; produces new revision with parent lineage. Status RESOLVED, source="user". No domain logic. Suite I6 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 39 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by exposing the user-confirmation promotion path through the orchestrator. No deviation from I-09 / I-11.
+
 ## 2026-11-17 — Context-Aware Reasoning retrieval path for RETRIEVABLE affordances (I-10 / I-09)
 
 - Problem: RETRIEVABLE affordances had no coordinated path that produced a new immutable evidence snapshot and envelope revision.

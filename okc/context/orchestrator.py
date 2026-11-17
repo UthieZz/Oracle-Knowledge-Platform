@@ -172,3 +172,21 @@ class ContextOrchestrator:
             evidence_refs=evidence_refs,
         )
 
+    def confirm_parameter(
+        self,
+        envelope: QueryContextEnvelope,
+        dimension_id: str,
+        confirmed_value: Any,
+    ) -> QueryContextEnvelope:
+        """Explicit user confirmation of a parameter.
+
+        Delegates to QueryContextEngine.promote_with_user_confirmation.
+        Produces new immutable revision with parent lineage (I-09).
+        No domain logic, no evidence interpretation (I-11).
+        """
+        return self.query_engine.promote_with_user_confirmation(
+            envelope,
+            dimension_id=dimension_id,
+            confirmed_value=confirmed_value,
+        )
+

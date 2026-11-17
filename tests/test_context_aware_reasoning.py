@@ -804,3 +804,43 @@ def test_I5_retrieve_for_affordance_creates_new_snapshot_and_revision(registry: 
     # Original envelope unchanged
     assert envelope.revision == 1
     assert envelope.parameters["historical_period"].status == ParameterStatus.MISSING
+
+
+def test_I6_confirm_parameter_creates_revision_with_user_source(registry: ContextRegistry) -> None:
+    """Suite I6: explicit user confirmation via orchestrator produces new revision.
+
+    Verifies I-09 lineage and that status becomes RESOLVED with source="user".
+    No domain logic in orchestrator.
+    """
+    from okc.context.orchestrator import ContextOrchestrator
+    from okc.context.models import QueryParameter, ParameterStatus
+    from okc.context.snapshot_store import EvidenceSnapshotStore
+
+    store = EvidenceSnapshotStore()
+    orch = ContextOrchestrator(registry, snapshot_store=store)
+
+    initial = {
+        "jurisdiction": QueryParameter(
+            dimension_id="jurisdiction",
+            status=ParameterStatus.MISSING,
+            assumption="ZA",
+            source="assumption",
+        )
+    }
+    env, _, _ = orch.process_query(
+        query_id="q1",
+        package_ref="pkg1",
+        envelope_id="env1",
+        initial_parameters=initial,
+    )
+    assert env.parameters["jurisdiction"].status == ParameterStatus.MISSING
+    assert env.revision == 1
+
+    revised = orch.confirm_parameter(env, "jurisdiction", "ZA")
+    assert revised.revision == 2
+    assert revised.parent_revision == env.revision
+    assert revised.parameters["jurisdiction"].status == ParameterStatus.RESOLVED
+    assert revised.parameters["jurisdiction"].value == "ZA"
+    assert revised.parameters["jurisdiction"].source == "user"
+    # Original assumption preserved in history via parent
+    assert env.parameters["jurisdiction"].assumption == "ZA"

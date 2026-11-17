@@ -25,6 +25,7 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
+- Orchestrator: ContextOrchestrator now exposes confirm_parameter for explicit user confirmation (delegates to engine; I-09 lineage). Suite I6 present. 39 passed.
 - Orchestrator: ContextOrchestrator coordinates create → affordances → answer without domain logic (I-11). When snapshot store present and package/spans supplied, create_envelope attaches immutable initial snapshot (I-10). apply_expansion produces immutable revision with parent lineage (I-09); evidence path creates new snapshot, assumption path sets MISSING + disclosed assumption (never auto-promoted). answer_from_envelope coordinates answer on an existing revision without mutation. Suite I2 + I3 + I4 present. 38 passed. No deviation.
 - Package adapter: extract_evidence_spans maps KnowledgePackage to evidence spans (existing only + explicit metadata constraints). Suite I1 present.
 - First gate: models, ContextRegistry, EvidenceCompatibilityEngine under okc/context/; Suites A–E deterministic tests executable.
