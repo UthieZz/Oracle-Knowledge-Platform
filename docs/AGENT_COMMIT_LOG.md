@@ -1,3 +1,12 @@
+## 2026-11-17 — Context-Aware Reasoning snapshot wiring into QueryContextEngine (I-10)
+
+- Problem: EvidenceSnapshotStore existed but was not used by QueryContextEngine; promote_with_evidence only accepted a caller-supplied ref without enforcing new immutable snapshot creation on evidence application.
+- Change: QueryContextEngine.__init__ now accepts optional EvidenceSnapshotStore. promote_with_evidence creates a fresh immutable snapshot via the store when attached (preferred id if free, unique suffix otherwise), records parent_snapshot_id from prior envelope, and sets evidence_set_ref to the new snapshot. Backward compatible without store. Suite G5 added. Exported types unchanged.
+- Verification: pytest tests/test_context_aware_reasoning.py → 32 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by wiring I-10 into the engine. No deviation.
+
+
 ## 2026-11-17 — Context-Aware Reasoning Evidence Snapshot Store minimal increment
 
 - Problem: Suite E3 was a placeholder; evidence snapshots required for I-10 (retrieval creates new immutable snapshot) were unowned.

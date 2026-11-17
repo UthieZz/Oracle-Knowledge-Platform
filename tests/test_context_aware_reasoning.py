@@ -475,6 +475,37 @@ def test_G3_evidence_promotes_and_new_snapshot() -> None:
     assert revised.revision == 2
 
 
+def test_G5_promote_with_evidence_creates_immutable_snapshot_when_store_attached() -> None:
+    """I-10: retrieval / evidence application creates a new immutable snapshot."""
+    store = EvidenceSnapshotStore()
+    engine = QueryContextEngine(snapshot_store=store)
+    parent = engine.create_envelope("e-g5", "q-g5", "pkg1")
+    revised = engine.promote_with_evidence(
+        parent,
+        "historical_period",
+        "modern",
+        evidence_set_ref="snap-g5",
+        evidence_refs=["ev-1", "ev-2"],
+    )
+    assert revised.evidence_set_ref == "snap-g5"
+    snap = store.get("snap-g5")
+    assert snap is not None
+    assert snap.evidence_refs == ("ev-1", "ev-2")
+    assert snap.parent_snapshot_id is None
+    # Second application creates a different snapshot (immutability + new-on-retrieval)
+    revised2 = engine.promote_with_evidence(
+        revised,
+        "historical_period",
+        "medieval",
+        evidence_set_ref="snap-g5",  # preferred id already taken
+        evidence_refs=["ev-3"],
+    )
+    assert revised2.evidence_set_ref != "snap-g5"
+    assert store.exists(revised2.evidence_set_ref)
+    assert store.get("snap-g5").evidence_refs == ("ev-1", "ev-2")  # original unchanged
+    assert revised2.parent_revision == 2
+
+
 def test_G4_lineage_preserved_across_multiple_revisions() -> None:
     engine = QueryContextEngine()
     e1 = engine.create_envelope("e-g4", "q-g4", "pkg1")
