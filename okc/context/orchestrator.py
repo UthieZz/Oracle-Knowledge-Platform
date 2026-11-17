@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from okc.context.answer import AnswerResult, AnswerStage
 from okc.context.compatibility import EvidenceCompatibilityEngine
-from okc.context.models import ExpansionAffordance, QueryContextEnvelope, QueryParameter
+from okc.context.models import ExpansionAffordance, QueryContextEnvelope, QueryParameter, ParameterStatus
 from okc.context.query_engine import QueryContextEngine
 from okc.context.registry import ContextRegistry
 from okc.context.snapshot_store import EvidenceSnapshotStore
@@ -74,3 +74,31 @@ class ContextOrchestrator:
             conflicts=conflicts,
         )
         return envelope, affordances, result
+
+    def apply_expansion(
+        self,
+        parent_envelope: QueryContextEnvelope,
+        dimension_id: str,
+        new_value: Any,
+        evidence_refs: Optional[List[str]] = None,
+    ) -> QueryContextEnvelope:
+        """Apply an expansion by creating a new immutable revision (I-09).
+
+        Uses QueryContextEngine.promote_with_evidence when evidence is supplied,
+        otherwise create_revision with an assumption. No domain logic.
+        """
+        if evidence_refs and self.snapshot_store:
+            return self.query_engine.promote_with_evidence(
+                parent_envelope,
+                dimension_id=dimension_id,
+                evidence_value=new_value,
+                evidence_refs=evidence_refs,
+            )
+        # Fallback: assumption path (status remains ASSUMED)
+        assumed = QueryParameter(
+            dimension_id=dimension_id,
+            status=ParameterStatus.ASSUMED,
+            value=new_value,
+            source="expansion",
+        )
+        return self.query_engine.create_revision(parent_envelope, {dimension_id: assumed})
