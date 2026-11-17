@@ -83,6 +83,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-17)
+- Context-Aware Reasoning Query Context Engine minimal increment: QueryContextEngine under okc/context/query_engine.py owns envelope creation and revisions with parent lineage. Assumptions never auto-promote to RESOLVED; only explicit user confirmation or new evidence does. New evidence updates snapshot ref. Suite G regressions added. 31 passed. No deviation from locked contracts. Next: evidence snapshot store or remaining P1 boundaries.
 - Context-Aware Reasoning Answer Stage minimal increment: AnswerStage under okc/context/answer.py produces locked structured output (independent answer_delivered and contextually_complete flags, assumption disclosure, unresolved high-sensitivity forcing incomplete, insufficient evidence path, pre-authorized affordances only). Suite F regressions added. No deviation from locked contracts. Next: Query Context Engine or evidence snapshot handling.
 - Context-Aware Reasoning first implementation gate: deterministic tests now executable (tests/test_context_aware_reasoning.py). Minimal ContextDimension, QueryContextEnvelope, ExpansionAffordance, ContextRegistry, and EvidenceCompatibilityEngine under okc/context/ obey locked contracts in design/context-aware-reasoning/. Suites A–E covered. 23 passed. No deviation from locked design. Implementation authorised; next increments remain smallest coherent against these tests.
 
@@ -141,7 +142,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Dockerfile and operator guide updated with reproducible Docker start for the local-folder Connect worker (P3).
 
 ## Next highest-value action
-Continue Context-Aware Reasoning with Query Context Engine (envelope revision management, assumption non-promotion) or remaining P1 authorization boundaries. Prefer the smallest coherent change that produces new regression evidence against locked contracts.
+Continue Context-Aware Reasoning with evidence snapshot handling (immutable snapshots on retrieval) or remaining P1 authorization boundaries. Prefer the smallest coherent change that produces new regression evidence against locked contracts.
 
 - Fixed missing json import in run_connect_worker.py so --config path works (P3).
 - Docker packaging for Connect pilot documented (P3).

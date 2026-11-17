@@ -1,3 +1,11 @@
+## 2026-11-17 — Context-Aware Reasoning Query Context Engine minimal increment
+
+- Problem: Answer Stage and compatibility present; envelope revision management, assumption non-promotion, and lineage still lacked an owning engine, leaving Suite E as placeholders.
+- Change: Added okc/context/query_engine.py (QueryContextEngine). Creates envelopes/revisions with parent lineage. apply_assumption never promotes status to RESOLVED. Explicit promote_with_user_confirmation and promote_with_evidence only. New evidence sets snapshot ref. Exported from package. Suite G regressions added (G1–G4).
+- Verification: pytest tests/test_context_aware_reasoning.py → 31 passed (prior 27 + 4 new).
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by one smallest coherent increment against Suite E rules. No deviation.
+
 ## 2026-11-17 — Context-Aware Reasoning Answer Stage minimal increment
 
 - Problem: first gate (models/registry/compatibility + Suites A–E) complete; Answer Stage contract remained unimplemented, blocking structured grounded answers with independent completion flags.

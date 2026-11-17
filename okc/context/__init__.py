@@ -13,6 +13,7 @@ from okc.context.models import (
 from okc.context.registry import ContextRegistry
 from okc.context.compatibility import EvidenceCompatibilityEngine
 from okc.context.answer import AnswerStage, AnswerResult
+from okc.context.query_engine import QueryContextEngine
 
 __all__ = [
     "AffordanceAvailability",
@@ -24,6 +25,7 @@ __all__ = [
     "EvidenceCompatibilityEngine",
     "ExpansionAffordance",
     "ParameterStatus",
+    "QueryContextEngine",
     "QueryContextEnvelope",
     "QueryParameter",
     "ResolutionPolicy",

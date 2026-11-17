@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-17
 
-**Basis:** Current main (Context-Aware Reasoning Answer Stage). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (Context-Aware Reasoning Query Context Engine). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -26,9 +26,10 @@
 
 ## Context-Aware Reasoning (locked design)
 - First gate: models, ContextRegistry, EvidenceCompatibilityEngine under okc/context/; Suites A–E deterministic tests executable.
-- Next increment: minimal AnswerStage (okc/context/answer.py) producing locked structured output with independent completion flags, assumption/unresolved/conflict disclosure, pre-authorized affordances only. Suite F regressions present. No deviation from contracts.
+- Answer Stage: minimal AnswerStage (okc/context/answer.py) producing locked structured output with independent completion flags, assumption/unresolved/conflict disclosure, pre-authorized affordances only. Suite F regressions present. No deviation from contracts.
+- Query Context Engine: QueryContextEngine (okc/context/query_engine.py) owns envelope revisions with parent lineage. Assumptions never auto-promote; only explicit user confirmation or new evidence does. Suite G regressions present. No deviation from contracts.
 
 ## Next
-Continue Context-Aware Reasoning (Query Context Engine) or remaining P1 authorization boundaries. Prefer smallest coherent change with new regression evidence against locked contracts.
+Continue Context-Aware Reasoning (evidence snapshot handling) or remaining P1 authorization boundaries. Prefer smallest coherent change with new regression evidence against locked contracts.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.

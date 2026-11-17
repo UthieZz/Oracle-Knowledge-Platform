@@ -15,6 +15,7 @@ from okc.context import (
     EvidenceCompatibilityEngine,
     ExpansionAffordance,
     ParameterStatus,
+    QueryContextEngine,
     QueryContextEnvelope,
     QueryParameter,
     ResolutionPolicy,
@@ -416,3 +417,55 @@ def test_F4_conflicts_force_incomplete_and_disclosed(registry: ContextRegistry) 
     assert result.completion.answer_delivered is True
     assert result.completion.contextually_complete is False
     assert "historical_period" in result.context.conflicted_dimensions
+
+
+# Suite G — Query Context Engine (envelope revision, assumption non-promotion)
+
+def test_G1_assumption_does_not_promote_status() -> None:
+    engine = QueryContextEngine()
+    parent = engine.create_envelope("e-g1", "q-g1", "pkg1")
+    revised = engine.apply_assumption(parent, "historical_period", "modern")
+    assert revised.revision == 2
+    assert revised.parent_revision == 1
+    param = revised.parameters["historical_period"]
+    assert param.status == ParameterStatus.MISSING
+    assert param.assumption == "modern"
+    assert param.source == "assumption"
+    # Original parent unchanged
+    assert "historical_period" not in parent.parameters
+
+
+def test_G2_user_confirmation_promotes() -> None:
+    engine = QueryContextEngine()
+    parent = engine.create_envelope("e-g2", "q-g2", "pkg1")
+    revised = engine.promote_with_user_confirmation(parent, "historical_period", "modern")
+    param = revised.parameters["historical_period"]
+    assert param.status == ParameterStatus.RESOLVED
+    assert param.value == "modern"
+    assert param.source == "user"
+    assert revised.parent_revision == 1
+
+
+def test_G3_evidence_promotes_and_new_snapshot() -> None:
+    engine = QueryContextEngine()
+    parent = engine.create_envelope("e-g3", "q-g3", "pkg1")
+    revised = engine.promote_with_evidence(
+        parent, "historical_period", "modern", "snap-new-1"
+    )
+    param = revised.parameters["historical_period"]
+    assert param.status == ParameterStatus.RESOLVED
+    assert param.source == "evidence"
+    assert revised.evidence_set_ref == "snap-new-1"
+    assert revised.revision == 2
+
+
+def test_G4_lineage_preserved_across_multiple_revisions() -> None:
+    engine = QueryContextEngine()
+    e1 = engine.create_envelope("e-g4", "q-g4", "pkg1")
+    e2 = engine.apply_assumption(e1, "historical_period", "medieval")
+    e3 = engine.promote_with_user_confirmation(e2, "historical_period", "modern")
+    assert e1.revision == 1 and e1.parent_revision is None
+    assert e2.revision == 2 and e2.parent_revision == 1
+    assert e3.revision == 3 and e3.parent_revision == 2
+    # Assumption from e2 not auto-promoted; e3 has resolved via user
+    assert e3.parameters["historical_period"].status == ParameterStatus.RESOLVED
