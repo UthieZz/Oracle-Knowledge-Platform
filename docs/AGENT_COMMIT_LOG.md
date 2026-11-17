@@ -1,3 +1,11 @@
+## 2026-11-17 — Context-Aware Reasoning answer from revised envelope (I-11)
+
+- Problem: After apply_expansion produced a new envelope revision, no orchestrator path existed to coordinate an answer from that existing revision without re-creating state.
+- Change: Added ContextOrchestrator.answer_from_envelope. Coordinates compatibility + AnswerStage on a caller-supplied envelope; does not mutate envelope, invent affordances, or contain domain logic. Suite I4 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 37 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by closing the expansion → answer coordination loop. No deviation from I-11.
+
 ## 2026-11-17 — Context-Aware Reasoning expansion creates immutable revision (I-09)
 
 - Problem: Orchestrator had no path to apply an ExpansionAffordance and produce a new envelope revision with parent lineage.

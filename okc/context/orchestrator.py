@@ -102,3 +102,27 @@ class ContextOrchestrator:
             source="expansion",
         )
         return self.query_engine.create_revision(parent_envelope, {dimension_id: assumed})
+
+    def answer_from_envelope(
+        self,
+        envelope: QueryContextEnvelope,
+        evidence_spans: Optional[List[Dict[str, Any]]] = None,
+        retrieval_paths: Optional[Dict[str, str]] = None,
+        conflicts: Optional[List[str]] = None,
+        evidence_summary: Optional[Dict[str, List[str]]] = None,
+    ) -> AnswerResult:
+        """Produce answer from an existing envelope revision (e.g. after apply_expansion).
+
+        Coordinates compatibility + answer stage only. Does not mutate envelope,
+        invent affordances, or contain domain logic (I-11).
+        """
+        spans = evidence_spans or []
+        affordances = self.compatibility.generate_affordances(
+            envelope, evidence_spans=spans, retrieval_paths=retrieval_paths or {}
+        )
+        return self.answer_stage.produce(
+            envelope,
+            affordances=affordances,
+            evidence_summary=evidence_summary,
+            conflicts=conflicts,
+        )

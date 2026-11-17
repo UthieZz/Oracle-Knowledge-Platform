@@ -689,3 +689,44 @@ def test_I3_apply_expansion_creates_immutable_revision_with_lineage(registry: Co
     assert assumed.parameters["historical_period"].value is None  # not promoted
     # Parent snapshot unchanged
     assert store.get(revised.evidence_set_ref).evidence_refs == ("ev-i3-1",)
+
+
+def test_I4_answer_from_revised_envelope_no_domain_logic(registry: ContextRegistry) -> None:
+    """I-11 / expansion loop: answer_from_envelope coordinates on existing revision without mutating it or inventing logic."""
+    from okc.context import ContextOrchestrator, EvidenceSnapshotStore, QueryParameter, ParameterStatus
+
+    store = EvidenceSnapshotStore()
+    orch = ContextOrchestrator(registry, snapshot_store=store)
+    parent = orch.query_engine.create_envelope(
+        envelope_id="e-i4",
+        query_id="q-i4",
+        package_ref="pkg-i4",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+            )
+        },
+    )
+    revised = orch.apply_expansion(
+        parent,
+        dimension_id="historical_period",
+        new_value="modern",
+        evidence_refs=["ev-i4"],
+    )
+    # Snapshot original revision id/status
+    orig_revision = revised.revision
+    orig_status = revised.parameters["historical_period"].status
+    result = orch.answer_from_envelope(
+        revised,
+        evidence_spans=[{"span_id": "ev-i4"}],
+        evidence_summary={"supporting": ["ev-i4"]},
+    )
+    # Envelope unchanged (no mutation)
+    assert revised.revision == orig_revision
+    assert revised.parameters["historical_period"].status == orig_status
+    # Answer coordinated from the existing revision
+    assert result.context.envelope_id == revised.envelope_id
+    assert result.context.revision == revised.revision
+    assert result.completion.answer_delivered is True
+    assert isinstance(result.expansion_affordances, list)
