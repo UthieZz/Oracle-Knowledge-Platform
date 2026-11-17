@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-16
+# OKP Stage — 2026-11-17
 
-**Basis:** Current main (open FDs health diagnostic). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (Context-Aware Reasoning Answer Stage). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -15,7 +15,7 @@
 
 ## Local OKC server (okc/server/app.py)
 - Upload/compile path honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export.
-- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable, db_exists) + tenant_configured / silo_configured + google_credentials_configured + active_jobs_count + upload_dir_absolute / db_path_absolute + process_id / cwd_absolute + upload_dir_configured / sqlite_path_configured + registry_ready / registered_plugins_count / registered_importers_count + upload_dir_free_mb / db_parent_free_mb + process_start_time_utc / uptime_seconds + listen_host / listen_port.
+- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable, db_exists) + tenant_configured / silo_configured + google_credentials_configured + active_jobs_count + upload_dir_absolute / db_path_absolute + process_id / cwd_absolute + upload_dir_configured / sqlite_path_configured + registry_ready / registered_plugins_count / registered_importers_count + upload_dir_free_mb / db_parent_free_mb + process_start_time_utc / uptime_seconds + listen_host / listen_port + memory_rss_mb + active_threads_count + cpu_count + load_average + open_file_descriptors_count + python_executable + registered_importer_names.
 - Job status reports mode used.
 - Regressions in tests/test_local_server_status.py green.
 
@@ -24,9 +24,11 @@
 - src/ remains for legacy compiler/UI and Gemini importer (functional, not stub).
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
-- /api/health reports strict_permissions mode + basic readiness (upload_dir_writable, db_parent_writable, db_exists) + tenant_configured / silo_configured + google_credentials_configured + active_jobs_count + upload_dir_absolute / db_path_absolute + process_id / cwd_absolute + upload_dir_configured / sqlite_path_configured + registry_ready / registered_plugins_count / registered_importers_count / registered_importer_names + upload_dir_free_mb / db_parent_free_mb + process_start_time_utc / uptime_seconds + listen_host / listen_port + memory_rss_mb + active_threads_count + cpu_count + load_average + open_file_descriptors_count + python_executable.
+## Context-Aware Reasoning (locked design)
+- First gate: models, ContextRegistry, EvidenceCompatibilityEngine under okc/context/; Suites A–E deterministic tests executable.
+- Next increment: minimal AnswerStage (okc/context/answer.py) producing locked structured output with independent completion flags, assumption/unresolved/conflict disclosure, pre-authorized affordances only. Suite F regressions present. No deviation from contracts.
 
 ## Next
-Continue P1 remaining authorization boundaries or further P3 diagnostics. Prefer smallest coherent change with new regression evidence.
+Continue Context-Aware Reasoning (Query Context Engine) or remaining P1 authorization boundaries. Prefer smallest coherent change with new regression evidence against locked contracts.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.
