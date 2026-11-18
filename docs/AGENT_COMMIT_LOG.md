@@ -1,3 +1,11 @@
+## 2026-11-18 — Context-Aware Reasoning confirmation completeness (I-09 / I-12)
+
+- Problem: After explicit user confirmation of a high-sensitivity parameter, AnswerStage still reported answer_delivered=False (insufficient_evidence) even though context was complete.
+- Change: AnswerStage.produce now treats any RESOLVED parameter as material for answer_delivered. Suite I7 chains process_query → confirm_parameter → answer_from_envelope and asserts independent flags + lineage.
+- Verification: pytest tests/test_context_aware_reasoning.py → 40 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by ensuring confirmation can produce a contextually complete, deliverable answer. No deviation from I-09 / I-11 / I-12.
+
 ## 2026-11-17 — Context-Aware Reasoning explicit user confirmation path (I-09 / I-11)
 
 - Problem: QueryContextEngine.promote_with_user_confirmation existed but orchestrator had no coordinated path for explicit user confirmation of a parameter.

@@ -844,3 +844,48 @@ def test_I6_confirm_parameter_creates_revision_with_user_source(registry: Contex
     assert revised.parameters["jurisdiction"].source == "user"
     # Original assumption preserved in history via parent
     assert env.parameters["jurisdiction"].assumption == "ZA"
+
+
+def test_I7_confirmation_makes_high_sensitivity_contextually_complete(registry: ContextRegistry) -> None:
+    """Suite I7: user confirmation of high-sensitivity dimension allows contextually_complete=True.
+
+    Chains process_query (with assumption) → confirm_parameter → answer_from_envelope.
+    Verifies independent flags, lineage (I-09), no auto-promotion, and no domain logic (I-11).
+    """
+    from okc.context.orchestrator import ContextOrchestrator
+    from okc.context.models import QueryParameter, ParameterStatus
+    from okc.context.snapshot_store import EvidenceSnapshotStore
+
+    store = EvidenceSnapshotStore()
+    orch = ContextOrchestrator(registry, snapshot_store=store)
+
+    initial = {
+        "historical_period": QueryParameter(
+            dimension_id="historical_period",
+            status=ParameterStatus.MISSING,
+            assumption="modern",
+            source="assumption",
+        )
+    }
+    env, affs, initial_result = orch.process_query(
+        query_id="q-i7",
+        package_ref="pkg1",
+        envelope_id="env-i7",
+        initial_parameters=initial,
+    )
+    assert initial_result.completion.answer_delivered is True
+    assert initial_result.completion.contextually_complete is False
+    assert "historical_period" in initial_result.context.unresolved_dimensions
+
+    revised = orch.confirm_parameter(env, "historical_period", "modern")
+    assert revised.revision == 2
+    assert revised.parent_revision == 1
+    assert revised.parameters["historical_period"].status == ParameterStatus.RESOLVED
+    assert revised.parameters["historical_period"].source == "user"
+
+    final_result = orch.answer_from_envelope(revised)
+    assert final_result.completion.answer_delivered is True
+    assert final_result.completion.contextually_complete is True
+    assert "historical_period" not in final_result.context.unresolved_dimensions
+    # Parent still incomplete
+    assert env.parameters["historical_period"].status == ParameterStatus.MISSING

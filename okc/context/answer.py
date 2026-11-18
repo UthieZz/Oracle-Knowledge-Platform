@@ -101,7 +101,9 @@ class AnswerStage:
         contextually_complete = len(unresolved) == 0 and len(conflicts) == 0
 
         # Minimal useful answer when any evidence or assumption exists
-        has_material = bool(evidence_summary.get("supporting")) or bool(applied)
+        has_material = bool(evidence_summary.get("supporting")) or bool(applied) or any(
+            p.status == ParameterStatus.RESOLVED for p in envelope.parameters.values()
+        )
         answer_delivered = has_material
 
         claims = []
