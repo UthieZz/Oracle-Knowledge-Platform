@@ -1024,3 +1024,31 @@ def test_I9_domain_rule_resolves_simple_conflict_preserves_evidence(registry: Co
     assert result.completion.contextually_complete is True
     assert result.completion.answer_delivered is True
 
+
+
+def test_D4_assumption_replacement_creates_new_revision(registry: ContextRegistry) -> None:
+    """Suite D4: assumption path creates new revision; original assumption preserved in parent history."""
+    from okc.context.orchestrator import ContextOrchestrator
+    store = EvidenceSnapshotStore()
+    orch = ContextOrchestrator(registry, snapshot_store=store)
+    parent = orch.query_engine.create_envelope(
+        envelope_id="d4",
+        query_id="qd4",
+        package_ref="pkg",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+                assumption="ancient",
+            )
+        },
+    )
+    revised = orch.apply_expansion(parent, "historical_period", "modern")
+    assert revised.revision == parent.revision + 1
+    assert revised.parent_revision == parent.revision
+    # Original assumption preserved in parent
+    assert parent.parameters["historical_period"].assumption == "ancient"
+    # New revision has the replacement as assumption (never auto-promoted)
+    assert revised.parameters["historical_period"].assumption == "modern"
+    assert revised.parameters["historical_period"].status == ParameterStatus.MISSING
+    assert revised.parameters["historical_period"].source == "expansion"

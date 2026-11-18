@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-18
 
-**Basis:** Current main (Context-Aware Reasoning domain-rule resolution for simple conflicts + confirmation completeness). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (Context-Aware Reasoning D4 assumption replacement + domain-rule resolution for simple conflicts + confirmation completeness). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -25,11 +25,11 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
-- Simple conflict detection: EvidenceCompatibilityEngine.detect_simple_conflicts + orchestrator auto-disclosure when spans present. Suite I8 verifies retention and incomplete flag. 41 passed.
+- D4 assumption replacement regression + simple conflict detection: EvidenceCompatibilityEngine.detect_simple_conflicts + orchestrator auto-disclosure when spans present. Suite I8 verifies retention and incomplete flag. 43 passed.
 
 - Orchestrator confirmation path + AnswerStage materiality: Suite I7 verifies user confirmation of high-sensitivity dimension yields contextually_complete=True and answer_delivered=True. 40 passed.
 
-- Conflict affordances: generate_affordances emits one AVAILABLE per distinct constrained value on unresolved conflict (C4). No silent majority (C3). Suite C3/C4 real. 42 passed.
+- Conflict affordances: generate_affordances emits one AVAILABLE per distinct constrained value on unresolved conflict (C4). No silent majority (C3). Suite C3/C4 real. 43 passed.
 - Orchestrator: ContextOrchestrator now exposes confirm_parameter for explicit user confirmation (delegates to engine; I-09 lineage). Suite I6 present. 39 passed.
 - Orchestrator: ContextOrchestrator coordinates create → affordances → answer without domain logic (I-11). When snapshot store present and package/spans supplied, create_envelope attaches immutable initial snapshot (I-10). apply_expansion produces immutable revision with parent lineage (I-09); evidence path creates new snapshot, assumption path sets MISSING + disclosed assumption (never auto-promoted). answer_from_envelope coordinates answer on an existing revision without mutation. Suite I2 + I3 + I4 present. 38 passed. No deviation.
 - Package adapter: extract_evidence_spans maps KnowledgePackage to evidence spans (existing only + explicit metadata constraints). Suite I1 present.

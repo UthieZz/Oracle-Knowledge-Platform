@@ -1,3 +1,19 @@
+## 2026-11-18 — Context-Aware Reasoning D4 assumption replacement revision (I-09)
+
+
+
+- Problem: Suite D4 (assumption replacement creates new revision; original preserved in history) was not covered by a dedicated regression.
+
+- Change: Added test_D4_assumption_replacement_creates_new_revision verifying apply_expansion assumption path produces immutable child revision with parent lineage, original assumption intact in parent, new assumption set without auto-promotion.
+
+- Verification: pytest tests/test_context_aware_reasoning.py → 43 passed.
+
+- Knowledge Core IR and Connect contracts unchanged.
+
+- Advances locked Context-Aware Reasoning by closing the D4 deterministic gate. No deviation from I-09 / I-11.
+
+
+
 
 ## 2026-11-18 — Context-Aware Reasoning both alternatives as affordances on conflict (C4 / C3)
 
