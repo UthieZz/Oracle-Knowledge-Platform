@@ -102,6 +102,7 @@ class EvidenceCompatibilityEngine:
                                 source_envelope_id=envelope.envelope_id,
                                 source_revision=envelope.revision,
                                 evidence_set_ref=envelope.evidence_set_ref,
+                                projected_change="estimate: may resolve or refine dimension",
                             )
                         )
                         emitted_any = True
@@ -125,6 +126,7 @@ class EvidenceCompatibilityEngine:
                             source_envelope_id=envelope.envelope_id,
                             source_revision=envelope.revision,
                             evidence_set_ref=envelope.evidence_set_ref,
+                            projected_change="estimate: may resolve or refine dimension",
                         )
                     )
                 elif dim_id in retrieval_paths:
@@ -137,6 +139,7 @@ class EvidenceCompatibilityEngine:
                             effect="add_evidence",
                             source_envelope_id=envelope.envelope_id,
                             source_revision=envelope.revision,
+                            projected_change="estimate: may resolve or refine dimension",
                             cost="defined_path",
                         )
                     )

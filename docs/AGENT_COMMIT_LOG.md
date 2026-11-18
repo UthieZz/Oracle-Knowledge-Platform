@@ -1,3 +1,11 @@
+## 2026-11-18 — Context-Aware Reasoning D5 projected_change estimate population
+
+- Problem: projected_change field existed as optional model attribute (estimate only) but was never populated by affordance generation.
+- Change: EvidenceCompatibilityEngine.generate_affordances now sets projected_change="estimate: may resolve or refine dimension" on every emitted AVAILABLE and RETRIEVABLE affordance. Assertions added to D1 and D2.
+- Verification: pytest tests/test_context_aware_reasoning.py → 43 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by making the estimate nature of projected_change operational. No deviation from D5 or I-11.
+
 ## 2026-11-18 — Context-Aware Reasoning D4 assumption replacement revision (I-09)
 
 

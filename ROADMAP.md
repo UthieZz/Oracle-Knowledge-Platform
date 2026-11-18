@@ -83,6 +83,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-18)
+
+- Context-Aware Reasoning D5 projected_change: EvidenceCompatibilityEngine.generate_affordances now populates projected_change with an estimate-only string on all emitted affordances (AVAILABLE and RETRIEVABLE). Suite D1/D2 regressions extended. 43 passed. No deviation from D5 (estimate, not promise) or I-11. Next: remaining P1 boundaries or further retrieval integration.
+
 - Context-Aware Reasoning D4 assumption replacement creates new revision with parent lineage; original assumption preserved. Suite D4 added. 43 passed. No deviation from I-09. Next: remaining P1 boundaries or further retrieval integration.
 
 - Context-Aware Reasoning domain-rule resolution for simple conflicts: EvidenceCompatibilityEngine.apply_simple_domain_rules + ContextOrchestrator applies optional domain_rules only when preferred_value is among observed evidence (C2). Creates new revision with source="domain_rule", discloses rationale, preserves conflicting values in claim. Suite I9 added. 42 passed. No domain logic in orchestrator, no silent invention. Next: remaining P1 boundaries or further retrieval integration.

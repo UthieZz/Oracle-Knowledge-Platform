@@ -232,6 +232,7 @@ def test_D1_available_when_evidence_present(registry: ContextRegistry) -> None:
     affs = engine.generate_affordances(envelope, spans)
     assert len(affs) == 1
     assert affs[0].availability == AffordanceAvailability.AVAILABLE
+    assert affs[0].projected_change == "estimate: may resolve or refine dimension"
 
 
 def test_D2_retrievable_when_path_exists(registry: ContextRegistry) -> None:
@@ -254,6 +255,7 @@ def test_D2_retrievable_when_path_exists(registry: ContextRegistry) -> None:
     assert len(affs) == 1
     assert affs[0].availability == AffordanceAvailability.RETRIEVABLE
     assert affs[0].cost == "defined_path"
+    assert affs[0].projected_change == "estimate: may resolve or refine dimension"
 
 
 def test_D3_unsupported_never_emitted(registry: ContextRegistry) -> None:
