@@ -124,3 +124,43 @@ class EvidenceCompatibilityEngine:
                     continue
                 observed.setdefault(dim_id, set()).add(value)
         return sorted(dim for dim, vals in observed.items() if len(vals) > 1)
+
+    def apply_simple_domain_rules(
+        self,
+        conflicts: List[str],
+        evidence_spans: List[Dict[str, Any]],
+        domain_rules: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Dict[str, Any]]:
+        """Apply optional domain rules to simple conflicts (C2).
+
+        domain_rules: {dimension_id: {"preferred_value": Any, "rationale": str}}
+        Only applies when preferred_value is among the observed conflicting values.
+        Returns {dim_id: {"resolved_value": ..., "rationale": ..., "preserved_values": set}}
+        Does not invent values; preserves all conflicting evidence. No silent override.
+        """
+        if not conflicts or not domain_rules:
+            return {}
+        observed: Dict[str, set] = {}
+        for span in evidence_spans:
+            constraints = span.get("constraints") or {}
+            for dim_id, value in constraints.items():
+                if dim_id not in conflicts or value is None or isinstance(value, list):
+                    continue
+                observed.setdefault(dim_id, set()).add(value)
+
+        resolutions: Dict[str, Dict[str, Any]] = {}
+        for dim_id in conflicts:
+            rule = domain_rules.get(dim_id)
+            if not rule:
+                continue
+            preferred = rule.get("preferred_value")
+            rationale = rule.get("rationale", "domain rule applied")
+            vals = observed.get(dim_id, set())
+            if preferred in vals:
+                resolutions[dim_id] = {
+                    "resolved_value": preferred,
+                    "rationale": rationale,
+                    "preserved_values": vals,
+                }
+        return resolutions
+

@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-18)
+- Context-Aware Reasoning domain-rule resolution for simple conflicts: EvidenceCompatibilityEngine.apply_simple_domain_rules + ContextOrchestrator applies optional domain_rules only when preferred_value is among observed evidence (C2). Creates new revision with source="domain_rule", discloses rationale, preserves conflicting values in claim. Suite I9 added. 42 passed. No domain logic in orchestrator, no silent invention. Next: remaining P1 boundaries or further retrieval integration.
+
 - Context-Aware Reasoning simple conflict detection: EvidenceCompatibilityEngine.detect_simple_conflicts + ContextOrchestrator auto-disclosure of multi-value constraints (C1). Suite I8 added. 41 passed. No domain logic, no silent override. Next: remaining P1 boundaries or further retrieval integration.
 
 ## Recent verified advances (2026-11-17)

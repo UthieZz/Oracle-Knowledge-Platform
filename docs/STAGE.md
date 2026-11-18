@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-18
 
-**Basis:** Current main (Context-Aware Reasoning simple conflict auto-detection + confirmation completeness). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (Context-Aware Reasoning domain-rule resolution for simple conflicts + confirmation completeness). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.

@@ -1,3 +1,11 @@
+## 2026-11-18 — Context-Aware Reasoning domain-rule resolution for simple conflicts (C2 / I-11)
+
+- Problem: No path to apply an optional versioned domain rule to a retained simple conflict while recording rationale and preserving all conflicting evidence.
+- Change: EvidenceCompatibilityEngine.apply_simple_domain_rules accepts {dim: {preferred_value, rationale}} and returns resolutions only when preferred is among observed values. ContextOrchestrator.process_query accepts domain_rules; on match creates new immutable revision (source="domain_rule"), passes remaining conflicts + rule_resolutions to AnswerStage which discloses rationale and preserved values. Suite I9 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 42 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by implementing C2 without embedding domain logic. No silent invention or majority override.
+
 ## 2026-11-18 — Context-Aware Reasoning simple conflict detection (C1 / I-11)
 
 - Problem: Conflicts between evidence constraints had to be supplied by the caller; no automatic retention/disclosure path for simple multi-value cases.

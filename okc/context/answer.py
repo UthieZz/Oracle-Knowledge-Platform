@@ -79,9 +79,11 @@ class AnswerStage:
         affordances: List[ExpansionAffordance],
         evidence_summary: Optional[Dict[str, List[str]]] = None,
         conflicts: Optional[List[str]] = None,
+        rule_resolutions: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> AnswerResult:
         evidence_summary = evidence_summary or {}
         conflicts = conflicts or []
+        rule_resolutions = rule_resolutions or {}
 
         # Context disclosure
         applied = []
@@ -126,6 +128,15 @@ class AnswerStage:
                 )
             )
             content_parts.append("Supported findings available.")
+        # Disclose domain-rule resolutions (C2) while preserving that conflict existed
+        for dim_id, res in rule_resolutions.items():
+            claims.append(
+                Claim(
+                    text=f"Resolved {dim_id}={res['resolved_value']} via domain rule: {res['rationale']} (conflicting values retained: {res['preserved_values']})",
+                    support_status="supported",
+                )
+            )
+            content_parts.append(f"Domain rule applied to {dim_id}")
         if not content_parts:
             content_parts.append("No material evidence or assumptions for a useful answer.")
 
@@ -134,6 +145,9 @@ class AnswerStage:
             qualifications.append(f"Unresolved high-sensitivity dimensions: {', '.join(unresolved)}")
         if conflicts:
             qualifications.append(f"Conflicts retained: {', '.join(conflicts)}")
+        if rule_resolutions:
+            quals = [f"{d}: {r['rationale']}" for d, r in rule_resolutions.items()]
+            qualifications.append(f"Domain rules applied: {'; '.join(quals)}")
 
         reason = None if answer_delivered else "insufficient_evidence"
 

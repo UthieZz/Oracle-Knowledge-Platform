@@ -922,3 +922,53 @@ def test_I8_auto_detect_simple_conflicts_disclosed(registry: ContextRegistry) ->
     assert result.completion.answer_delivered is False  # no supporting material or assumption
     # No silent winner; both alternatives remain eligible via engine if candidates supplied
     assert isinstance(affordances, list)
+
+
+def test_I9_domain_rule_resolves_simple_conflict_preserves_evidence(registry: ContextRegistry) -> None:
+    """Suite I9 / C2: domain rule applied to simple conflict; rationale recorded; evidence preserved.
+
+    Preferred value must already be among observed constraints. No silent invention.
+    Envelope revised with source=domain_rule; remaining conflicts empty for that dim.
+    """
+    from okc.context.orchestrator import ContextOrchestrator
+
+    orch = ContextOrchestrator(registry)
+    initial = {
+        "historical_period": QueryParameter(
+            dimension_id="historical_period",
+            status=ParameterStatus.MISSING,
+        )
+    }
+    spans = [
+        {"span_id": "s1", "constraints": {"historical_period": "modern"}},
+        {"span_id": "s2", "constraints": {"historical_period": "ancient"}},
+    ]
+    domain_rules = {
+        "historical_period": {
+            "preferred_value": "modern",
+            "rationale": "prefer modern for contemporary analysis",
+        }
+    }
+    envelope, affordances, result = orch.process_query(
+        query_id="q-i9",
+        package_ref="pkg1",
+        envelope_id="e-i9",
+        initial_parameters=initial,
+        evidence_spans=spans,
+        domain_rules=domain_rules,
+    )
+    # Resolved via rule
+    param = envelope.parameters["historical_period"]
+    assert param.status == ParameterStatus.RESOLVED
+    assert param.value == "modern"
+    assert param.source == "domain_rule"
+    # Conflict no longer listed (resolved); rationale disclosed
+    assert "historical_period" not in result.context.conflicted_dimensions
+    assert any("domain rule" in q.lower() for q in result.answer.qualifications)
+    assert any("prefer modern" in c.text for c in result.answer.claims)
+    # Original conflict values preserved in claim text
+    assert "ancient" in str(result.answer.claims)
+    # Contextually complete if no other unresolved high-sensitivity
+    assert result.completion.contextually_complete is True
+    assert result.completion.answer_delivered is True
+

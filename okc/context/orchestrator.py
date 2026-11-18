@@ -45,10 +45,13 @@ class ContextOrchestrator:
         retrieval_paths: Optional[Dict[str, str]] = None,
         conflicts: Optional[List[str]] = None,
         evidence_summary: Optional[Dict[str, List[str]]] = None,
+        domain_rules: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> tuple[QueryContextEnvelope, List[ExpansionAffordance], AnswerResult]:
         """Create envelope, request affordances from compatibility engine, produce answer.
 
         Does not interpret evidence, resolve dimensions, or invent affordances.
+        Domain rules (if supplied) are applied only for simple conflicts whose preferred
+        value is already among the observed evidence (C2). No domain logic resides here.
         """
         if evidence_spans is None and package is not None:
             spans = extract_evidence_spans(package)
@@ -71,11 +74,33 @@ class ContextOrchestrator:
         if conflicts is None and spans:
             dim_ids = list(envelope.parameters.keys()) if envelope.parameters else None
             conflicts = self.compatibility.detect_simple_conflicts(spans, dim_ids)
+
+        # Apply optional domain rules for C2 (preserve evidence; no silent winner)
+        rule_resolutions: Dict[str, Dict[str, Any]] = {}
+        remaining_conflicts = conflicts or []
+        if domain_rules and conflicts and spans:
+            rule_resolutions = self.compatibility.apply_simple_domain_rules(
+                conflicts, spans, domain_rules
+            )
+            if rule_resolutions:
+                # Create revised envelope with resolved parameters (source=domain_rule)
+                updated_params = dict(envelope.parameters)
+                for dim_id, res in rule_resolutions.items():
+                    updated_params[dim_id] = QueryParameter(
+                        dimension_id=dim_id,
+                        status=ParameterStatus.RESOLVED,
+                        value=res["resolved_value"],
+                        source="domain_rule",
+                    )
+                envelope = self.query_engine.create_revision(envelope, updated_params)
+                remaining_conflicts = [c for c in remaining_conflicts if c not in rule_resolutions]
+
         result = self.answer_stage.produce(
             envelope,
             affordances=affordances,
             evidence_summary=evidence_summary,
-            conflicts=conflicts,
+            conflicts=remaining_conflicts,
+            rule_resolutions=rule_resolutions,
         )
         return envelope, affordances, result
 
