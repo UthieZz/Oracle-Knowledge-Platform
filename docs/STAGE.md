@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-17
+# OKP Stage — 2026-11-18
 
-**Basis:** Current main (Context-Aware Reasoning package adapter + initial snapshot on process_query + apply_expansion lineage). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (Context-Aware Reasoning simple conflict auto-detection + confirmation completeness). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -25,6 +25,8 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
+- Simple conflict detection: EvidenceCompatibilityEngine.detect_simple_conflicts + orchestrator auto-disclosure when spans present. Suite I8 verifies retention and incomplete flag. 41 passed.
+
 - Orchestrator confirmation path + AnswerStage materiality: Suite I7 verifies user confirmation of high-sensitivity dimension yields contextually_complete=True and answer_delivered=True. 40 passed.
 
 - Orchestrator: ContextOrchestrator now exposes confirm_parameter for explicit user confirmation (delegates to engine; I-09 lineage). Suite I6 present. 39 passed.

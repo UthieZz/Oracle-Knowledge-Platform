@@ -67,6 +67,10 @@ class ContextOrchestrator:
         affordances = self.compatibility.generate_affordances(
             envelope, evidence_spans=spans, retrieval_paths=retrieval_paths or {}
         )
+        # Auto-detect simple conflicts when caller does not supply them (C1 retention)
+        if conflicts is None and spans:
+            dim_ids = list(envelope.parameters.keys()) if envelope.parameters else None
+            conflicts = self.compatibility.detect_simple_conflicts(spans, dim_ids)
         result = self.answer_stage.produce(
             envelope,
             affordances=affordances,
@@ -120,6 +124,10 @@ class ContextOrchestrator:
         affordances = self.compatibility.generate_affordances(
             envelope, evidence_spans=spans, retrieval_paths=retrieval_paths or {}
         )
+        # Auto-detect simple conflicts when caller does not supply them (C1 retention)
+        if conflicts is None and spans:
+            dim_ids = list(envelope.parameters.keys()) if envelope.parameters else None
+            conflicts = self.compatibility.detect_simple_conflicts(spans, dim_ids)
         return self.answer_stage.produce(
             envelope,
             affordances=affordances,

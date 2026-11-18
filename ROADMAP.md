@@ -1,6 +1,6 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-17  
+**Updated:** 2026-11-18  
 **Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.  
 Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.  
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
@@ -81,6 +81,9 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Preserve pipeline: IMPORT → NORMALIZE → PROCESS → ENRICH → VALIDATE → COMPILE → PACKAGE.
 - Small, reversible, tested changes. Protect unrelated work.
 - Do not claim B2B readiness without evidence.
+
+## Recent verified advances (2026-11-18)
+- Context-Aware Reasoning simple conflict detection: EvidenceCompatibilityEngine.detect_simple_conflicts + ContextOrchestrator auto-disclosure of multi-value constraints (C1). Suite I8 added. 41 passed. No domain logic, no silent override. Next: remaining P1 boundaries or further retrieval integration.
 
 ## Recent verified advances (2026-11-17)
 - Context-Aware Reasoning confirmation completeness loop: ContextOrchestrator.confirm_parameter + answer_from_envelope after process_query with assumption. AnswerStage now treats RESOLVED parameters as material for answer_delivered. Suite I7 added. 40 passed. No deviation from locked contracts. Next: remaining P1 boundaries or further retrieval integration.

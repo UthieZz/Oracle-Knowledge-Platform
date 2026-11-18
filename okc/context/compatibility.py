@@ -97,3 +97,30 @@ class EvidenceCompatibilityEngine:
                 )
             # unsupported never emitted
         return affordances
+
+    def detect_simple_conflicts(
+        self,
+        evidence_spans: List[Dict[str, Any]],
+        dimension_ids: Optional[List[str]] = None,
+    ) -> List[str]:
+        """Detect dimensions with multiple distinct constrained values across spans.
+
+        Returns dimension_ids that have conflicting fully-specified constraints.
+        No domain rules applied; no silent winner. Unconstrained spans ignored.
+        Caller (orchestrator) may pass result to Answer Stage for disclosure.
+        """
+        if not evidence_spans:
+            return []
+        observed: Dict[str, set] = {}
+        for span in evidence_spans:
+            constraints = span.get("constraints") or {}
+            for dim_id, value in constraints.items():
+                if dimension_ids is not None and dim_id not in dimension_ids:
+                    continue
+                if value is None:
+                    continue
+                # Treat list constraints as potential partial; collect only scalar for conflict
+                if isinstance(value, list):
+                    continue
+                observed.setdefault(dim_id, set()).add(value)
+        return sorted(dim for dim, vals in observed.items() if len(vals) > 1)

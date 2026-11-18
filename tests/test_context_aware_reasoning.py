@@ -889,3 +889,36 @@ def test_I7_confirmation_makes_high_sensitivity_contextually_complete(registry: 
     assert "historical_period" not in final_result.context.unresolved_dimensions
     # Parent still incomplete
     assert env.parameters["historical_period"].status == ParameterStatus.MISSING
+
+
+def test_I8_auto_detect_simple_conflicts_disclosed(registry: ContextRegistry) -> None:
+    """Suite I8 / C1: orchestrator auto-detects simple conflicting constraints and discloses them.
+
+    No domain rule applied; both values retained; contextually_complete=False.
+    Caller does not need to pass conflicts explicitly.
+    """
+    from okc.context.orchestrator import ContextOrchestrator
+
+    orch = ContextOrchestrator(registry)
+    initial = {
+        "historical_period": QueryParameter(
+            dimension_id="historical_period",
+            status=ParameterStatus.MISSING,
+        )
+    }
+    spans = [
+        {"span_id": "s1", "constraints": {"historical_period": "modern"}},
+        {"span_id": "s2", "constraints": {"historical_period": "ancient"}},
+    ]
+    envelope, affordances, result = orch.process_query(
+        query_id="q-i8",
+        package_ref="pkg1",
+        envelope_id="e-i8",
+        initial_parameters=initial,
+        evidence_spans=spans,
+    )
+    assert "historical_period" in result.context.conflicted_dimensions
+    assert result.completion.contextually_complete is False
+    assert result.completion.answer_delivered is False  # no supporting material or assumption
+    # No silent winner; both alternatives remain eligible via engine if candidates supplied
+    assert isinstance(affordances, list)

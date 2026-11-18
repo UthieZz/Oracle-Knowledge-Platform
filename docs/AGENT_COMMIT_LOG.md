@@ -1,3 +1,11 @@
+## 2026-11-18 — Context-Aware Reasoning simple conflict detection (C1 / I-11)
+
+- Problem: Conflicts between evidence constraints had to be supplied by the caller; no automatic retention/disclosure path for simple multi-value cases.
+- Change: EvidenceCompatibilityEngine.detect_simple_conflicts returns dimension_ids with multiple distinct scalar constraints. ContextOrchestrator.process_query and answer_from_envelope auto-detect when conflicts argument is None and spans present. No domain rules, no silent override. Suite I8 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 41 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by ensuring simple conflicts are retained and disclosed. No deviation from C1 / I-11.
+
 ## 2026-11-18 — Context-Aware Reasoning confirmation completeness (I-09 / I-12)
 
 - Problem: After explicit user confirmation of a high-sensitivity parameter, AnswerStage still reported answer_delivered=False (insufficient_evidence) even though context was complete.
