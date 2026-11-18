@@ -165,7 +165,7 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Dockerfile and operator guide updated with reproducible Docker start for the local-folder Connect worker (P3).
 
 ## Next highest-value action
-Continue remaining P1 authorization boundaries or further Context-Aware Reasoning integration (e.g., real evidence retrieval path). Prefer smallest coherent change with new regression evidence against locked contracts.
+Continue remaining P1 authorization boundaries or further Context-Aware Reasoning integration (C4 multi-alternative affordances now implemented) (e.g., real evidence retrieval path). Prefer smallest coherent change with new regression evidence against locked contracts.
 
 
 Continue Context-Aware Reasoning (orchestrator wiring of QueryContextEngine + snapshot store) or remaining P1 authorization boundaries. Prefer the smallest coherent change that produces new regression evidence against locked contracts.

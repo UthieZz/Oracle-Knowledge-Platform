@@ -149,14 +149,66 @@ def test_C1_conflict_retained_when_no_rule() -> None:
 
 
 def test_C3_no_silent_majority_or_provenance_override() -> None:
-    # Explicit: engine does not select winner by count or provenance
-    assert True  # covered by C1 contract; no majority logic present
+    """C3: engine never selects a winner by count or provenance.
+    Both values remain eligible affordances; no override applied.
+    """
+    engine = EvidenceCompatibilityEngine(ContextRegistry())
+    envelope = QueryContextEnvelope(
+        envelope_id="c3",
+        revision=1,
+        query_id="qc3",
+        package_ref="pkg1",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+            )
+        },
+    )
+    # Three spans support "modern", one supports "ancient" — majority must not win
+    spans = [
+        {"constraints": {"historical_period": "modern"}},
+        {"constraints": {"historical_period": "modern"}},
+        {"constraints": {"historical_period": "modern"}},
+        {"constraints": {"historical_period": "ancient"}},
+    ]
+    affs = engine.generate_affordances(envelope, spans)
+    targets = {a.target_value for a in affs}
+    assert "modern" in targets
+    assert "ancient" in targets
+    assert len(affs) == 2  # both alternatives retained; no silent majority
 
 
-def test_C4_both_alternatives_become_affordances() -> None:
-    # When well-supported alternatives exist, both can be offered
-    # (minimal: engine can emit multiple if caller supplies candidates)
-    assert True  # eligibility produced only by engine; see D-suite
+def test_C4_both_alternatives_become_affordances(registry: ContextRegistry) -> None:
+    """C4: when well-supported alternatives exist and no domain rule resolves,
+    both become eligible affordances. Eligibility produced only by the engine.
+    """
+    engine = EvidenceCompatibilityEngine(registry)
+    envelope = QueryContextEnvelope(
+        envelope_id="c4",
+        revision=1,
+        query_id="qc4",
+        package_ref="pkg1",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+            )
+        },
+    )
+    spans = [
+        {"constraints": {"historical_period": "modern"}},
+        {"constraints": {"historical_period": "ancient"}},
+    ]
+    affs = engine.generate_affordances(envelope, spans)
+    assert len(affs) == 2
+    targets = sorted(a.target_value for a in affs)
+    assert targets == ["ancient", "modern"]
+    for a in affs:
+        assert a.availability == AffordanceAvailability.AVAILABLE
+        assert a.effect == "add_evidence"
+        assert a.source_envelope_id == "c4"
+        assert a.source_revision == 1
 
 
 # Suite D — Affordance Generation

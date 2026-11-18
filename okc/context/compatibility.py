@@ -56,45 +56,90 @@ class EvidenceCompatibilityEngine:
         evidence_spans: List[Dict[str, Any]],
         retrieval_paths: Optional[Dict[str, str]] = None,
     ) -> List[ExpansionAffordance]:
-        """D1-D5. Only available/retrievable emitted."""
+        """D1-D5. Only available/retrievable emitted.
+
+        For unresolved dimensions, emit one AVAILABLE affordance per distinct
+        fully-specified constrained value observed in the evidence spans.
+        This makes both (or all) well-supported alternatives eligible when a
+        conflict exists and no domain rule has resolved it (C4). No majority
+        or provenance override is applied (C3).
+        """
         affordances: List[ExpansionAffordance] = []
         retrieval_paths = retrieval_paths or {}
+        # Pre-collect distinct constrained values per dimension
+        observed: Dict[str, set] = {}
+        for span in evidence_spans:
+            constraints = span.get("constraints") or {}
+            for dim_id, value in constraints.items():
+                if value is None or isinstance(value, list):
+                    continue
+                observed.setdefault(dim_id, set()).add(value)
+
         for dim_id, param in envelope.parameters.items():
             if param.status == ParameterStatus.RESOLVED:
                 continue
-            candidate = param.value if param.value is not None else "candidate"
-            supporting = [
-                s
-                for s in evidence_spans
-                if self.classify(s.get("constraints", {}), dim_id, candidate)
-                == CompatibilityState.FULLY_COMPATIBLE
-            ]
-            if supporting:
-                affordances.append(
-                    ExpansionAffordance(
-                        affordance_id=f"aff-{envelope.envelope_id}-{dim_id}-reuse",
-                        dimension_id=dim_id,
-                        target_value=candidate,
-                        availability=AffordanceAvailability.AVAILABLE,
-                        effect="add_evidence",
-                        source_envelope_id=envelope.envelope_id,
-                        source_revision=envelope.revision,
-                        evidence_set_ref=envelope.evidence_set_ref,
+            # C4: when multiple distinct constrained values exist (conflict, no rule applied),
+            # emit one AVAILABLE affordance for each. No silent selection (C3).
+            # Otherwise preserve original single-candidate / retrieval path (D1/D2).
+            candidates = sorted(observed.get(dim_id, set()))
+            emitted_any = False
+            if len(candidates) > 1:
+                for candidate in candidates:
+                    supporting = [
+                        s
+                        for s in evidence_spans
+                        if self.classify(s.get("constraints", {}), dim_id, candidate)
+                        == CompatibilityState.FULLY_COMPATIBLE
+                    ]
+                    if supporting:
+                        affordances.append(
+                            ExpansionAffordance(
+                                affordance_id=f"aff-{envelope.envelope_id}-{dim_id}-{candidate}",
+                                dimension_id=dim_id,
+                                target_value=candidate,
+                                availability=AffordanceAvailability.AVAILABLE,
+                                effect="add_evidence",
+                                source_envelope_id=envelope.envelope_id,
+                                source_revision=envelope.revision,
+                                evidence_set_ref=envelope.evidence_set_ref,
+                            )
+                        )
+                        emitted_any = True
+            # Fallback single candidate path (no conflict, or no multi-values)
+            if not emitted_any:
+                candidate = param.value if param.value is not None else "candidate"
+                supporting = [
+                    s
+                    for s in evidence_spans
+                    if self.classify(s.get("constraints", {}), dim_id, candidate)
+                    == CompatibilityState.FULLY_COMPATIBLE
+                ]
+                if supporting:
+                    affordances.append(
+                        ExpansionAffordance(
+                            affordance_id=f"aff-{envelope.envelope_id}-{dim_id}-reuse",
+                            dimension_id=dim_id,
+                            target_value=candidate,
+                            availability=AffordanceAvailability.AVAILABLE,
+                            effect="add_evidence",
+                            source_envelope_id=envelope.envelope_id,
+                            source_revision=envelope.revision,
+                            evidence_set_ref=envelope.evidence_set_ref,
+                        )
                     )
-                )
-            elif dim_id in retrieval_paths:
-                affordances.append(
-                    ExpansionAffordance(
-                        affordance_id=f"aff-{envelope.envelope_id}-{dim_id}-retrieve",
-                        dimension_id=dim_id,
-                        target_value=candidate,
-                        availability=AffordanceAvailability.RETRIEVABLE,
-                        effect="add_evidence",
-                        source_envelope_id=envelope.envelope_id,
-                        source_revision=envelope.revision,
-                        cost="defined_path",
+                elif dim_id in retrieval_paths:
+                    affordances.append(
+                        ExpansionAffordance(
+                            affordance_id=f"aff-{envelope.envelope_id}-{dim_id}-retrieve",
+                            dimension_id=dim_id,
+                            target_value=candidate,
+                            availability=AffordanceAvailability.RETRIEVABLE,
+                            effect="add_evidence",
+                            source_envelope_id=envelope.envelope_id,
+                            source_revision=envelope.revision,
+                            cost="defined_path",
+                        )
                     )
-                )
             # unsupported never emitted
         return affordances
 

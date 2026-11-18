@@ -1,3 +1,12 @@
+
+## 2026-11-18 — Context-Aware Reasoning both alternatives as affordances on conflict (C4 / C3)
+
+- Problem: Suite C4 was a stub. When evidence contained conflicting fully-specified values for an unresolved dimension and no domain rule resolved it, only a single candidate affordance (or none) was emitted. Majority or silent selection risk existed.
+- Change: EvidenceCompatibilityEngine.generate_affordances now emits one AVAILABLE affordance per distinct constrained value when a conflict is present (len(candidates) > 1). No majority/provenance override. Original single-candidate and RETRIEVABLE paths preserved for non-conflict cases. Suite C3 and C4 replaced with real assertions. 42 passed.
+- Verification: pytest tests/test_context_aware_reasoning.py → 42 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by making both well-supported alternatives eligible affordances. No deviation from C3/C4 or I-11.
+
 ## 2026-11-18 — Context-Aware Reasoning domain-rule resolution for simple conflicts (C2 / I-11)
 
 - Problem: No path to apply an optional versioned domain rule to a retained simple conflict while recording rationale and preserving all conflicting evidence.
