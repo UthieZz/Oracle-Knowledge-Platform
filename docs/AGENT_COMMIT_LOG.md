@@ -1,3 +1,11 @@
+## 2026-11-19 — Context-Aware Reasoning conflicts disclosed as conflicted claims (I-08)
+
+- Problem: Retained conflicts were disclosed only in qualifications and context fields. No material claim with support_status=conflicted appeared in the claims array, weakening I-08 (every material factual claim must appear in claims) and the mandatory disclosure rule for unresolved conflicts.
+- Change: AnswerStage.produce now emits a dedicated claim (support_status=conflicted) listing the conflicted dimensions and stating that neither value is treated as established. Evidence refs from conflicting spans are attached when present. Suite F8 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 48 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by making conflict retention visible in the structured claims. No deviation from Answer-Stage contract, C1, or I-08 / I-12.
+
 ## 2026-11-19 — Context-Aware Reasoning completion reason disclosure for incomplete context (I-12)
 
 - Problem: When an answer was delivered under unresolved high-sensitivity dimensions, Completion.reason remained None. Callers had to inspect unresolved_dimensions separately to understand why contextually_complete=False.

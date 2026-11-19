@@ -148,6 +148,15 @@ class AnswerStage:
                     evidence_refs=evidence_summary["background"],
                 )
             )
+        # Disclose retained conflicts as material claims (no silent winner)
+        if conflicts:
+            claims.append(
+                Claim(
+                    text=f"Conflicts retained and disclosed for dimensions: {', '.join(conflicts)} (neither value treated as established)",
+                    support_status="conflicted",
+                    evidence_refs=evidence_summary.get("conflicting", []),
+                )
+            )
         # Disclose domain-rule resolutions (C2) while preserving that conflict existed
         for dim_id, res in rule_resolutions.items():
             claims.append(

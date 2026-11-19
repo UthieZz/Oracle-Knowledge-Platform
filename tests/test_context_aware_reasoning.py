@@ -1224,3 +1224,34 @@ def test_F7_completion_reason_discloses_conflicts_retained(registry: ContextRegi
     assert result.completion.reason == "conflicts_retained"
     assert any("Conflicts retained" in q for q in result.answer.qualifications)
     assert "speaker_affiliation" in result.context.conflicted_dimensions
+
+
+def test_F8_conflicts_disclosed_as_conflicted_claims(registry: ContextRegistry) -> None:
+    """Retained conflicts produce an explicit claim with support_status=conflicted (I-08 / disclosure rule)."""
+    from okc.context.answer import AnswerStage
+    from okc.context.models import (
+        QueryContextEnvelope, QueryParameter, ParameterStatus,
+    )
+
+    env = QueryContextEnvelope(
+        envelope_id="e-f8",
+        query_id="q-f8",
+        package_ref="pkg-f8",
+        revision=1,
+        parameters={"speaker_affiliation": QueryParameter(dimension_id="speaker_affiliation", status=ParameterStatus.RESOLVED, value="internal")},
+    )
+    stage = AnswerStage(registry)
+    result = stage.produce(
+        env,
+        affordances=[],
+        evidence_summary={"supporting": ["span-a"], "conflicting": ["span-c"]},
+        conflicts=["speaker_affiliation"],
+    )
+    assert result.completion.answer_delivered is True
+    assert result.completion.contextually_complete is False
+    conflict_claims = [c for c in result.answer.claims if c.support_status == "conflicted"]
+    assert len(conflict_claims) == 1
+    assert "speaker_affiliation" in conflict_claims[0].text
+    assert "neither value treated as established" in conflict_claims[0].text
+    assert conflict_claims[0].evidence_refs == ["span-c"]
+    assert "speaker_affiliation" in result.context.conflicted_dimensions

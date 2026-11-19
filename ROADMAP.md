@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-19)
+- Context-Aware Reasoning conflicts as claims: AnswerStage emits support_status=conflicted claim for retained conflicts (neither treated as established). Suite F8. 48 passed. No deviation. Next: remaining P1 boundaries or further retrieval integration.
+
 - Context-Aware Reasoning completion reason: Suite F7 verifies conflicts_retained is disclosed when answer delivered under retained conflicts and no high-sensitivity unresolved. 47 passed. No deviation. Next: remaining P1 boundaries or further retrieval integration.
 
 
