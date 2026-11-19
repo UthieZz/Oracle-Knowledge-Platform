@@ -1087,3 +1087,80 @@ def test_F5_partial_and_background_claims_disclosed(registry: ContextRegistry) -
     # Background claim does not claim to establish dimension
     bg = next(c for c in result.answer.claims if c.support_status == "background")
     assert "not used to establish" in bg.text
+
+
+
+
+def test_I10_retrieval_makes_high_sensitivity_contextually_complete(registry: ContextRegistry) -> None:
+    """Suite I10: retrieval of evidence for RETRIEVABLE affordance resolves high-sensitivity dimension and allows contextually_complete=True.
+
+    Chains process_query → retrieve_for_affordance → answer_from_envelope.
+    Verifies independent flags, lineage (I-09), new snapshot (I-10), no domain logic (I-11).
+    """
+    from okc.context.orchestrator import ContextOrchestrator
+    from okc.context.models import (
+        QueryParameter,
+        ParameterStatus,
+        AffordanceAvailability,
+        ExpansionAffordance,
+    )
+    from okc.context.snapshot_store import EvidenceSnapshotStore
+
+    store = EvidenceSnapshotStore()
+    orch = ContextOrchestrator(registry, snapshot_store=store)
+
+    initial = {
+        "historical_period": QueryParameter(
+            dimension_id="historical_period",
+            status=ParameterStatus.MISSING,
+        )
+    }
+    # Start with no evidence so the dimension remains unresolved
+    envelope, _, first = orch.process_query(
+        query_id="q-i10",
+        package_ref="pkg-i10",
+        envelope_id="e-i10",
+        initial_parameters=initial,
+        evidence_spans=[],
+        retrieval_paths={"historical_period": "package"},
+    )
+    assert first.completion.contextually_complete is False
+    assert envelope.parameters["historical_period"].status == ParameterStatus.MISSING
+
+    # Controlled RETRIEVABLE affordance matching the envelope
+    aff = ExpansionAffordance(
+        affordance_id="aff-i10",
+        dimension_id="historical_period",
+        availability=AffordanceAvailability.RETRIEVABLE,
+        target_value="modern",
+        source_envelope_id=envelope.envelope_id,
+        source_revision=envelope.revision,
+        evidence_set_ref=envelope.evidence_set_ref,
+        effect="add_evidence",
+        projected_change="estimate: may resolve or refine dimension",
+    )
+
+    # Supply evidence spans that carry the resolving constraint
+    evidence_spans = [
+        {
+            "span_id": "sp-complete",
+            "content": "the period is modern",
+            "constraints": {"historical_period": "modern"},
+        }
+    ]
+    revised = orch.retrieve_for_affordance(envelope, aff, extra_spans=evidence_spans)
+
+    assert revised.revision == envelope.revision + 1
+    assert revised.parent_revision == envelope.revision
+    assert revised.parameters["historical_period"].status == ParameterStatus.RESOLVED
+    assert revised.parameters["historical_period"].value == "modern"
+    assert revised.evidence_set_ref is not None
+    assert revised.evidence_set_ref != envelope.evidence_set_ref
+
+    # Answer from the revised envelope with the same evidence
+    final = orch.answer_from_envelope(revised, evidence_spans=evidence_spans)
+    assert final.completion.answer_delivered is True
+    assert final.completion.contextually_complete is True
+    # Original envelope remains unchanged (immutable)
+    assert envelope.parameters["historical_period"].status == ParameterStatus.MISSING
+    assert envelope.revision == 1

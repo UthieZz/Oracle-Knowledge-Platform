@@ -1,3 +1,12 @@
+## 2026-11-19 — Context-Aware Reasoning retrieval path completeness loop (I-10 / I-12)
+
+- Problem: Retrieval of evidence for a RETRIEVABLE affordance produced a new revision and snapshot, but no dedicated regression verified that the subsequent answer_from_envelope sets contextually_complete=True when a high-sensitivity dimension is resolved by that evidence.
+- Change: Added Suite I10 chaining process_query → retrieve_for_affordance → answer_from_envelope. Asserts lineage, new snapshot, RESOLVED status, independent completion flags, and immutability of the parent envelope. No domain logic introduced.
+- Verification: pytest tests/test_context_aware_reasoning.py → 45 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by closing the retrieval-to-completeness loop symmetrically with the confirmation path (I7). No deviation from I-09 / I-10 / I-11 / I-12.
+
+
 ## 2026-11-19 — Context-Aware Reasoning AnswerStage partial/background claim disclosure (I-08)
 
 - Problem: AnswerStage emitted claims only for supporting evidence and assumptions. Partial compatibility and unconstrained (background) evidence were recorded in the evidence section but not disclosed as claims with proper support_status, violating the requirement that material factual claims appear in claims and that partial evidence requires qualification.
