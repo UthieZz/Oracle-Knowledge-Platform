@@ -82,6 +82,10 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Small, reversible, tested changes. Protect unrelated work.
 - Do not claim B2B readiness without evidence.
 
+## Recent verified advances (2026-11-19)
+
+- Context-Aware Reasoning AnswerStage partial/background disclosure: produce now emits claims with support_status=partial and =background when those evidence classes are present, plus explicit partial qualification. has_material includes partial. Suite F5 added. 44 passed. Aligns with I-08 and Answer-Stage contract (partial requires qualification; unconstrained = background only). Next: remaining P1 boundaries or further retrieval integration.
+
 ## Recent verified advances (2026-11-18)
 
 - Context-Aware Reasoning D5 projected_change: EvidenceCompatibilityEngine.generate_affordances now populates projected_change with an estimate-only string on all emitted affordances (AVAILABLE and RETRIEVABLE). Suite D1/D2 regressions extended. 43 passed. No deviation from D5 (estimate, not promise) or I-11. Next: remaining P1 boundaries or further retrieval integration.

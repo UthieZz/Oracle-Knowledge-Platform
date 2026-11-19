@@ -1,3 +1,11 @@
+## 2026-11-19 — Context-Aware Reasoning AnswerStage partial/background claim disclosure (I-08)
+
+- Problem: AnswerStage emitted claims only for supporting evidence and assumptions. Partial compatibility and unconstrained (background) evidence were recorded in the evidence section but not disclosed as claims with proper support_status, violating the requirement that material factual claims appear in claims and that partial evidence requires qualification.
+- Change: AnswerStage.produce now emits dedicated claims for partial (support_status=partial) and background (support_status=background) evidence when present. Partial triggers an explicit qualification. has_material considers partial evidence. Suite F5 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 44 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by ensuring partial and background evidence produce visible, correctly classified claims. No deviation from Answer-Stage contract or I-08 / I-11.
+
 ## 2026-11-18 — Context-Aware Reasoning D5 projected_change estimate population
 
 - Problem: projected_change field existed as optional model attribute (estimate only) but was never populated by affordance generation.

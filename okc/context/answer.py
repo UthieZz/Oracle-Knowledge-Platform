@@ -103,8 +103,11 @@ class AnswerStage:
         contextually_complete = len(unresolved) == 0 and len(conflicts) == 0
 
         # Minimal useful answer when any evidence or assumption exists
-        has_material = bool(evidence_summary.get("supporting")) or bool(applied) or any(
-            p.status == ParameterStatus.RESOLVED for p in envelope.parameters.values()
+        has_material = (
+            bool(evidence_summary.get("supporting"))
+            or bool(evidence_summary.get("partial"))
+            or bool(applied)
+            or any(p.status == ParameterStatus.RESOLVED for p in envelope.parameters.values())
         )
         answer_delivered = has_material
 
@@ -128,6 +131,23 @@ class AnswerStage:
                 )
             )
             content_parts.append("Supported findings available.")
+        if evidence_summary.get("partial"):
+            claims.append(
+                Claim(
+                    text="Partial support from partially-compatible evidence (qualification required)",
+                    support_status="partial",
+                    evidence_refs=evidence_summary["partial"],
+                )
+            )
+            content_parts.append("Partial findings available with qualification.")
+        if evidence_summary.get("background"):
+            claims.append(
+                Claim(
+                    text="Background context from unconstrained evidence (not used to establish dimensions)",
+                    support_status="background",
+                    evidence_refs=evidence_summary["background"],
+                )
+            )
         # Disclose domain-rule resolutions (C2) while preserving that conflict existed
         for dim_id, res in rule_resolutions.items():
             claims.append(
@@ -145,6 +165,8 @@ class AnswerStage:
             qualifications.append(f"Unresolved high-sensitivity dimensions: {', '.join(unresolved)}")
         if conflicts:
             qualifications.append(f"Conflicts retained: {', '.join(conflicts)}")
+        if evidence_summary.get("partial"):
+            qualifications.append("Partial compatibility disclosed; not full substantiation.")
         if rule_resolutions:
             quals = [f"{d}: {r['rationale']}" for d, r in rule_resolutions.items()]
             qualifications.append(f"Domain rules applied: {'; '.join(quals)}")

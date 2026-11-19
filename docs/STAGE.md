@@ -25,6 +25,8 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
+- AnswerStage partial/background claim disclosure: Suite F5 verifies partial and unconstrained evidence produce correctly classified claims and qualification. 44 passed.
+## Context-Aware Reasoning (locked design)
 - D4 assumption replacement regression + simple conflict detection: EvidenceCompatibilityEngine.detect_simple_conflicts + orchestrator auto-disclosure when spans present. Suite I8 verifies retention and incomplete flag. 43 passed.
 
 - Orchestrator confirmation path + AnswerStage materiality: Suite I7 verifies user confirmation of high-sensitivity dimension yields contextually_complete=True and answer_delivered=True. 40 passed.

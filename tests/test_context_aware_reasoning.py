@@ -1054,3 +1054,36 @@ def test_D4_assumption_replacement_creates_new_revision(registry: ContextRegistr
     assert revised.parameters["historical_period"].assumption == "modern"
     assert revised.parameters["historical_period"].status == ParameterStatus.MISSING
     assert revised.parameters["historical_period"].source == "expansion"
+
+
+def test_F5_partial_and_background_claims_disclosed(registry: ContextRegistry) -> None:
+    """I-08 / contract: partial requires qualification; unconstrained is background only."""
+    stage = AnswerStage(registry)
+    env = QueryContextEnvelope(
+        envelope_id="e12",
+        revision=1,
+        query_id="q12",
+        package_ref="pkg1",
+        parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.RESOLVED,
+                value="modern",
+            )
+        },
+    )
+    evidence = {
+        "supporting": ["span-full"],
+        "partial": ["span-partial"],
+        "background": ["span-unconstrained"],
+    }
+    result = stage.produce(env, affordances=[], evidence_summary=evidence)
+    assert result.completion.answer_delivered is True
+    statuses = {c.support_status for c in result.answer.claims}
+    assert "supported" in statuses
+    assert "partial" in statuses
+    assert "background" in statuses
+    assert any("Partial compatibility" in q for q in result.answer.qualifications)
+    # Background claim does not claim to establish dimension
+    bg = next(c for c in result.answer.claims if c.support_status == "background")
+    assert "not used to establish" in bg.text
