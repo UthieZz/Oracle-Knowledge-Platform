@@ -1,3 +1,11 @@
+## 2026-11-19 — Context-Aware Reasoning presentation disclosure summary (AnswerResult)
+
+- Problem: Structured AnswerResult required callers to assemble content, qualifications, and independent completion flags manually for display. No canonical plain-text disclosure aid existed.
+- Change: Added AnswerResult.to_disclosure_summary(). Emits content, qualifications, Delivered/ContextuallyComplete/Reason, unresolved, and conflicts. No fact invention, no eligibility change. Suite F9 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 49 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by providing a presentation-oriented disclosure path without domain logic or contract deviation (I-08 / I-12).
+
 ## 2026-11-19 — Context-Aware Reasoning conflicts disclosed as conflicted claims (I-08)
 
 - Problem: Retained conflicts were disclosed only in qualifications and context fields. No material claim with support_status=conflicted appeared in the claims array, weakening I-08 (every material factual claim must appear in claims) and the mandatory disclosure rule for unresolved conflicts.

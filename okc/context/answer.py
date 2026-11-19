@@ -66,6 +66,24 @@ class AnswerResult(BaseModel):
     expansion_affordances: List[ExpansionAffordance]
     completion: Completion
 
+    def to_disclosure_summary(self) -> str:
+        """Plain-text disclosure of content, qualifications, and completion status.
+        Does not invent facts or alter eligibility. Presentation aid only.
+        """
+        parts = [self.answer.content]
+        if self.answer.qualifications:
+            parts.append("Qualifications: " + "; ".join(self.answer.qualifications))
+        c = self.completion
+        status = f"Delivered={c.answer_delivered}, ContextuallyComplete={c.contextually_complete}"
+        if c.reason:
+            status += f", Reason={c.reason}"
+        parts.append(status)
+        if self.context.unresolved_dimensions:
+            parts.append("Unresolved: " + ", ".join(self.context.unresolved_dimensions))
+        if self.context.conflicted_dimensions:
+            parts.append("Conflicts: " + ", ".join(self.context.conflicted_dimensions))
+        return " | ".join(parts)
+
 
 class AnswerStage:
     """Minimal deterministic Answer Stage."""

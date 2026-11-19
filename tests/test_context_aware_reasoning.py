@@ -1255,3 +1255,26 @@ def test_F8_conflicts_disclosed_as_conflicted_claims(registry: ContextRegistry) 
     assert "neither value treated as established" in conflict_claims[0].text
     assert conflict_claims[0].evidence_refs == ["span-c"]
     assert "speaker_affiliation" in result.context.conflicted_dimensions
+
+
+def test_F9_disclosure_summary_includes_completion_and_qualifications(registry: ContextRegistry) -> None:
+    """Presentation aid surfaces content, qualifications, and independent completion flags without inventing facts."""
+    from okc.context.answer import AnswerStage
+    from okc.context.models import QueryContextEnvelope, QueryParameter, ParameterStatus
+
+    env = QueryContextEnvelope(
+        envelope_id="e-f9",
+        query_id="q-f9",
+        package_ref="pkg-f9",
+        revision=1,
+        parameters={"historical_period": QueryParameter(dimension_id="historical_period", status=ParameterStatus.MISSING)},
+    )
+    stage = AnswerStage(registry)
+    result = stage.produce(env, affordances=[], evidence_summary={"supporting": ["span-1"]}, conflicts=[])
+    summary = result.to_disclosure_summary()
+    assert "Supported findings available." in summary
+    assert "Unresolved high-sensitivity dimensions: historical_period" in summary
+    assert "Delivered=True" in summary
+    assert "ContextuallyComplete=False" in summary
+    assert "Reason=unresolved_high_sensitivity" in summary
+    assert "Unresolved: historical_period" in summary
