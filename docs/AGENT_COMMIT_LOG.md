@@ -1,3 +1,11 @@
+## 2026-11-19 — STAGE.md synced to current verified Context-Aware Reasoning state
+
+- Problem: STAGE.md dated 2026-11-18 and omitted the latest B6 / F11 verified advances, creating drift from runtime evidence and AGENT_COMMIT_LOG.
+- Change: Updated header, basis, and inserted the two latest CAR bullets (B6 per-dimension classification, F11 unavailable qualification). No code or contract changes.
+- Verification: docs-only; prior pytest tests/test_context_aware_reasoning.py remains 52 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Keeps the agent source-of-truth current for the next run.
+
 ## 2026-11-19 — Context-Aware Reasoning per-dimension independent classification (consistency clarification)
 
 - Problem: Locked consistency review states evidence classification is per-dimension, never global (a span may be unconstrained for one dimension, fully compatible for another, partially compatible for a third). No executable regression locked this independent behaviour.

@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-18
+# OKP Stage — 2026-11-19
 
-**Basis:** Current main (Context-Aware Reasoning D4 assumption replacement + domain-rule resolution for simple conflicts + confirmation completeness). Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (Context-Aware Reasoning per-dimension independent classification B6 + unavailable qualification F11 + prior suites). Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -25,6 +25,8 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
+- Context-Aware Reasoning per-dimension independent classification: Suite B6 verifies a single span is classified independently per dimension (FULLY / PARTIAL / UNCONSTRAINED / INCOMPATIBLE). 52 passed.
+- Context-Aware Reasoning unavailable qualification: Suite F11 verifies high-sensitivity non-assumable dimensions emit explicit "Unavailable (cannot be assumed)" qualification. 51 passed.
 - Context-Aware Reasoning unavailable dimensions disclosure: Suite F10 verifies high-sensitivity dimensions that cannot be assumed are listed in unavailable_dimensions and disclosure summary. 50 passed.
 - Context-Aware Reasoning presentation disclosure summary: Suite F9 verifies AnswerResult.to_disclosure_summary. 49 passed.
 - Context-Aware Reasoning conflicts as claims: Suite F8 verifies retained conflicts produce support_status=conflicted claim. 48 passed.
