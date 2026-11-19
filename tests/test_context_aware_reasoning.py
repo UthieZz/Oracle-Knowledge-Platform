@@ -1164,3 +1164,35 @@ def test_I10_retrieval_makes_high_sensitivity_contextually_complete(registry: Co
     # Original envelope remains unchanged (immutable)
     assert envelope.parameters["historical_period"].status == ParameterStatus.MISSING
     assert envelope.revision == 1
+
+
+def test_F6_completion_reason_discloses_unresolved_high_sensitivity(registry: ContextRegistry) -> None:
+    """When answer is delivered but high-sensitivity remains unresolved, reason discloses the cause."""
+    from okc.context.answer import AnswerStage
+    from okc.context.models import (
+        QueryContextEnvelope, QueryParameter, ParameterStatus, Sensitivity,
+        ContextDimension, ValueType, ResolutionPolicy,
+    )
+
+    dim = ContextDimension(
+        dimension_id="jurisdiction",
+        version="1",
+        value_type=ValueType.STRING,
+        sensitivity=Sensitivity.HIGH,
+        resolution_policy=ResolutionPolicy.ALLOW_ASSUMPTION,
+        can_be_assumed=True,
+    )
+    registry.register(dim)
+    env = QueryContextEnvelope(
+        envelope_id="e1",
+        query_id="q1",
+        package_ref="pkg1",
+        revision=1,
+        parameters={"jurisdiction": QueryParameter(dimension_id="jurisdiction", status=ParameterStatus.MISSING, assumption="US")},
+    )
+    stage = AnswerStage(registry)
+    result = stage.produce(env, affordances=[], evidence_summary={"supporting": ["span1"]})
+    assert result.completion.answer_delivered is True
+    assert result.completion.contextually_complete is False
+    assert result.completion.reason == "unresolved_high_sensitivity"
+    assert any("Unresolved high-sensitivity" in q for q in result.answer.qualifications)

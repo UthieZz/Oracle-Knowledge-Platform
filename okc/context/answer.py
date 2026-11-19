@@ -171,7 +171,16 @@ class AnswerStage:
             quals = [f"{d}: {r['rationale']}" for d, r in rule_resolutions.items()]
             qualifications.append(f"Domain rules applied: {'; '.join(quals)}")
 
-        reason = None if answer_delivered else "insufficient_evidence"
+        reason = None
+        if not answer_delivered:
+            reason = "insufficient_evidence"
+        elif not contextually_complete:
+            if unresolved:
+                reason = "unresolved_high_sensitivity"
+            elif conflicts:
+                reason = "conflicts_retained"
+            else:
+                reason = "context_incomplete"
 
         return AnswerResult(
             answer_id=f"ans-{envelope.envelope_id}-r{envelope.revision}",

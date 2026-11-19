@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-19)
+- Context-Aware Reasoning completion reason disclosure: AnswerStage sets specific reason when delivered under incomplete high-sensitivity or conflicts. Suite F6. 46 passed. No deviation. Next: remaining P1 boundaries.
+
 - Context-Aware Reasoning retrieval path completeness: Suite I10 added verifying retrieve_for_affordance followed by answer_from_envelope sets contextually_complete=True when high-sensitivity dimension is resolved by retrieved evidence. 45 passed. No deviation from I-09/I-10/I-11/I-12. Next: remaining P1 boundaries or further retrieval integration.
 
 - Context-Aware Reasoning AnswerStage partial/background disclosure: produce now emits claims with support_status=partial and =background when those evidence classes are present, plus explicit partial qualification. has_material includes partial. Suite F5 added. 44 passed. Aligns with I-08 and Answer-Stage contract (partial requires qualification; unconstrained = background only). Next: remaining P1 boundaries or further retrieval integration.

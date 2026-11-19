@@ -1,3 +1,11 @@
+## 2026-11-19 — Context-Aware Reasoning completion reason disclosure for incomplete context (I-12)
+
+- Problem: When an answer was delivered under unresolved high-sensitivity dimensions, Completion.reason remained None. Callers had to inspect unresolved_dimensions separately to understand why contextually_complete=False.
+- Change: AnswerStage.produce now sets reason="unresolved_high_sensitivity" (or "conflicts_retained" / "context_incomplete") when answer_delivered=True but contextually_complete=False. Insufficient evidence path unchanged. Suite F6 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 46 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by making incompleteness self-describing in the structured output. No deviation from Answer-Stage contract or I-12.
+
 ## 2026-11-19 — Context-Aware Reasoning retrieval path completeness loop (I-10 / I-12)
 
 - Problem: Retrieval of evidence for a RETRIEVABLE affordance produced a new revision and snapshot, but no dedicated regression verified that the subsequent answer_from_envelope sets contextually_complete=True when a high-sensitivity dimension is resolved by that evidence.
