@@ -1,3 +1,11 @@
+## 2026-11-19 — Context-Aware Reasoning unavailable qualification (I-12)
+
+- Problem: Non-assumable high-sensitivity missing dimensions were recorded in unavailable_dimensions and the disclosure summary, but the structured answer qualifications did not explicitly call out the "cannot be assumed" constraint.
+- Change: AnswerStage.produce now appends an explicit qualification "Unavailable (cannot be assumed): ..." when unavailable_dimensions is non-empty. Suite F11 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 51 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by strengthening presentation disclosure of non-assumable dimensions. No deviation from Answer-Stage contract or I-12.
+
 ## 2026-11-19 — Context-Aware Reasoning unavailable dimensions disclosure (I-12)
 
 - Problem: AnswerContext.unavailable_dimensions existed in the locked output structure but was never populated. High-sensitivity dimensions that cannot be assumed (no assumption path) were indistinguishable from those that can.

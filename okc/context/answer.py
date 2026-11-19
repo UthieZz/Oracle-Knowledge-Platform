@@ -195,6 +195,8 @@ class AnswerStage:
         qualifications = []
         if unresolved:
             qualifications.append(f"Unresolved high-sensitivity dimensions: {', '.join(unresolved)}")
+        if unavailable:
+            qualifications.append(f"Unavailable (cannot be assumed): {', '.join(unavailable)}")
         if conflicts:
             qualifications.append(f"Conflicts retained: {', '.join(conflicts)}")
         if evidence_summary.get("partial"):

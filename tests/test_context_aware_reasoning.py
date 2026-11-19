@@ -1327,3 +1327,46 @@ def test_F10_unavailable_dimensions_disclosed_when_cannot_assume(registry: Conte
     summary = result.to_disclosure_summary()
     assert "Unavailable: legal_jurisdiction" in summary
     assert "Unresolved: legal_jurisdiction" in summary or "historical_period" in summary
+
+
+def test_F11_unavailable_qualification_emitted_when_cannot_assume(registry: ContextRegistry) -> None:
+    """Unavailable high-sensitivity dimensions that cannot be assumed receive an explicit qualification (I-12 disclosure)."""
+    from okc.context.answer import AnswerStage
+    from okc.context.models import (
+        QueryContextEnvelope, QueryParameter, ParameterStatus,
+        ContextDimension, ValueType, Sensitivity, ResolutionPolicy,
+    )
+
+    no_assume = ContextDimension(
+        dimension_id="legal_jurisdiction",
+        version="1.0",
+        value_type=ValueType.CONTROLLED_VOCABULARY,
+        sensitivity=Sensitivity.HIGH,
+        resolution_policy=ResolutionPolicy.REQUIRE_EVIDENCE,
+        can_be_assumed=False,
+        allowed_values=["us", "eu", "other"],
+    )
+    registry.register(no_assume)
+
+    env = QueryContextEnvelope(
+        envelope_id="e-f11",
+        query_id="q-f11",
+        package_ref="pkg-f11",
+        revision=1,
+        parameters={
+            "legal_jurisdiction": QueryParameter(
+                dimension_id="legal_jurisdiction",
+                status=ParameterStatus.MISSING,
+            ),
+        },
+    )
+    stage = AnswerStage(registry)
+    result = stage.produce(env, affordances=[], evidence_summary={"supporting": ["span-1"]})
+    assert result.completion.answer_delivered is True
+    assert result.completion.contextually_complete is False
+    assert "legal_jurisdiction" in result.context.unavailable_dimensions
+    quals = result.answer.qualifications
+    assert any("Unavailable (cannot be assumed): legal_jurisdiction" in q for q in quals)
+    summary = result.to_disclosure_summary()
+    assert "Unavailable: legal_jurisdiction" in summary
+    assert "Unavailable (cannot be assumed): legal_jurisdiction" in summary
