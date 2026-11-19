@@ -1370,3 +1370,21 @@ def test_F11_unavailable_qualification_emitted_when_cannot_assume(registry: Cont
     summary = result.to_disclosure_summary()
     assert "Unavailable: legal_jurisdiction" in summary
     assert "Unavailable (cannot be assumed): legal_jurisdiction" in summary
+
+
+def test_B6_per_dimension_independent_classification(registry: ContextRegistry) -> None:
+    """Consistency clarification: a single span may be unconstrained for one
+    dimension, fully compatible for another, and partially compatible for a third.
+    Classification is always per-dimension, never global.
+    """
+    engine = EvidenceCompatibilityEngine(registry)
+    span_constraints = {
+        "historical_period": "2020s",          # fully compatible if target matches
+        "speaker_affiliation": ["academic", "industry"],  # partial if target in list
+        # "legal_jurisdiction" absent → unconstrained
+    }
+    assert engine.classify(span_constraints, "historical_period", "2020s") == CompatibilityState.FULLY_COMPATIBLE
+    assert engine.classify(span_constraints, "speaker_affiliation", "academic") == CompatibilityState.PARTIALLY_COMPATIBLE
+    assert engine.classify(span_constraints, "legal_jurisdiction", "us") == CompatibilityState.UNCONSTRAINED
+    # Incompatible case for completeness
+    assert engine.classify(span_constraints, "historical_period", "1990s") == CompatibilityState.INCOMPATIBLE

@@ -1,3 +1,12 @@
+## 2026-11-19 — Context-Aware Reasoning per-dimension independent classification (consistency clarification)
+
+- Problem: Locked consistency review states evidence classification is per-dimension, never global (a span may be unconstrained for one dimension, fully compatible for another, partially compatible for a third). No executable regression locked this independent behaviour.
+- Change: Added Suite B6 regression verifying EvidenceCompatibilityEngine.classify treats a single span independently per dimension (FULLY / PARTIAL / UNCONSTRAINED / INCOMPATIBLE).
+- Verification: pytest tests/test_context_aware_reasoning.py → 52 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by making the per-dimension classification invariant executable. No deviation from contracts.
+
+
 ## 2026-11-19 — Context-Aware Reasoning unavailable qualification (I-12)
 
 - Problem: Non-assumable high-sensitivity missing dimensions were recorded in unavailable_dimensions and the disclosure summary, but the structured answer qualifications did not explicitly call out the "cannot be assumed" constraint.

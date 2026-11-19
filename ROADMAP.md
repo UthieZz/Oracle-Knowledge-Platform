@@ -83,6 +83,8 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 - Do not claim B2B readiness without evidence.
 
 ## Recent verified advances (2026-11-19)
+- Context-Aware Reasoning per-dimension classification: Suite B6 verifies independent per-dimension classification on a single span (unconstrained / fully compatible / partially compatible). 52 passed. Locks consistency-review clarification. No deviation.
+
 
 - Context-Aware Reasoning unavailable dimensions: AnswerStage discloses high-sensitivity missing dimensions that cannot be assumed as unavailable_dimensions (subset of unresolved). Suite F10. 50 passed. No deviation. Next: remaining P1 boundaries or further retrieval integration.
 
