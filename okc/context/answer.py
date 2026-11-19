@@ -80,6 +80,8 @@ class AnswerResult(BaseModel):
         parts.append(status)
         if self.context.unresolved_dimensions:
             parts.append("Unresolved: " + ", ".join(self.context.unresolved_dimensions))
+        if self.context.unavailable_dimensions:
+            parts.append("Unavailable: " + ", ".join(self.context.unavailable_dimensions))
         if self.context.conflicted_dimensions:
             parts.append("Conflicts: " + ", ".join(self.context.conflicted_dimensions))
         return " | ".join(parts)
@@ -106,6 +108,7 @@ class AnswerStage:
         # Context disclosure
         applied = []
         unresolved = []
+        unavailable = []
         for dim_id, param in envelope.parameters.items():
             if param.assumption is not None:
                 applied.append({
@@ -117,6 +120,8 @@ class AnswerStage:
             if dim and dim.sensitivity == Sensitivity.HIGH:
                 if param.status in (ParameterStatus.MISSING, ParameterStatus.PARTIALLY_RESOLVED):
                     unresolved.append(dim_id)
+                    if param.status == ParameterStatus.MISSING and not dim.can_be_assumed:
+                        unavailable.append(dim_id)
 
         contextually_complete = len(unresolved) == 0 and len(conflicts) == 0
 
@@ -223,6 +228,7 @@ class AnswerStage:
                 applied_assumptions=applied,
                 unresolved_dimensions=unresolved,
                 conflicted_dimensions=conflicts,
+                unavailable_dimensions=unavailable,
             ),
             evidence=AnswerEvidence(
                 supporting_refs=evidence_summary.get("supporting", []),

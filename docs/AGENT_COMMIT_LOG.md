@@ -1,3 +1,11 @@
+## 2026-11-19 — Context-Aware Reasoning unavailable dimensions disclosure (I-12)
+
+- Problem: AnswerContext.unavailable_dimensions existed in the locked output structure but was never populated. High-sensitivity dimensions that cannot be assumed (no assumption path) were indistinguishable from those that can.
+- Change: AnswerStage.produce now sets unavailable_dimensions for HIGH sensitivity MISSING parameters where the registered dimension has can_be_assumed=False. These remain in unresolved. Disclosure summary includes them. Suite F10 added.
+- Verification: pytest tests/test_context_aware_reasoning.py → 50 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Advances locked Context-Aware Reasoning by making non-assumable missing dimensions explicitly disclosed. No deviation from Answer-Stage contract or I-12.
+
 ## 2026-11-19 — Context-Aware Reasoning presentation disclosure summary (AnswerResult)
 
 - Problem: Structured AnswerResult required callers to assemble content, qualifications, and independent completion flags manually for display. No canonical plain-text disclosure aid existed.

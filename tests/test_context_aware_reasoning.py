@@ -1278,3 +1278,52 @@ def test_F9_disclosure_summary_includes_completion_and_qualifications(registry: 
     assert "ContextuallyComplete=False" in summary
     assert "Reason=unresolved_high_sensitivity" in summary
     assert "Unresolved: historical_period" in summary
+
+
+def test_F10_unavailable_dimensions_disclosed_when_cannot_assume(registry: ContextRegistry) -> None:
+    """High-sensitivity missing dimensions that cannot be assumed are disclosed as unavailable (presentation + I-12)."""
+    from okc.context.answer import AnswerStage
+    from okc.context.models import (
+        QueryContextEnvelope, QueryParameter, ParameterStatus,
+        ContextDimension, ValueType, Sensitivity, ResolutionPolicy,
+    )
+
+    # Register a high-sens dim that cannot be assumed
+    no_assume = ContextDimension(
+        dimension_id="legal_jurisdiction",
+        version="1.0",
+        value_type=ValueType.CONTROLLED_VOCABULARY,
+        sensitivity=Sensitivity.HIGH,
+        resolution_policy=ResolutionPolicy.REQUIRE_EVIDENCE,
+        can_be_assumed=False,
+        allowed_values=["us", "eu", "other"],
+    )
+    registry.register(no_assume)
+
+    env = QueryContextEnvelope(
+        envelope_id="e-f10",
+        query_id="q-f10",
+        package_ref="pkg-f10",
+        revision=1,
+        parameters={
+            "legal_jurisdiction": QueryParameter(
+                dimension_id="legal_jurisdiction",
+                status=ParameterStatus.MISSING,
+            ),
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+                assumption="modern",
+            ),
+        },
+    )
+    stage = AnswerStage(registry)
+    result = stage.produce(env, affordances=[], evidence_summary={"supporting": ["span-1"]})
+    assert result.completion.answer_delivered is True
+    assert result.completion.contextually_complete is False
+    assert "legal_jurisdiction" in result.context.unavailable_dimensions
+    assert "legal_jurisdiction" in result.context.unresolved_dimensions
+    assert "historical_period" not in result.context.unavailable_dimensions  # can_be_assumed=True
+    summary = result.to_disclosure_summary()
+    assert "Unavailable: legal_jurisdiction" in summary
+    assert "Unresolved: legal_jurisdiction" in summary or "historical_period" in summary

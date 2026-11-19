@@ -25,6 +25,7 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
+- Context-Aware Reasoning unavailable dimensions disclosure: Suite F10 verifies high-sensitivity dimensions that cannot be assumed are listed in unavailable_dimensions and disclosure summary. 50 passed.
 - Context-Aware Reasoning presentation disclosure summary: Suite F9 verifies AnswerResult.to_disclosure_summary. 49 passed.
 - Context-Aware Reasoning conflicts as claims: Suite F8 verifies retained conflicts produce support_status=conflicted claim. 48 passed.
 - Context-Aware Reasoning completion reason (conflicts path): Suite F7 verifies conflicts_retained reason and disclosure. 47 passed.
