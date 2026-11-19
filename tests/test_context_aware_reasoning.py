@@ -1196,3 +1196,31 @@ def test_F6_completion_reason_discloses_unresolved_high_sensitivity(registry: Co
     assert result.completion.contextually_complete is False
     assert result.completion.reason == "unresolved_high_sensitivity"
     assert any("Unresolved high-sensitivity" in q for q in result.answer.qualifications)
+
+
+def test_F7_completion_reason_discloses_conflicts_retained(registry: ContextRegistry) -> None:
+    """When answer is delivered but conflicts are retained (no high-sensitivity unresolved), reason discloses the cause."""
+    from okc.context.answer import AnswerStage
+    from okc.context.models import (
+        QueryContextEnvelope, QueryParameter, ParameterStatus,
+    )
+
+    env = QueryContextEnvelope(
+        envelope_id="e-f7",
+        query_id="q-f7",
+        package_ref="pkg-f7",
+        revision=1,
+        parameters={"speaker_affiliation": QueryParameter(dimension_id="speaker_affiliation", status=ParameterStatus.RESOLVED, value="internal")},
+    )
+    stage = AnswerStage(registry)
+    result = stage.produce(
+        env,
+        affordances=[],
+        evidence_summary={"supporting": ["span-a", "span-b"]},
+        conflicts=["speaker_affiliation"],
+    )
+    assert result.completion.answer_delivered is True
+    assert result.completion.contextually_complete is False
+    assert result.completion.reason == "conflicts_retained"
+    assert any("Conflicts retained" in q for q in result.answer.qualifications)
+    assert "speaker_affiliation" in result.context.conflicted_dimensions

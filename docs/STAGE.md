@@ -25,6 +25,9 @@
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md if present.
 
 ## Context-Aware Reasoning (locked design)
+- Context-Aware Reasoning completion reason (conflicts path): Suite F7 verifies conflicts_retained reason and disclosure. 47 passed.
+
+
 - AnswerStage completion reason now discloses cause when contextually_complete=False (unresolved_high_sensitivity or conflicts_retained). Suite F6. 46 passed.
 - AnswerStage partial/background claim disclosure: Suite F5 verifies partial and unconstrained evidence produce correctly classified claims and qualification. 44 passed.
 ## Context-Aware Reasoning (locked design)
