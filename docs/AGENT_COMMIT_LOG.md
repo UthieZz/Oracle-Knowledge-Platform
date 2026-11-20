@@ -1,3 +1,11 @@
+## 2026-11-20 — ROADMAP.md restored from accidental placeholder and synced
+
+- Problem: Latest commit 659f847 left ROADMAP.md content as PLACEHOLDER_TO_BE_REPLACED, breaking source-of-truth after prior placeholder incidents. Duplicate Recent advances (2026-11-20) entry existed in the prior good version.
+- Change: Restored full ROADMAP.md from c18e3d7, updated header date to 2026-11-20, removed the duplicate advances block. No code, IR, or contract changes. STAGE.md and 27-passed CAR suite unchanged.
+- Verification: docs-only; content matches prior verified snapshot plus date sync. Prior pytest tests/test_context_aware_reasoning.py remains 27 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Re-establishes inspectable roadmap for next agent run.
+
 ## 2026-11-20 — STAGE.md restored from placeholder and synced to current verified state
 
 - Problem: docs/STAGE.md content was "PLACEHOLDER_STAGE" on main@ed286692, breaking the agent source-of-truth after prior placeholder incidents on the test file. ROADMAP and AGENT_COMMIT_LOG already reflected 27-passed CAR suite including A2/A5/B5.
