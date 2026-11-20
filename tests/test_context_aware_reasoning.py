@@ -24,4 +24,203 @@ from okc.context import (
     ValueType,
 )
 
-# ... (full file content omitted in this simulation for brevity, but in real would be full)
+
+def _dim(
+    dimension_id: str = "historical_period",
+    version: str = "1.0",
+    sensitivity: Sensitivity = Sensitivity.MEDIUM,
+    can_be_assumed: bool = True,
+) -> ContextDimension:
+    return ContextDimension(
+        dimension_id=dimension_id,
+        version=version,
+        value_type=ValueType.CONTROLLED_VOCABULARY,
+        sensitivity=sensitivity,
+        resolution_policy=ResolutionPolicy.ALLOW_ASSUMPTION,
+        can_be_assumed=can_be_assumed,
+        allowed_values=["ancient", "medieval", "modern"],
+    )
+
+
+class TestSuiteARegistry:
+    def test_a1_package_redefinition_rejected(self):
+        registry = ContextRegistry()
+        registry.register(_dim())
+        with pytest.raises(ValueError, match="may not own or redefine"):
+            registry.reject_package_ownership({"context_dimensions": [{"dimension_id": "historical_period"}]})
+
+    def test_a3_version_isolation(self):
+        registry = ContextRegistry()
+        registry.register(_dim(version="1.0"))
+        registry.register(_dim(version="2.0", sensitivity=Sensitivity.HIGH))
+        assert registry.get("historical_period", "1.0").sensitivity == Sensitivity.MEDIUM
+        assert registry.get("historical_period", "2.0").sensitivity == Sensitivity.HIGH
+        assert registry.get("historical_period").version == "2.0"
+
+    def test_a4_soft_deprecate_still_resolvable(self):
+        registry = ContextRegistry()
+        registry.register(_dim())
+        registry.soft_deprecate("historical_period", "1.0")
+        assert registry.get("historical_period", "1.0") is not None
+
+
+class TestSuiteBCompatibility:
+    def test_b1_fully_compatible(self):
+        engine = EvidenceCompatibilityEngine(ContextRegistry())
+        state = engine.classify({"historical_period": "modern"}, "historical_period", "modern")
+        assert state == CompatibilityState.FULLY_COMPATIBLE
+
+    def test_b2_incompatible(self):
+        engine = EvidenceCompatibilityEngine(ContextRegistry())
+        state = engine.classify({"historical_period": "ancient"}, "historical_period", "modern")
+        assert state == CompatibilityState.INCOMPATIBLE
+
+    def test_b3_unconstrained(self):
+        engine = EvidenceCompatibilityEngine(ContextRegistry())
+        state = engine.classify({}, "historical_period", "modern")
+        assert state == CompatibilityState.UNCONSTRAINED
+        state2 = engine.classify({"historical_period": None}, "historical_period", "modern")
+        assert state2 == CompatibilityState.UNCONSTRAINED
+
+    def test_b4_partially_compatible(self):
+        engine = EvidenceCompatibilityEngine(ContextRegistry())
+        state = engine.classify(
+            {"historical_period": ["medieval", "modern"]},
+            "historical_period",
+            "modern",
+        )
+        assert state == CompatibilityState.PARTIALLY_COMPATIBLE
+
+
+class TestSuiteEEnvelopeLifecycle:
+    def test_e1_assumption_never_auto_promotes(self):
+        engine = QueryContextEngine()
+        env = engine.create_envelope("e1", "q1", "pkg1")
+        env = engine.apply_assumption(env, "historical_period", "modern")
+        assert env.parameters["historical_period"].status == ParameterStatus.MISSING
+        assert env.parameters["historical_period"].assumption == "modern"
+        # revision does not promote
+        rev = engine.create_revision(env)
+        assert rev.parameters["historical_period"].status == ParameterStatus.MISSING
+        assert rev.parameters["historical_period"].assumption == "modern"
+
+    def test_e2_promotion_only_via_confirmation_or_evidence(self):
+        engine = QueryContextEngine()
+        env = engine.create_envelope("e1", "q1", "pkg1")
+        env = engine.apply_assumption(env, "historical_period", "modern")
+        # confirmation
+        confirmed = engine.promote_with_user_confirmation(env, "historical_period", "modern")
+        assert confirmed.parameters["historical_period"].status == ParameterStatus.RESOLVED
+        assert confirmed.parameters["historical_period"].assumption is None
+        # evidence path
+        env2 = engine.create_envelope("e2", "q2", "pkg1")
+        evidenced = engine.promote_with_evidence(
+            env2, "historical_period", "modern", evidence_set_ref="snap-1"
+        )
+        assert evidenced.parameters["historical_period"].status == ParameterStatus.RESOLVED
+
+    def test_e3_snapshot_immutability(self):
+        store = EvidenceSnapshotStore()
+        snap = store.create_snapshot("snap-1", ["span-a", "span-b"])
+        with pytest.raises(ValueError):
+            store.create_snapshot("snap-1", ["other"])
+        retrieved = store.get("snap-1")
+        assert retrieved.evidence_refs == ("span-a", "span-b")
+        assert retrieved.snapshot_id == "snap-1"
+
+    def test_e4_revision_lineage(self):
+        engine = QueryContextEngine()
+        parent = engine.create_envelope("e1", "q1", "pkg1")
+        child = engine.create_revision(parent)
+        assert child.parent_revision == parent.revision
+        assert child.revision == parent.revision + 1
+        assert child.envelope_id == parent.envelope_id
+
+
+class TestSuiteCConflictAffordances:
+    def test_c4_both_alternatives_become_affordances(self):
+        registry = ContextRegistry()
+        registry.register(_dim())
+        engine = EvidenceCompatibilityEngine(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        spans = [
+            {"span_id": "s1", "constraints": {"historical_period": "ancient"}},
+            {"span_id": "s2", "constraints": {"historical_period": "modern"}},
+        ]
+        affordances = engine.generate_affordances(env, spans)
+        targets = {a.target_value for a in affordances}
+        assert targets == {"ancient", "modern"}
+        assert all(a.availability == AffordanceAvailability.AVAILABLE for a in affordances)
+
+    def test_d3_unsupported_never_emitted(self):
+        registry = ContextRegistry()
+        registry.register(_dim())
+        engine = EvidenceCompatibilityEngine(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.UNSUPPORTED,
+                )
+            },
+        )
+        affordances = engine.generate_affordances(env, [])
+        assert affordances == []
+
+
+class TestAnswerStageCompletionFlags:
+    def test_high_sensitivity_unresolved_not_complete(self):
+        registry = ContextRegistry()
+        registry.register(_dim(sensitivity=Sensitivity.HIGH, can_be_assumed=False))
+        stage = AnswerStage(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        result = stage.produce(env, [])
+        assert result.completion.answer_delivered is False
+        assert result.completion.contextually_complete is False
+
+    def test_resolved_high_sensitivity_complete(self):
+        registry = ContextRegistry()
+        registry.register(_dim(sensitivity=Sensitivity.HIGH))
+        stage = AnswerStage(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.RESOLVED,
+                    value="modern",
+                )
+            },
+        )
+        result = stage.produce(env, [], evidence_summary={"supporting": ["span-1"]})
+        assert result.completion.answer_delivered is True
+        assert result.completion.contextually_complete is True

@@ -171,3 +171,12 @@
 - Advances locked Context-Aware Reasoning by ensuring initial evidence path produces immutable snapshot. No deviation from I-10 / I-11.
 
 [Full historical log continues from prior commits; see git history for complete prior entries.]
+## 2026-11-20 — Deterministic tests restored as executable first gate
+
+- Problem: tests/test_context_aware_reasoning.py was a placeholder stub (no test functions). Prior commit messages claimed suites passed; repository contained no executable regressions for the locked contracts.
+- Change: Replaced stub with 15 real deterministic tests covering Suite A (ownership, version isolation, soft deprecate), Suite B (per-dimension classification B1–B4), Suite E (assumption non-promotion, promotion paths, snapshot immutability, revision lineage), Suite C/D (conflict affordances C4, unsupported never emitted), and AnswerStage completion flags (independent answer_delivered / contextually_complete).
+- Verification: pytest tests/test_context_aware_reasoning.py → 15 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes the first verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
+
+
