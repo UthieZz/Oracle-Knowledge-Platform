@@ -474,3 +474,40 @@ class TestSuiteBInvalidProvenance:
         assert state == CompatibilityState.UNCONSTRAINED
         state2 = engine.classify({"historical_period": object()}, "historical_period", "modern")
         assert state2 != CompatibilityState.FULLY_COMPATIBLE
+
+
+class TestSuiteFAnswerStageInsufficient:
+    def test_f_insufficient_evidence_no_delivery_independent_flags(self):
+        """Locks insufficient evidence path: answer_delivered=false, reason set,
+        contextually_complete independent, no invented claims.
+        Source: 03-answer-stage-contract.md insufficient evidence example + I-12.
+        """
+        registry = ContextRegistry()
+        registry.register(_dim(sensitivity=Sensitivity.HIGH, can_be_assumed=False))
+        stage = AnswerStage(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        result = stage.produce(env, affordances=[], evidence_summary={})
+        assert result.completion.answer_delivered is False
+        assert result.completion.contextually_complete is False
+        assert result.completion.reason == "insufficient_evidence"
+        assert result.answer.claims == []
+        assert "No material" in result.answer.content
+        # High-sensitivity missing and non-assumable is disclosed
+        assert "historical_period" in result.context.unresolved_dimensions
+        assert "historical_period" in result.context.unavailable_dimensions
+        # Disclosure summary includes the flags
+        summary = result.to_disclosure_summary()
+        assert "Delivered=False" in summary
+        assert "ContextuallyComplete=False" in summary
+        assert "Reason=insufficient_evidence" in summary

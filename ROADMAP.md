@@ -14,7 +14,9 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 
 ## Recent verified advances (2026-11-20)
 
-- Context-Aware Reasoning A2/A5/B5: domain extension via new version (same-version rejected), package support declaration alone does not emit affordance, invalid provenance classified unconstrained. Suite expanded. 27 passed. No deviation.
+- Context-Aware Reasoning AnswerStage insufficient-evidence path: locks answer_delivered=false + reason=insufficient_evidence when no material evidence/assumptions, independent contextually_complete=false, no invented claims, high-sensitivity non-assumable disclosed as unresolved+unavailable, disclosure summary includes flags. Suite F. 28 passed. No deviation.
+
+- Context-Aware Reasoning A2/A5/B5: domain extension via new version (same-version rejected), package support declaration alone does not emit affordance, invalid provenance classified unconstrained. Suite expanded. 27 passed (prior). No deviation.
 
 ## Current implementation snapshot — 2026-11-13
 
