@@ -108,7 +108,11 @@ class EvidenceCompatibilityEngine:
                         emitted_any = True
             # Fallback single candidate path (no conflict, or no multi-values)
             if not emitted_any:
-                candidate = param.value if param.value is not None else "candidate"
+                # Prefer the single observed constrained value when present (D1)
+                if len(candidates) == 1:
+                    candidate = candidates[0]
+                else:
+                    candidate = param.value if param.value is not None else "candidate"
                 supporting = [
                     s
                     for s in evidence_spans

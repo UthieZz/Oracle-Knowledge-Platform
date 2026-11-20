@@ -224,3 +224,131 @@ class TestAnswerStageCompletionFlags:
         result = stage.produce(env, [], evidence_summary={"supporting": ["span-1"]})
         assert result.completion.answer_delivered is True
         assert result.completion.contextually_complete is True
+
+
+class TestSuiteCConflictRetention:
+    def test_c1_conflict_detected_and_retained(self):
+        engine = EvidenceCompatibilityEngine(ContextRegistry())
+        spans = [
+            {"id": "s1", "constraints": {"historical_period": "ancient"}},
+            {"id": "s2", "constraints": {"historical_period": "modern"}},
+        ]
+        conflicts = engine.detect_simple_conflicts(spans)
+        assert "historical_period" in conflicts
+        # No silent resolution
+        assert len(conflicts) == 1
+
+    def test_c3_no_silent_majority_or_override(self):
+        engine = EvidenceCompatibilityEngine(ContextRegistry())
+        # Three ancient, one modern — still both must remain eligible (no majority)
+        spans = [
+            {"id": "s1", "constraints": {"historical_period": "ancient"}},
+            {"id": "s2", "constraints": {"historical_period": "ancient"}},
+            {"id": "s3", "constraints": {"historical_period": "ancient"}},
+            {"id": "s4", "constraints": {"historical_period": "modern"}},
+        ]
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        affordances = engine.generate_affordances(env, spans)
+        targets = {a.target_value for a in affordances}
+        assert targets == {"ancient", "modern"}
+
+
+class TestSuiteECompletionAndUnconstrained:
+    def test_e5_high_sensitivity_unresolved_not_complete(self):
+        registry = ContextRegistry()
+        registry.register(_dim(sensitivity=Sensitivity.HIGH, can_be_assumed=False))
+        stage = AnswerStage(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        result = stage.produce(env, [])
+        assert result.completion.contextually_complete is False
+
+    def test_e6_unconstrained_alone_cannot_establish_completeness(self):
+        registry = ContextRegistry()
+        registry.register(_dim(sensitivity=Sensitivity.HIGH))
+        stage = AnswerStage(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        # Only unconstrained evidence
+        evidence_summary = {"background": ["span-bg"], "supporting": []}
+        result = stage.produce(env, [], evidence_summary=evidence_summary)
+        assert result.completion.contextually_complete is False
+        # Background only — must not promote dimension
+        assert any("Unresolved" in q or "high-sensitivity" in q.lower() for q in result.answer.qualifications)
+
+
+class TestSuiteDAffordanceAvailability:
+    def test_d1_available_when_evidence_present(self):
+        registry = ContextRegistry()
+        registry.register(_dim())
+        engine = EvidenceCompatibilityEngine(registry)
+        spans = [{"id": "s1", "constraints": {"historical_period": "modern"}}]
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        affordances = engine.generate_affordances(env, spans)
+        assert len(affordances) == 1
+        assert affordances[0].availability == AffordanceAvailability.AVAILABLE
+        assert affordances[0].target_value == "modern"
+
+    def test_d2_retrievable_when_path_declared(self):
+        registry = ContextRegistry()
+        registry.register(_dim())
+        engine = EvidenceCompatibilityEngine(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        affordances = engine.generate_affordances(
+            env, [], retrieval_paths={"historical_period": "external_lookup"}
+        )
+        assert len(affordances) == 1
+        assert affordances[0].availability == AffordanceAvailability.RETRIEVABLE

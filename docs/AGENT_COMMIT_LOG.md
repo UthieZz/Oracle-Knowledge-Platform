@@ -180,3 +180,11 @@
 - Closes the first verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
 
 
+
+## 2026-11-20 — Deterministic suite expanded + single-candidate affordance fix
+
+- Problem: Locked suites C1/C3/E5/E6/D1/D2 were not covered by executable tests after the first-gate restore. Single-evidence affordance path used a placeholder candidate instead of the observed constrained value, so D1 failed.
+- Change: Added 6 deterministic tests (C1 conflict retention, C3 no silent majority, E5 high-sensitivity incomplete, E6 unconstrained cannot establish completeness, D1 available on evidence, D2 retrievable on declared path). Fixed generate_affordances fallback to prefer the single observed constrained value when present.
+- Verification: pytest tests/test_context_aware_reasoning.py → 21 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Strengthens the first verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
