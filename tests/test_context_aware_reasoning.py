@@ -352,3 +352,82 @@ class TestSuiteDAffordanceAvailability:
         )
         assert len(affordances) == 1
         assert affordances[0].availability == AffordanceAvailability.RETRIEVABLE
+
+
+class TestSuiteDAssumptionAndEstimate:
+    def test_d4_assumption_replacement_creates_new_revision(self):
+        store = EvidenceSnapshotStore()
+        engine = QueryContextEngine(store)
+        parent = engine.create_envelope("e1", "q1", "pkg1", parameters={
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+                assumption="ancient",
+            )
+        })
+        # Apply expansion via assumption path (no evidence_refs)
+        orch = None  # use engine directly for isolation
+        revised = engine.create_revision(parent, {
+            "historical_period": QueryParameter(
+                dimension_id="historical_period",
+                status=ParameterStatus.MISSING,
+                assumption="modern",
+                source="expansion",
+            )
+        })
+        assert revised.revision == parent.revision + 1
+        assert revised.parent_revision == parent.revision
+        assert parent.parameters["historical_period"].assumption == "ancient"
+        assert revised.parameters["historical_period"].assumption == "modern"
+        assert revised.parameters["historical_period"].status == ParameterStatus.MISSING  # never auto-promoted
+
+    def test_d5_projected_change_is_estimate_only(self):
+        registry = ContextRegistry()
+        registry.register(_dim())
+        engine = EvidenceCompatibilityEngine(registry)
+        env = QueryContextEnvelope(
+            envelope_id="e1",
+            revision=1,
+            query_id="q1",
+            package_ref="pkg1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+        )
+        spans = [{"span_id": "s1", "constraints": {"historical_period": "modern"}}]
+        affordances = engine.generate_affordances(env, spans)
+        assert len(affordances) == 1
+        assert affordances[0].projected_change == "estimate: may resolve or refine dimension"
+        # Estimate only: no promise of resolution
+        assert "promise" not in (affordances[0].projected_change or "").lower()
+
+
+class TestSuiteCDomainRule:
+    def test_c2_domain_rule_resolves_only_when_preferred_observed(self):
+        from okc.context.orchestrator import ContextOrchestrator
+        registry = ContextRegistry()
+        registry.register(_dim())
+        store = EvidenceSnapshotStore()
+        orch = ContextOrchestrator(registry, snapshot_store=store)
+        spans = [
+            {"span_id": "s1", "constraints": {"historical_period": "ancient"}},
+            {"span_id": "s2", "constraints": {"historical_period": "modern"}},
+        ]
+        domain_rules = {"historical_period": {"preferred_value": "modern", "rationale": "preferred modern"}}
+        env, affordances, answer = orch.process_query(
+            envelope_id="e1",
+            query_id="q1",
+            package_ref="pkg1",
+            initial_parameters={"historical_period": QueryParameter(dimension_id="historical_period", status=ParameterStatus.MISSING)},
+            evidence_spans=spans,
+            domain_rules=domain_rules,
+        )
+        # Preferred is among observed, so resolution applied
+        assert env.parameters["historical_period"].status == ParameterStatus.RESOLVED
+        assert env.parameters["historical_period"].value == "modern"
+        assert env.parameters["historical_period"].source == "domain_rule"
+        # Conflicts retained in answer
+        assert any("domain rule" in (q or "").lower() or "preferred" in (q or "").lower() for q in (answer.answer.qualifications or []))

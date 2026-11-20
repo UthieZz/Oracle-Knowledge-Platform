@@ -1,4 +1,4 @@
-# OKP Stage — 2026-11-19
+# OKP Stage — 2026-11-20
 
 **Basis:** Current main (Context-Aware Reasoning per-dimension independent classification B6 + unavailable qualification F11 + prior suites). Implementation, tests, and documented operator visibility distinguished from planned work.
 
@@ -48,6 +48,21 @@
 - Answer Stage: minimal AnswerStage (okc/context/answer.py) producing locked structured output with independent completion flags, assumption/unresolved/conflict disclosure, pre-authorized affordances only. Suite F regressions present. No deviation from contracts.
 - Query Context Engine: QueryContextEngine owns envelope revisions with parent lineage. Assumptions never auto-promote; only explicit user confirmation or new evidence does. promote_with_evidence and create_envelope (when refs supplied) create immutable snapshots when store attached (I-10). Suite G + I2 present. No deviation from contracts.
 - Evidence Snapshot Store: EvidenceSnapshotStore owns immutable snapshots; create rejects re-use of same id. Wired into QueryContextEngine for evidence promotion and initial attachment.
+
+## 2026-11-20 — Deterministic suite expanded for D4/D5/C2
+
+
+
+- Problem: Locked suites D4 (assumption replacement revision), D5 (projected_change estimate), and C2 (domain-rule resolution only on observed values) lacked executable regressions after the first-gate restore.
+
+- Change: Added three deterministic tests verifying immutable parent lineage on assumption replacement, estimate-only projected_change, and domain-rule application with disclosure when preferred value is among evidence.
+
+- Verification: pytest tests/test_context_aware_reasoning.py → 24 passed.
+
+- Knowledge Core IR and Connect contracts unchanged.
+
+- Strengthens the first verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
+
 
 ## Next
 Continue remaining P1 authorization boundaries or further Context-Aware Reasoning integration (e.g. expansion path). Prefer smallest coherent change with new regression evidence against locked contracts.

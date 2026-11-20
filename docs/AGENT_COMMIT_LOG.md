@@ -1,3 +1,18 @@
+## 2026-11-20 — Deterministic suite expanded for D4/D5/C2
+
+
+
+- Problem: Locked suites D4 (assumption replacement revision), D5 (projected_change estimate), and C2 (domain-rule resolution only on observed values) lacked executable regressions after the first-gate restore.
+
+- Change: Added three deterministic tests verifying immutable parent lineage on assumption replacement, estimate-only projected_change, and domain-rule application with disclosure when preferred value is among evidence.
+
+- Verification: pytest tests/test_context_aware_reasoning.py → 24 passed.
+
+- Knowledge Core IR and Connect contracts unchanged.
+
+- Strengthens the first verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
+
+
 ## 2026-11-19 — STAGE.md synced to current verified Context-Aware Reasoning state
 
 - Problem: STAGE.md dated 2026-11-18 and omitted the latest B6 / F11 verified advances, creating drift from runtime evidence and AGENT_COMMIT_LOG.
