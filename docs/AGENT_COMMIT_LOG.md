@@ -1,3 +1,11 @@
+## 2026-11-20 — Orchestrator retrieval path locks I-10 snapshot + I-09 lineage
+
+- Problem: Deterministic suite lacked an explicit regression for the orchestrator retrieve_for_affordance path: retrieval must create a new immutable evidence snapshot (I-10) and a new envelope revision with parent lineage (I-09).
+- Change: Added TestSuiteIRetrievalPath.test_retrieve_for_affordance_creates_new_snapshot_and_revision. No production code change; existing QueryContextEngine.promote_with_evidence and ContextOrchestrator.retrieve_for_affordance already satisfied the locked contracts.
+- Verification: pytest tests/test_context_aware_reasoning.py → 29 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Strengthens the first verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
+
 ## 2026-11-20 — ROADMAP.md restored from accidental placeholder and synced
 
 ## 2026-11-20 — AnswerStage insufficient-evidence path locked

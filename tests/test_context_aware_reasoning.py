@@ -511,3 +511,96 @@ class TestSuiteFAnswerStageInsufficient:
         assert "Delivered=False" in summary
         assert "ContextuallyComplete=False" in summary
         assert "Reason=insufficient_evidence" in summary
+
+
+class TestSuiteIRetrievalPath:
+    """Locks I-10 (retrieval creates new immutable snapshot) and I-09 (revision lineage)
+    on the orchestrator retrieval path for RETRIEVABLE affordances.
+    Source: design/context-aware-reasoning/05-integration-contract.md I-09, I-10.
+    """
+
+    def test_retrieve_for_affordance_creates_new_snapshot_and_revision(self):
+        from okc.context.orchestrator import ContextOrchestrator
+        from okc.context.models import AffordanceAvailability, ExpansionAffordance
+        from okc.context.snapshot_store import EvidenceSnapshotStore
+
+        registry = ContextRegistry()
+        registry.register(_dim())
+        store = EvidenceSnapshotStore()
+        orch = ContextOrchestrator(registry, snapshot_store=store)
+
+        # Initial envelope with a parent snapshot
+        initial = orch.query_engine.create_envelope(
+            envelope_id="env-r1",
+            query_id="q-r1",
+            package_ref="pkg-r1",
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.MISSING,
+                )
+            },
+            evidence_refs=["span-initial"],
+        )
+        assert initial.revision == 1
+        assert initial.evidence_set_ref is not None
+        original_snap_id = initial.evidence_set_ref
+        original_snap = store.get(original_snap_id)
+        assert original_snap is not None
+        assert original_snap.evidence_refs == ("span-initial",)
+
+        # Construct a valid RETRIEVABLE affordance matching the envelope
+        affordance = ExpansionAffordance(
+            affordance_id="aff-r1",
+            dimension_id="historical_period",
+            target_value="modern",
+            availability=AffordanceAvailability.RETRIEVABLE,
+            effect="add_evidence",
+            source_envelope_id=initial.envelope_id,
+            source_revision=initial.revision,
+            cost="low",
+        )
+
+        # Provide a span that carries an explicit constraint (presence only; no interpretation)
+        extra_spans = [
+            {
+                "span_id": "span-retrieved",
+                "constraints": {"historical_period": "modern"},
+            }
+        ]
+
+        new_env = orch.retrieve_for_affordance(
+            envelope=initial,
+            affordance=affordance,
+            extra_spans=extra_spans,
+        )
+
+        # New revision with parent lineage (I-09)
+        assert new_env.revision == 2
+        assert new_env.parent_revision == 1
+        assert new_env.envelope_id == initial.envelope_id
+
+        # Parameter promoted via evidence
+        param = new_env.parameters["historical_period"]
+        assert param.status == ParameterStatus.RESOLVED
+        assert param.value == "modern"
+        assert param.source == "evidence"
+
+        # New immutable snapshot created (I-10), parent linked
+        assert new_env.evidence_set_ref is not None
+        assert new_env.evidence_set_ref != original_snap_id
+        new_snap = store.get(new_env.evidence_set_ref)
+        assert new_snap is not None
+        assert new_snap.parent_snapshot_id == original_snap_id
+        assert "span-retrieved" in new_snap.evidence_refs
+
+        # Originals remain unchanged (immutability)
+        assert initial.revision == 1
+        assert initial.evidence_set_ref == original_snap_id
+        assert store.get(original_snap_id).evidence_refs == ("span-initial",)
+        # Attempting to recreate the same snapshot id must fail
+        try:
+            store.create_snapshot(original_snap_id, ["other"])
+            assert False, "duplicate snapshot id must be rejected"
+        except ValueError:
+            pass

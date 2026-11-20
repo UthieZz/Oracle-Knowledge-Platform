@@ -14,6 +14,8 @@ The near-term product objective is a dependable, demonstrable vertical slice: co
 
 ## Recent verified advances (2026-11-20)
 
+- Context-Aware Reasoning orchestrator retrieval path: locks I-10 (retrieval creates new immutable evidence snapshot with parent link) and I-09 (new envelope revision with parent_revision) on retrieve_for_affordance for RETRIEVABLE affordances. Suite I. 29 passed. No deviation.
+
 - Context-Aware Reasoning AnswerStage insufficient-evidence path: locks answer_delivered=false + reason=insufficient_evidence when no material evidence/assumptions, independent contextually_complete=false, no invented claims, high-sensitivity non-assumable disclosed as unresolved+unavailable, disclosure summary includes flags. Suite F. 28 passed. No deviation.
 
 - Context-Aware Reasoning A2/A5/B5: domain extension via new version (same-version rejected), package support declaration alone does not emit affordance, invalid provenance classified unconstrained. Suite expanded. 27 passed (prior). No deviation.
