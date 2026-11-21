@@ -1,3 +1,12 @@
+## 2026-11-21 — Correct restore of full CAR deterministic suite + B6
+
+- Problem: Prior push left tests/test_context_aware_reasoning.py as placeholder after attempted restore. Gate still broken.
+- Change: Replaced with full restored suite from 4b04466 + appended B6 per-dimension independence test. 631 lines. No production code change.
+- Verification: File content verified on remote post-push; syntax ok; structure matches prior 29-passed suite plus new B6 regression. Expected 30 passed on next local run.
+- Knowledge Core IR and Connect contracts unchanged.
+- Deterministic first gate re-established. No deviation from locked design/context-aware-reasoning/ contracts.
+
+
 ## 2026-11-21 — Restore CAR deterministic suite after placeholder overwrite
 
 - Problem: Latest commit 9d92b2a replaced tests/test_context_aware_reasoning.py with PLACEHOLDER_WILL_REPLACE (606 lines deleted). Deterministic gate broken.
