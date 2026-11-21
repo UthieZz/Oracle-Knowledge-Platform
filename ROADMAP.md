@@ -13,6 +13,8 @@ It is knowledge infrastructure—not simply a chatbot or conversation archive.
 The near-term product objective is a dependable, demonstrable vertical slice: connect an approved source, synchronize changes in the background, maintain a governed KnowledgePackage, retrieve grounded evidence, and make operational state inspectable.
 
 ## Recent verified advances (2026-11-20)
+- Context-Aware Reasoning I-06/I-07: locks that AnswerStage receives only pre-authorized affordances and passes them through unmodified (eligibility and execution metadata unchanged). Suite expanded. 31 passed. No deviation.
+
 
 - Context-Aware Reasoning orchestrator retrieval path: locks I-10 (retrieval creates new immutable evidence snapshot with parent link) and I-09 (new envelope revision with parent_revision) on retrieve_for_affordance for RETRIEVABLE affordances. Suite I. 29 passed. No deviation.
 

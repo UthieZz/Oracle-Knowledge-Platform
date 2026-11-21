@@ -56,3 +56,11 @@
 - Re-establishes inspectable stage status for next agent run.
 
 [Full historical log continues from prior commits; see git history for complete prior entries.]
+
+## 2026-11-21 — AnswerStage pre-authorized affordance pass-through locked (I-06/I-07)
+
+- Problem: Deterministic suite lacked an explicit regression confirming the Answer Stage cannot invent or alter expansion affordance eligibility/metadata (I-06, I-07).
+- Change: Added TestSuiteIIntegrationInvariants.test_i06_i07_answer_stage_passes_preauthorized_affordances_unmodified. No production code change; existing AnswerStage already satisfied the locked contract.
+- Verification: pytest tests/test_context_aware_reasoning.py → 31 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Strengthens the verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.

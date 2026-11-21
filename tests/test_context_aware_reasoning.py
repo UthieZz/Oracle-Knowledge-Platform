@@ -629,3 +629,58 @@ class TestSuiteBPerDimensionIndependence:
         assert state_region == CompatibilityState.PARTIALLY_COMPATIBLE
         assert state_theme == CompatibilityState.UNCONSTRAINED
 
+
+
+class TestSuiteIIntegrationInvariants:
+    def test_i06_i07_answer_stage_passes_preauthorized_affordances_unmodified(self):
+        """Locks I-06 (only pre-authorized affordances reach Answer Stage)
+        and I-07 (Answer Stage cannot modify eligibility or execution metadata).
+        Source: design/context-aware-reasoning/05-integration-contract.md
+        """
+        registry = ContextRegistry()
+        registry.register(_dim("historical_period"))
+        stage = AnswerStage(registry)
+
+        envelope = QueryContextEnvelope(
+            envelope_id="env-i07",
+            query_id="q-i07",
+            package_ref="pkg-1",
+            evidence_set_ref="snap-1",
+            revision=1,
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.RESOLVED,
+                    value="modern",
+                    source="evidence",
+                )
+            },
+        )
+
+        original = ExpansionAffordance(
+            affordance_id="aff-pre",
+            dimension_id="historical_period",
+            target_value="modern",
+            availability=AffordanceAvailability.AVAILABLE,
+            effect="constrain",
+            source_envelope_id=envelope.envelope_id,
+            source_revision=envelope.revision,
+            cost="none",
+        )
+
+        result = stage.produce(
+            envelope=envelope,
+            affordances=[original],
+            evidence_summary={"supporting": ["span-1"]},
+        )
+
+        assert len(result.expansion_affordances) == 1
+        returned = result.expansion_affordances[0]
+        assert returned.affordance_id == original.affordance_id
+        assert returned.availability == original.availability
+        assert returned.effect == original.effect
+        assert returned.source_envelope_id == original.source_envelope_id
+        assert returned.source_revision == original.source_revision
+        assert returned.target_value == original.target_value
+        # No mutation of the input object
+        assert original.availability == AffordanceAvailability.AVAILABLE
