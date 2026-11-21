@@ -684,3 +684,84 @@ class TestSuiteIIntegrationInvariants:
         assert returned.target_value == original.target_value
         # No mutation of the input object
         assert original.availability == AffordanceAvailability.AVAILABLE
+
+
+    def test_i08_material_claims_appear_in_claims_array(self):
+        """Locks I-08: every material factual claim appears in the claims array
+        with support_status and evidence_refs where applicable.
+        Source: design/context-aware-reasoning/03-answer-stage-contract.md and 05-integration-contract.md
+        """
+        registry = ContextRegistry()
+        registry.register(_dim("historical_period"))
+        stage = AnswerStage(registry)
+
+        envelope = QueryContextEnvelope(
+            envelope_id="env-i08",
+            query_id="q-i08",
+            package_ref="pkg-1",
+            evidence_set_ref="snap-1",
+            revision=1,
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.RESOLVED,
+                    value="modern",
+                    source="evidence",
+                )
+            },
+        )
+
+        supporting_refs = ["span-primary-1", "span-primary-2"]
+        result = stage.produce(
+            envelope=envelope,
+            affordances=[],
+            evidence_summary={"supporting": supporting_refs},
+        )
+
+        assert result.completion.answer_delivered is True
+        supported_claims = [c for c in result.answer.claims if c.support_status == "supported"]
+        assert len(supported_claims) >= 1
+        assert set(supporting_refs).issubset(set(supported_claims[0].evidence_refs))
+        # Claim text must not invent unsupported facts
+        assert "Primary findings supported" in supported_claims[0].text
+
+    def test_i05_conflicts_retained_by_answer_stage_not_silently_removed(self):
+        """Locks I-05: conflicts cannot be silently removed by the Answer Stage.
+        Both alternatives remain disclosed; neither is treated as established.
+        Source: design/context-aware-reasoning/05-integration-contract.md
+        """
+        registry = ContextRegistry()
+        registry.register(_dim("historical_period"))
+        stage = AnswerStage(registry)
+
+        envelope = QueryContextEnvelope(
+            envelope_id="env-i05",
+            query_id="q-i05",
+            package_ref="pkg-1",
+            evidence_set_ref="snap-1",
+            revision=1,
+            parameters={
+                "historical_period": QueryParameter(
+                    dimension_id="historical_period",
+                    status=ParameterStatus.PARTIALLY_RESOLVED,
+                    value=None,
+                    source="conflict",
+                )
+            },
+        )
+
+        conflicts = ["historical_period:ancient", "historical_period:modern"]
+        result = stage.produce(
+            envelope=envelope,
+            affordances=[],
+            evidence_summary={"supporting": ["span-a"], "conflicting": conflicts},
+            conflicts=conflicts,
+        )
+
+        assert set(result.context.conflicted_dimensions) == set(conflicts)
+        assert any("Conflicts retained" in q for q in result.answer.qualifications)
+        # No claim treats one side as established fact without disclosure
+        for claim in result.answer.claims:
+            assert "ancient" not in claim.text.lower() or "conflict" in claim.text.lower()
+            assert "modern" not in claim.text.lower() or "conflict" in claim.text.lower()
+        assert result.completion.contextually_complete is False

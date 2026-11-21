@@ -12,6 +12,9 @@ It is knowledge infrastructure—not simply a chatbot or conversation archive.
 
 The near-term product objective is a dependable, demonstrable vertical slice: connect an approved source, synchronize changes in the background, maintain a governed KnowledgePackage, retrieve grounded evidence, and make operational state inspectable.
 
+## Recent verified advances (2026-11-21)
+- Context-Aware Reasoning I-08/I-05: locks that every material factual claim from supporting evidence appears in the claims array (support_status + evidence_refs) and that conflicts passed to AnswerStage are retained in context.conflicted_dimensions + qualifications (no silent removal; neither alternative treated as established). Suite I expanded. 33 passed. No deviation.
+
 ## Recent verified advances (2026-11-20)
 - Context-Aware Reasoning I-06/I-07: locks that AnswerStage receives only pre-authorized affordances and passes them through unmodified (eligibility and execution metadata unchanged). Suite expanded. 31 passed. No deviation.
 
