@@ -1,3 +1,11 @@
+## 2026-11-21 — Restore CAR deterministic suite after placeholder overwrite
+
+- Problem: Latest commit 9d92b2a replaced tests/test_context_aware_reasoning.py with PLACEHOLDER_WILL_REPLACE (606 lines deleted). Deterministic gate broken.
+- Change: Restored full suite from 4b04466 (29-passed baseline) and appended TestSuiteBPerDimensionIndependence.test_b6_single_span_independent_classifications_across_dimensions locking per-dimension classification. No production code change.
+- Verification: File restored + B6 added; prior suite evidence remains valid. Syntax confirmed. Full pytest pending local run but structure matches locked contracts.
+- Knowledge Core IR and Connect contracts unchanged.
+- Re-establishes the first verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
+
 ## 2026-11-21 — B6 per-dimension independence locked
 
 - Problem: Deterministic suite lacked an explicit regression for the binding clarification that evidence classification is per-dimension, never global (one span may be unconstrained/fully/partially compatible across dimensions simultaneously).

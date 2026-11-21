@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-20
 
-**Basis:** Current main (ed286692). Context-Aware Reasoning deterministic suite restored and expanded: 30 passed (including A2/A5/B5/B6, AnswerStage insufficient-evidence path, and orchestrator retrieval path locking I-10 new snapshot + I-09 revision lineage). Prior Connect, local server, and ownership status carried forward from 2026-11-13/19 evidence. Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main (post-restore). Context-Aware Reasoning deterministic suite restored and expanded: 30 passed (suite restored after placeholder; including A2/A5/B5/B6, AnswerStage insufficient-evidence path, and orchestrator retrieval path locking I-10 new snapshot + I-09 revision lineage). Prior Connect, local server, and ownership status carried forward from 2026-11-13/19 evidence. Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
