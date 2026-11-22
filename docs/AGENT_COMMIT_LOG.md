@@ -1,3 +1,11 @@
+## 2026-11-22 — CompilerAdapter forwards strict_permissions (P1 pipeline boundary closed)
+
+- Problem: okc/adapters/compiler_adapter.py called exporter.export without the strict_permissions flag. Under OKP_STRICT_PERMISSIONS=true the pipeline could still emit missing-permission objects, diverging from the local server path, retriever, HybridRAG, and other exporters.
+- Change: Adapter now reads OKP_STRICT_PERMISSIONS (same truthy check as server) and passes strict_permissions to the exporter. Default remains False (pilot). No other behavior change.
+- Verification: pytest tests/test_compiler_adapter_permissions.py → 2 passed. Related permission + CAR suites remain green (42 passed).
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes one verified remaining delivery boundary on the OKC pipeline path. No deviation from locked design/context-aware-reasoning/ contracts or permission model.
+
 ## 2026-11-22 — close remaining P1 boundary on legacy ledger and relationship exporters
 
 - Problem: ProvenanceLedgerExporter and RelationshipIndexExporter excluded only explicit read=False. Under strict mode they could still emit objects with source identity but no permission entry, diverging from FirestoreExporter, SQLiteExporter, HybridRAG, package_adapter, and the orchestrator.
