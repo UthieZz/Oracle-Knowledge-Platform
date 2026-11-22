@@ -46,15 +46,20 @@ class ContextOrchestrator:
         conflicts: Optional[List[str]] = None,
         evidence_summary: Optional[Dict[str, List[str]]] = None,
         domain_rules: Optional[Dict[str, Dict[str, Any]]] = None,
+        strict_permissions: bool = False,
     ) -> tuple[QueryContextEnvelope, List[ExpansionAffordance], AnswerResult]:
         """Create envelope, request affordances from compatibility engine, produce answer.
 
         Does not interpret evidence, resolve dimensions, or invent affordances.
         Domain rules (if supplied) are applied only for simple conflicts whose preferred
         value is already among the observed evidence (C2). No domain logic resides here.
+
+        strict_permissions is forwarded to extract_evidence_spans when a package is
+        supplied and no pre-filtered spans are provided. Default False preserves pilot
+        behavior. Explicit denials are always excluded by the adapter.
         """
         if evidence_spans is None and package is not None:
-            spans = extract_evidence_spans(package)
+            spans = extract_evidence_spans(package, strict_permissions=strict_permissions)
         else:
             spans = evidence_spans or []
         evidence_refs = None
@@ -166,12 +171,16 @@ class ContextOrchestrator:
         affordance: ExpansionAffordance,
         package: Optional[KnowledgePackage] = None,
         extra_spans: Optional[List[Dict[str, Any]]] = None,
+        strict_permissions: bool = False,
     ) -> QueryContextEnvelope:
         """Coordinate retrieval for a RETRIEVABLE affordance.
 
         Uses package adapter or supplied spans only. Creates new immutable snapshot
         and revision via promote_with_evidence. No domain logic, no status mutation
         beyond what the engine already does for evidence. (I-10, I-09, I-11)
+
+        strict_permissions is forwarded to extract_evidence_spans when a package is
+        supplied. Default False preserves pilot behavior.
         """
         if affordance.availability != "retrievable":
             raise ValueError("retrieve_for_affordance only accepts RETRIEVABLE affordances")
@@ -180,7 +189,7 @@ class ContextOrchestrator:
 
         spans = extra_spans or []
         if package is not None:
-            spans = extract_evidence_spans(package) + spans
+            spans = extract_evidence_spans(package, strict_permissions=strict_permissions) + spans
         # Filter to spans that could support the target (presence only; no interpretation)
         relevant = [s for s in spans if s.get("span_id")]
         if not relevant:

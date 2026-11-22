@@ -81,6 +81,14 @@
 - Knowledge Core IR and Connect contracts unchanged.
 - Strengthens the verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
 
+## 2026-11-22 — orchestrator propagates strict_permissions (P1 boundary closed)
+
+- Problem: ContextOrchestrator.process_query and retrieve_for_affordance called extract_evidence_spans without the strict_permissions flag. Under strict mode, missing-permission evidence could still enter the CAR pipeline via the orchestrator even though the adapter, retriever, HybridRAG, and exporters already filtered it.
+- Change: Added strict_permissions: bool = False parameter to both methods and forwarded it to extract_evidence_spans. Default preserves pilot behavior. Explicit denials remain always-excluded by the adapter.
+- Verification: pytest tests/test_context_aware_reasoning.py → 38 passed (1 new regression).
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes one verified delivery boundary for CAR. No deviation from locked design/context-aware-reasoning/ contracts.
+
 ## 2026-11-22 — package_adapter permission filter (P1 boundary closed)
 
 - Problem: Context-Aware Reasoning evidence extraction (okc/context/package_adapter.py) did not honor the permission model. Explicit denials and strict-mode missing entries could leak into CAR evidence spans.
