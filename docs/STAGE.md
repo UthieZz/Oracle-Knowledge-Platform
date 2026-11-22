@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-22
 
-**Basis:** Current main. MultiSourceExporter now wires strict_permissions (default False) through export and filtering (closes remaining legacy multi-source P1 boundary; 6 passed). Context-Aware Reasoning deterministic suite expanded: 38 passed (verified 2026-11-22). CompilerAdapter forwards OKP_STRICT_PERMISSIONS. Prior Connect, local server, and ownership status carried forward from 2026-11-13/19 evidence. Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main. ExportService.export_knowledge now forwards OKP_STRICT_PERMISSIONS to every registered exporter (closes remaining legacy ExportService P1 boundary; 2 passed). MultiSourceExporter, CompilerAdapter, and CAR paths already honor the flag. Context-Aware Reasoning deterministic suite: 38 passed (verified 2026-11-22). Prior Connect, local server, and ownership status carried forward. Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -31,6 +31,6 @@
 - Legacy delivery surfaces: ProvenanceLedgerExporter and RelationshipIndexExporter now honor strict_permissions (default False). Explicit deny always excluded; under strict, source-identity objects without explicit entry are excluded. Aligns remaining P1 boundary with Firestore / SQLite / CAR paths. Regressions added. No deviation from permission model or locked contracts.
 
 ## Next
-Continue remaining P1 authorization boundaries (one verified weak boundary with regression) or further Context-Aware Reasoning integration only when higher defects cleared. Prefer smallest coherent change with new regression evidence against locked contracts.
+Continue remaining P1 authorization boundaries (identify next verified weak boundary with regression) or further Context-Aware Reasoning integration only when higher defects cleared. Prefer smallest coherent change with new regression evidence against locked contracts.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.

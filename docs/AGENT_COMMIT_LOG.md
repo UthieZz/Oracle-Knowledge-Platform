@@ -120,3 +120,11 @@
 - Verification: pytest tests/test_context_aware_reasoning.py → 37 passed (3 new regressions).
 - Knowledge Core IR and Connect contracts unchanged.
 - Closes one verified delivery boundary for CAR. No deviation from locked design/context-aware-reasoning/ contracts.
+
+## 2026-11-22 — ExportService forwards OKP_STRICT_PERMISSIONS (P1 boundary closed)
+
+- Problem: ExportService.export_knowledge called exporter.export(package) without the strict_permissions flag. All registered exporters already honored the flag, but the legacy service path ignored OKP_STRICT_PERMISSIONS, allowing missing-permission objects to be exported under strict mode.
+- Change: Compute strict_permissions from the same env flag used by local server and CompilerAdapter; pass it to every exporter.export call. Default preserves pilot behavior.
+- Verification: pytest tests/test_export_service_permissions.py → 2 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes one verified delivery boundary on the legacy ExportService path. No deviation from permission model or locked contracts.

@@ -13,6 +13,9 @@ It is knowledge infrastructure—not simply a chatbot or conversation archive.
 The near-term product objective is a dependable, demonstrable vertical slice: connect an approved source, synchronize changes in the background, maintain a governed KnowledgePackage, retrieve grounded evidence, and make operational state inspectable.
 
 ## Recent verified advances (2026-11-22)
+- ExportService.export_knowledge: now reads OKP_STRICT_PERMISSIONS and forwards strict_permissions to every registered exporter (MultiSource, RelationshipIndex, ProvenanceLedger, Firestore). Pilot default (False) preserved. Aligns legacy ExportService path with CompilerAdapter / local server / CAR / other exporters. Regression added (2 passed). No IR or Connect contract change.
+
+## Recent verified advances (2026-11-22)
 - MultiSourceExporter: export() and internal filtering now accept and honor optional strict_permissions (default False). Explicit deny always excluded; under strict, source-identity conversations without explicit entry are excluded. Aligns remaining legacy multi-source delivery boundary with Firestore / SQLite / CAR / ledger / relationship / CompilerAdapter. Regression added (6 passed). No IR or Connect contract change.
 
 ## Recent verified advances (2026-11-22)

@@ -71,12 +71,16 @@ class ExportService:
 
         results = []
 
+        # Align with local server, CompilerAdapter, and other delivery paths:
+        # honor OKP_STRICT_PERMISSIONS (pilot default False keeps missing-permission objects visible).
+        strict_permissions = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
+
         for exporter in exporters:
             if hasattr(exporter, "mode"):
                 setattr(exporter, "mode", mode)
             if hasattr(exporter, "output_dir"):
                 setattr(exporter, "output_dir", output_dir)
-            exporter.export(package)
+            exporter.export(package, strict_permissions=strict_permissions)
             results.append(exporter.name)
 
         return {
