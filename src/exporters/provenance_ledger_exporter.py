@@ -54,19 +54,37 @@ class ProvenanceLedgerExporter(Exporter):
     def supported_outputs(self) -> List[str]:
         return ["json"]
 
-    def export(self, package: KnowledgePackage) -> KnowledgePackage:
+    def export(self, package: KnowledgePackage, strict_permissions: bool = False) -> KnowledgePackage:
         repair = ensure_knowledge_object_provenance(package)
         check = provenance_report(package)
         entries: List[Dict[str, Any]] = []
-        # Exclude knowledge_objects with explicit permission read=False (aligned with other delivery boundaries)
+        # Exclude knowledge_objects with explicit permission read=False (aligned with other delivery boundaries).
+        # strict_permissions=True additionally excludes objects that have source identity but no explicit entry
+        # (production-oriented fail-closed; default False preserves pilot compatibility).
         raw_permissions = package.metadata.get("permissions", {}) if hasattr(package, "metadata") else {}
         permissions = raw_permissions if isinstance(raw_permissions, dict) else {}
         def _is_forbidden(ko) -> bool:
             oid = str(getattr(ko, "id", "") or "")
-            if not oid:
+            provenance = getattr(ko, "provenance", None) or {}
+            src_ids = provenance.get("source_record_ids") or []
+            if not isinstance(src_ids, list):
+                src_ids = []
+            keys = []
+            if oid:
+                keys.append(oid)
+            for rid in src_ids:
+                s = str(rid)
+                keys.append(s[4:] if s.startswith("src:") else s)
+            if not keys:
                 return False
-            perm = permissions.get(oid)
-            if perm is not None and isinstance(perm, dict) and perm.get("read") is False:
+            has_explicit = False
+            for key in keys:
+                perm = permissions.get(key)
+                if perm is not None and isinstance(perm, dict):
+                    has_explicit = True
+                    if perm.get("read") is False:
+                        return True
+            if strict_permissions and not has_explicit:
                 return True
             return False
         for ko in package.knowledge_objects:

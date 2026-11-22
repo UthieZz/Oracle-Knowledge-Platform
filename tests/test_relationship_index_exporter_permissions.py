@@ -52,3 +52,42 @@ class TestRelationshipIndexPermissions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_strict_permissions_excludes_missing(self):
+        """P1: strict_permissions=True excludes objects with source identity but no explicit entry."""
+        package = KnowledgePackage()
+        package.metadata["permissions"] = {"denied": {"read": False}}
+        package.add_knowledge_object(
+            KnowledgeObject(
+                id="denied",
+                title="Secret",
+                content="hidden",
+                source_platform="Test",
+                source_file="test.json",
+                created_at="2026-01-01T00:00:00Z",
+                updated_at="2026-01-01T00:00:00Z",
+                provenance={"conversation_id": "c1", "source_record_ids": ["src:denied"]},
+                evidence=[],
+            )
+        )
+        package.add_knowledge_object(
+            KnowledgeObject(
+                id="missing",
+                title="No entry",
+                content="visible by default",
+                source_platform="Test",
+                source_file="test.json",
+                created_at="2026-01-01T00:00:00Z",
+                updated_at="2026-01-01T00:00:00Z",
+                provenance={"conversation_id": "c2", "source_record_ids": ["src:missing"]},
+                evidence=[],
+            )
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            RelationshipIndexExporter(output_dir=tmp).export(package, strict_permissions=True)
+            with open(os.path.join(tmp, "relationships.json"), encoding="utf-8") as fh:
+                payload = json.load(fh)
+        from_ids = {e["from"] for e in payload["edges"]}
+        self.assertNotIn("denied", from_ids)
+        self.assertNotIn("missing", from_ids)

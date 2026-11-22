@@ -1,3 +1,11 @@
+## 2026-11-22 — close remaining P1 boundary on legacy ledger and relationship exporters
+
+- Problem: ProvenanceLedgerExporter and RelationshipIndexExporter excluded only explicit read=False. Under strict mode they could still emit objects with source identity but no permission entry, diverging from FirestoreExporter, SQLiteExporter, HybridRAG, package_adapter, and the orchestrator.
+- Change: Both export methods now accept optional strict_permissions: bool = False. Filtering uses the same source_record_ids + id keying as the Firestore path. Explicit deny always excluded; strict mode excludes missing when source identity present. Default preserves pilot behavior.
+- Verification: pytest tests/test_provenance_ledger_exporter.py tests/test_relationship_index_exporter_permissions.py → 7 passed (new regressions included). Related permission and CAR suites remain green.
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes one verified remaining delivery boundary. No deviation from locked design/context-aware-reasoning/ contracts or permission model.
+
 ## 2026-11-22 — Restore CAR suite green after attribute and B5 mismatch (34 passed)
 
 - Problem: Restored suite on main failed 2 tests (32 passed). I-06/I-07 accessed result.affordances (absent; contract and prior suite use expansion_affordances). B5 classified malformed dict constraint as INCOMPATIBLE instead of UNCONSTRAINED.

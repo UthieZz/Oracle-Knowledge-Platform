@@ -122,3 +122,69 @@ class TestProvenanceLedgerExporter(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_strict_permissions_excludes_missing_with_source_identity(self):
+        """P1 boundary: under strict_permissions=True, objects with source identity but no explicit
+        permission entry are excluded from the ledger. Default (False) still includes them.
+        Explicit deny remains excluded in both modes.
+        """
+        package = KnowledgePackage()
+        package.metadata["permissions"] = {
+            "denied": {"read": False},
+        }
+        package.add_knowledge_object(
+            KnowledgeObject(
+                id="denied",
+                title="Denied",
+                content="hidden",
+                source_platform="Test",
+                source_file="t.json",
+                created_at="2026-01-01T00:00:00Z",
+                updated_at="2026-01-01T00:00:00Z",
+                provenance={"source_record_ids": ["src:denied"]},
+                evidence=[],
+            )
+        )
+        package.add_knowledge_object(
+            KnowledgeObject(
+                id="missing",
+                title="Missing",
+                content="no entry",
+                source_platform="Test",
+                source_file="t.json",
+                created_at="2026-01-01T00:00:00Z",
+                updated_at="2026-01-01T00:00:00Z",
+                provenance={"source_record_ids": ["src:missing"]},
+                evidence=[],
+            )
+        )
+        package.add_knowledge_object(
+            KnowledgeObject(
+                id="no-src",
+                title="No source",
+                content="plain",
+                source_platform="",
+                source_file="",
+                created_at=None,
+                updated_at=None,
+                provenance={},
+                evidence=[],
+            )
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            # default mode includes missing
+            ProvenanceLedgerExporter(output_dir=tmp).export(package)
+            with open(os.path.join(tmp, "provenance_ledger.json"), encoding="utf-8") as fh:
+                payload = json.load(fh)
+            ids = {o["object_id"] for o in payload["objects"]}
+            self.assertNotIn("denied", ids)
+            self.assertIn("missing", ids)
+
+            # strict mode excludes missing when source identity present
+            ProvenanceLedgerExporter(output_dir=tmp).export(package, strict_permissions=True)
+            with open(os.path.join(tmp, "provenance_ledger.json"), encoding="utf-8") as fh:
+                payload = json.load(fh)
+            ids = {o["object_id"] for o in payload["objects"]}
+            self.assertNotIn("denied", ids)
+            self.assertNotIn("missing", ids)
