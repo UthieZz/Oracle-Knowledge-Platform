@@ -62,18 +62,24 @@ class MultiSourceExporter(Exporter):
             return "Separate by Source"
         return "Both"
 
-    def export(self, package: KnowledgePackage) -> KnowledgePackage:
-        """Execute export based on configured mode."""
+    def export(self, package: KnowledgePackage, strict_permissions: bool = False) -> KnowledgePackage:
+        """Execute export based on configured mode.
+
+        Permission filtering (aligned with other exporters):
+        - Explicit read=False always excluded.
+        - strict_permissions=False (default, pilot): missing entries kept visible.
+        - strict_permissions=True: source-identity objects without explicit entry excluded.
+        """
         os.makedirs(self.output_dir, exist_ok=True)
         timestamp = datetime.now(timezone.utc).isoformat()
 
         # Group data by platform dynamically
         platform_map = self._group_by_platform(package)
 
-        # Filter platform map for root manifest (explicit denials excluded)
+        # Filter platform map for root manifest (explicit denials excluded; strict when requested)
         filtered_platform_map: Dict[str, List[Any]] = {}
         for plat, convs in platform_map.items():
-            filtered = [c for c in convs if not self._is_forbidden(c, package)]
+            filtered = [c for c in convs if not self._is_forbidden(c, package, strict_permissions)]
             if filtered:
                 filtered_platform_map[plat] = filtered
 
@@ -87,6 +93,7 @@ class MultiSourceExporter(Exporter):
                 package=package,
                 platform_name="Unified",
                 is_unified=True,
+                strict_permissions=strict_permissions,
             )
             # Root output directory fallback for backwards compatibility
             self._export_package_unit(
@@ -97,6 +104,7 @@ class MultiSourceExporter(Exporter):
                 platform_name="Unified",
                 is_unified=True,
                 skip_platform_json=True,
+                strict_permissions=strict_permissions,
             )
 
         # 2. Export Separate by Source if mode is Separate by Source or Both
@@ -113,6 +121,7 @@ class MultiSourceExporter(Exporter):
                     package=package,
                     platform_name=platform_name,
                     is_unified=False,
+                    strict_permissions=strict_permissions,
                 )
 
         # 3. Generate Top-Level Root Manifest (post-filter counts)
@@ -176,6 +185,7 @@ class MultiSourceExporter(Exporter):
         platform_name: str,
         is_unified: bool,
         skip_platform_json: bool = False,
+        strict_permissions: bool = False,
     ) -> None:
         """Render a self-contained knowledge package folder."""
         os.makedirs(target_dir, exist_ok=True)
@@ -184,10 +194,10 @@ class MultiSourceExporter(Exporter):
         os.makedirs(ko_dir, exist_ok=True)
         os.makedirs(sa_dir, exist_ok=True)
 
-        # Apply permission filter (explicit deny always excluded; pilot default keeps missing visible)
+        # Apply permission filter (explicit deny always excluded; strict excludes missing when requested)
         filtered_conversations = [
             c for c in conversations
-            if not self._is_forbidden(c, package)
+            if not self._is_forbidden(c, package, strict_permissions)
         ]
         conv_ids = {conv.id for conv in filtered_conversations if hasattr(conv, "id")}
 

@@ -206,6 +206,43 @@ class TestMultiSourceExporter(unittest.TestCase):
         self.assertEqual(root_manifest["compilation_run"]["total_conversations"], 2)
 
 
+    def test_strict_permissions_excludes_missing(self):
+        """Under strict_permissions=True, conversations with source id but no permission entry are excluded.
+        Explicit deny remains excluded. Pilot default (False) keeps missing visible.
+        """
+        package = create_multi_source_package()
+        # Explicit deny on one; leave the others without any permission entry
+        package.update_metadata("permissions", {
+            "conv_gemini_1": {"read": False, "recorded_from_event": "evt-deny"}
+        })
+
+        # Default (pilot): missing stay visible, only explicit deny excluded
+        exporter_default = MultiSourceExporter(output_dir=self.output_dir + "_default", mode="Unified")
+        exporter_default.export(package)  # strict_permissions defaults False
+        ko_default = os.path.join(self.output_dir + "_default", "knowledge_objects")
+        files_default = os.listdir(ko_default)
+        # Gemini denied, ChatGPT and Claude present
+        self.assertFalse(any("Gemini" in f or "Quantum" in f for f in files_default))
+        self.assertTrue(any("PEP" in f or "ChatGPT" in f or "style" in f.lower() for f in files_default))
+        self.assertTrue(any("Claude" in f or "Architecture" in f for f in files_default))
+
+        # Strict: missing also excluded (only objects with explicit allow would remain; none here)
+        exporter_strict = MultiSourceExporter(output_dir=self.output_dir + "_strict", mode="Unified")
+        exporter_strict.export(package, strict_permissions=True)
+        ko_strict = os.path.join(self.output_dir + "_strict", "knowledge_objects")
+        files_strict = os.listdir(ko_strict)
+        # All three have source ids and either deny or missing → empty
+        self.assertEqual(len(files_strict), 0, f"Strict mode leaked objects: {files_strict}")
+
+        # INDEX must be empty of conversations
+        index_path = os.path.join(self.output_dir + "_strict", "INDEX.md")
+        with open(index_path, "r", encoding="utf-8") as f:
+            index_text = f.read()
+        self.assertNotIn("Gemini", index_text)
+        self.assertNotIn("ChatGPT", index_text)
+        self.assertNotIn("Claude", index_text)
+
+
 if __name__ == "__main__":
     unittest.main()
 

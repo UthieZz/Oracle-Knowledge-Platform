@@ -13,6 +13,9 @@ It is knowledge infrastructure—not simply a chatbot or conversation archive.
 The near-term product objective is a dependable, demonstrable vertical slice: connect an approved source, synchronize changes in the background, maintain a governed KnowledgePackage, retrieve grounded evidence, and make operational state inspectable.
 
 ## Recent verified advances (2026-11-22)
+- MultiSourceExporter: export() and internal filtering now accept and honor optional strict_permissions (default False). Explicit deny always excluded; under strict, source-identity conversations without explicit entry are excluded. Aligns remaining legacy multi-source delivery boundary with Firestore / SQLite / CAR / ledger / relationship / CompilerAdapter. Regression added (6 passed). No IR or Connect contract change.
+
+## Recent verified advances (2026-11-22)
 - Context-Aware Reasoning orchestrator: process_query and retrieve_for_affordance now accept and forward strict_permissions to extract_evidence_spans. Missing-permission evidence is excluded under strict mode before it can enter the CAR pipeline. Aligns orchestrator with package_adapter / retriever / exporters. Suite expanded. 38 passed. No deviation from locked contracts.
 - Context-Aware Reasoning package_adapter: extract_evidence_spans now filters by permission model (explicit read=False always excluded; strict_permissions excludes missing when source identity present). Aligns CAR evidence path with retriever/exporters. Suite expanded. 37 passed. No deviation from locked contracts.
 - Context-Aware Reasoning suite restored to green: malformed constraints treated as unconstrained (B5); AnswerStage expansion_affordances attribute alignment (I-06/I-07). 34 passed (prior). No deviation from locked contracts.

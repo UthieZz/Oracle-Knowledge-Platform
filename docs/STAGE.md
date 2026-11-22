@@ -1,12 +1,12 @@
 # OKP Stage — 2026-11-22
 
-**Basis:** Current main. Context-Aware Reasoning deterministic suite expanded: 38 passed (verified 2026-11-22). CompilerAdapter now forwards OKP_STRICT_PERMISSIONS to exporter (closes remaining OKC pipeline P1 boundary). Prior Connect, local server, and ownership status carried forward from 2026-11-13/19 evidence. Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main. MultiSourceExporter now wires strict_permissions (default False) through export and filtering (closes remaining legacy multi-source P1 boundary; 6 passed). Context-Aware Reasoning deterministic suite expanded: 38 passed (verified 2026-11-22). CompilerAdapter forwards OKP_STRICT_PERMISSIONS. Prior Connect, local server, and ownership status carried forward from 2026-11-13/19 evidence. Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
 - Provenance, source IDs, tenant/silo preserved.
 - Permission model: pilot default keeps missing visible; explicit deny enforced; strict mode available via OKP_STRICT_PERMISSIONS.
-- Delivery boundaries (retriever, HybridRAG index, SQLite/Firestore/MultiSource/ProvenanceLedger/RelationshipIndex exporters, Context-Aware Reasoning package_adapter, CompilerAdapter pipeline export) honor explicit deny; strict mode excludes missing when source identity present. Unit-tested.
+- Delivery boundaries (retriever, HybridRAG index, SQLite/Firestore/MultiSource/ProvenanceLedger/RelationshipIndex exporters, Context-Aware Reasoning package_adapter, CompilerAdapter pipeline export) honor explicit deny; strict mode excludes missing when source identity present. MultiSourceExporter export() now accepts and forwards strict_permissions (default False). Unit-tested.
 
 ## OKP Connect local-folder pilot
 - LocalFolderConnector + persistent snapshot, SQLite SyncEngine, KnowledgeAccumulator implemented and targeted-tested (recent Connect + permission suites green on 2026-11-12/13 verification).

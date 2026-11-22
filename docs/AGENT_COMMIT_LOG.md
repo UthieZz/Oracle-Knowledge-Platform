@@ -1,3 +1,11 @@
+## 2026-11-22 — MultiSourceExporter honors strict_permissions (P1 boundary closed)
+
+- Problem: src/exporters/multi_source_exporter.py already contained _is_forbidden(strict_permissions) but export() and all call sites never passed the flag. Strict mode was inert; missing-permission conversations with source identity could still be emitted under OKP_STRICT_PERMISSIONS, diverging from Firestore, SQLite, HybridRAG, CAR, ProvenanceLedger, RelationshipIndex, and CompilerAdapter.
+- Change: export() and _export_package_unit now accept optional strict_permissions: bool = False and forward it to every _is_forbidden call. Default remains False (pilot). Explicit deny still always excluded. No other behavior change.
+- Verification: python -m unittest tests.test_multi_source_exporter → 6 passed (prior 5 + new test_strict_permissions_excludes_missing). Default path keeps missing visible; strict excludes missing when source id present.
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes one verified remaining delivery boundary on the legacy multi-source export path. No deviation from locked design/context-aware-reasoning/ contracts or permission model.
+
 ## 2026-11-22 — CompilerAdapter forwards strict_permissions (P1 pipeline boundary closed)
 
 - Problem: okc/adapters/compiler_adapter.py called exporter.export without the strict_permissions flag. Under OKP_STRICT_PERMISSIONS=true the pipeline could still emit missing-permission objects, diverging from the local server path, retriever, HybridRAG, and other exporters.
