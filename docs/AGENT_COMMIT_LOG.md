@@ -1,3 +1,11 @@
+## 2026-11-22 — Restore CAR suite green after attribute and B5 mismatch (34 passed)
+
+- Problem: Restored suite on main failed 2 tests (32 passed). I-06/I-07 accessed result.affordances (absent; contract and prior suite use expansion_affordances). B5 classified malformed dict constraint as INCOMPATIBLE instead of UNCONSTRAINED.
+- Change: EvidenceCompatibilityEngine.classify now treats non-primitive constraints (dict, object, etc.) as UNCONSTRAINED (B5). Corrected test assertions to expansion_affordances. No other behavior change.
+- Verification: pytest tests/test_context_aware_reasoning.py → 34 passed. Connect + knowledge object suites → 52 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Deterministic first gate re-established and aligned with locked design/context-aware-reasoning/ contracts.
+
 ## 2026-11-21 — Restore full CAR suite + successive retrieval lineage lock (34 passed)
 
 - Problem: Latest commits left tests/test_context_aware_reasoning.py as PLACEHOLDER_AGAIN / PLACEHOLDER_WILL_BE_REPLACED_BY_LOCAL, breaking the deterministic gate again.

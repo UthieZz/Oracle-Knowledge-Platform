@@ -645,8 +645,8 @@ class TestSuiteIIntegrationInvariants:
             cost="none",
         )
         result = stage.produce(env, affordances=[original], evidence_summary={"supporting": ["span-1"]})
-        assert len(result.affordances) == 1
-        returned = result.affordances[0]
+        assert len(result.expansion_affordances) == 1
+        returned = result.expansion_affordances[0]
         assert returned.affordance_id == original.affordance_id
         assert returned.availability == original.availability
         assert returned.effect == original.effect

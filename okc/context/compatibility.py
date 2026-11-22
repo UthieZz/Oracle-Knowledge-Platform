@@ -44,6 +44,9 @@ class EvidenceCompatibilityEngine:
         constraint = span_constraints[dimension_id]
         if constraint is None:
             return CompatibilityState.UNCONSTRAINED
+        # B5: malformed / non-comparable constraint (dict, object, non-primitive) treated as unconstrained
+        if not isinstance(constraint, (str, int, float, bool, list)):
+            return CompatibilityState.UNCONSTRAINED
         if constraint == target_value:
             return CompatibilityState.FULLY_COMPATIBLE
         if isinstance(constraint, list) and target_value in constraint:
