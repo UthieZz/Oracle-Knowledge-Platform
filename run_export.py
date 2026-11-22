@@ -63,5 +63,6 @@ print(
 )
 pkg = import_service.get_package()
 exporter = FirestoreExporter(project_id=os.getenv("GOOGLE_CLOUD_PROJECT", "oracle-knowledge-platform"))
-exporter.export(pkg)
+strict = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
+exporter.export(pkg, strict_permissions=strict)
 print("Export completed.")
