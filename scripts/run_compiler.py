@@ -46,13 +46,14 @@ def run_pipeline(source_file: str, tenant_id: str, silo_id: str) -> None:
     pkg = analyzer.run(pkg)
 
     rag_engine = HybridRAGEngine()
-    rag_engine.index_package(pkg)
+    strict = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
+    rag_engine.index_package(pkg, strict_permissions=strict)
     hits = rag_engine.search("SQLite Python integration", tenant_id=tenant_id, silo_id=silo_id)
     logger.info("Hybrid Search Validation Hits: %s", len(hits))
 
     exporter_cls = registry.get("exporter", "sqlite_exporter").plugin
     exporter = exporter_cls(db_path="okp_local.db")
-    exporter.export(pkg, tenant_id=tenant_id, silo_id=silo_id)
+    exporter.export(pkg, tenant_id=tenant_id, silo_id=silo_id, strict_permissions=strict)
     logger.info("Pipeline run completed successfully (%s objects).", len(pkg.objects))
 
 
