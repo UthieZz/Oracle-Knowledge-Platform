@@ -1,12 +1,12 @@
 # OKP Stage — 2026-11-22
 
-**Basis:** Current main. ExportService.export_knowledge now forwards OKP_STRICT_PERMISSIONS to every registered exporter (closes remaining legacy ExportService P1 boundary; 2 passed). MultiSourceExporter, CompilerAdapter, and CAR paths already honor the flag. Context-Aware Reasoning deterministic suite: 38 passed (verified 2026-11-22). Prior Connect, local server, and ownership status carried forward. Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main. Operator scripts (run_export.py, scripts/run_compiler.py) now honor OKP_STRICT_PERMISSIONS for Firestore / HybridRAG / SQLite paths (aligns with local server, CompilerAdapter, ExportService). ExportService, MultiSourceExporter, CompilerAdapter, and CAR paths already honor the flag. Context-Aware Reasoning deterministic suite: 38 passed (verified 2026-11-22). Prior Connect, local server, and ownership status carried forward. Implementation, tests, and documented operator visibility distinguished from planned work.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
 - Provenance, source IDs, tenant/silo preserved.
 - Permission model: pilot default keeps missing visible; explicit deny enforced; strict mode available via OKP_STRICT_PERMISSIONS.
-- Delivery boundaries (retriever, HybridRAG index, SQLite/Firestore/MultiSource/ProvenanceLedger/RelationshipIndex exporters, Context-Aware Reasoning package_adapter, CompilerAdapter pipeline export) honor explicit deny; strict mode excludes missing when source identity present. MultiSourceExporter export() now accepts and forwards strict_permissions (default False). Unit-tested.
+- Delivery boundaries (retriever, HybridRAG index, SQLite/Firestore/MultiSource/ProvenanceLedger/RelationshipIndex exporters, Context-Aware Reasoning package_adapter, CompilerAdapter pipeline export, operator run_export / run_compiler scripts) honor explicit deny; strict mode excludes missing when source identity present. MultiSourceExporter export() now accepts and forwards strict_permissions (default False). Unit-tested.
 
 ## OKP Connect local-folder pilot
 - LocalFolderConnector + persistent snapshot, SQLite SyncEngine, KnowledgeAccumulator implemented and targeted-tested (recent Connect + permission suites green on 2026-11-12/13 verification).
@@ -31,6 +31,6 @@
 - Legacy delivery surfaces: ProvenanceLedgerExporter and RelationshipIndexExporter now honor strict_permissions (default False). Explicit deny always excluded; under strict, source-identity objects without explicit entry are excluded. Aligns remaining P1 boundary with Firestore / SQLite / CAR paths. Regressions added. No deviation from permission model or locked contracts.
 
 ## Next
-Continue remaining P1 authorization boundaries (identify next verified weak boundary with regression) or further Context-Aware Reasoning integration only when higher defects cleared. Prefer smallest coherent change with new regression evidence against locked contracts.
+P1 delivery boundaries for core and operator scripts largely aligned. Prefer Connect reliability evidence (restart/update/delete under interruption) or smallest CAR integration increment against locked contracts. Identify any remaining verified weak boundary with regression before expanding.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.
