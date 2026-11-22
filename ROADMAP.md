@@ -13,7 +13,8 @@ It is knowledge infrastructure—not simply a chatbot or conversation archive.
 The near-term product objective is a dependable, demonstrable vertical slice: connect an approved source, synchronize changes in the background, maintain a governed KnowledgePackage, retrieve grounded evidence, and make operational state inspectable.
 
 ## Recent verified advances (2026-11-22)
-- Context-Aware Reasoning suite restored to green: malformed constraints treated as unconstrained (B5); AnswerStage expansion_affordances attribute alignment (I-06/I-07). 34 passed. No deviation from locked contracts.
+- Context-Aware Reasoning package_adapter: extract_evidence_spans now filters by permission model (explicit read=False always excluded; strict_permissions excludes missing when source identity present). Aligns CAR evidence path with retriever/exporters. Suite expanded. 37 passed. No deviation from locked contracts.
+- Context-Aware Reasoning suite restored to green: malformed constraints treated as unconstrained (B5); AnswerStage expansion_affordances attribute alignment (I-06/I-07). 34 passed (prior). No deviation from locked contracts.
 
 ## Recent verified advances (2026-11-21)
 - Context-Aware Reasoning successive retrieval lineage: locks that successive retrieve_for_affordance calls create distinct immutable snapshots with correct parent_snapshot_id chain and corresponding envelope revisions with parent_revision (I-10/I-09). Suite expanded. 34 passed. No deviation.

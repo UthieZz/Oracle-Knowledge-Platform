@@ -80,3 +80,11 @@
 - Verification: pytest tests/test_context_aware_reasoning.py → 31 passed.
 - Knowledge Core IR and Connect contracts unchanged.
 - Strengthens the verification gate for Context-Aware Reasoning. No deviation from locked design/context-aware-reasoning/ contracts.
+
+## 2026-11-22 — package_adapter permission filter (P1 boundary closed)
+
+- Problem: Context-Aware Reasoning evidence extraction (okc/context/package_adapter.py) did not honor the permission model. Explicit denials and strict-mode missing entries could leak into CAR evidence spans.
+- Change: Added _is_forbidden helper and strict_permissions param (default False) to extract_evidence_spans. Explicit read=False always excluded; strict mode excludes source-identity objects without explicit entry. Matches KnowledgePackageRetriever / HybridRAG / exporters.
+- Verification: pytest tests/test_context_aware_reasoning.py → 37 passed (3 new regressions).
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes one verified delivery boundary for CAR. No deviation from locked design/context-aware-reasoning/ contracts.

@@ -814,3 +814,73 @@ class TestSuiteISuccessiveRetrievalLineage:
         assert store.get(env1.evidence_set_ref).parent_snapshot_id is None
         assert env1.revision == 2
         assert env1.evidence_set_ref == snap1.snapshot_id
+
+
+class TestPackageAdapterPermissions:
+    """P1 boundary: evidence extraction for CAR honors the permission model."""
+
+    def test_explicit_deny_excludes_spans(self):
+        from okc.connect.interfaces import SyncEvent
+        from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+        from okc.context.package_adapter import extract_evidence_spans
+
+        acc = KnowledgeAccumulator()
+        acc.process(SyncEvent(
+            event_id="c1",
+            source="folder",
+            kind="create",
+            payload={"object_id": "doc1", "text": "secret evidence"},
+            tenant_id="t",
+            silo_id="s",
+        ))
+        acc.process(SyncEvent(
+            event_id="p1",
+            source="folder",
+            kind="permission_change",
+            payload={"object_id": "doc1", "read": False},
+            tenant_id="t",
+            silo_id="s",
+        ))
+
+        spans = extract_evidence_spans(acc.package)
+        assert spans == []
+
+    def test_missing_permission_included_by_default(self):
+        from okc.connect.interfaces import SyncEvent
+        from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+        from okc.context.package_adapter import extract_evidence_spans
+
+        acc = KnowledgeAccumulator()
+        acc.process(SyncEvent(
+            event_id="c1",
+            source="folder",
+            kind="create",
+            payload={"object_id": "doc1", "text": "visible evidence"},
+            tenant_id="t",
+            silo_id="s",
+        ))
+
+        spans = extract_evidence_spans(acc.package)
+        assert len(spans) >= 1
+        assert any("visible" in s.get("content", "") for s in spans)
+
+    def test_strict_mode_excludes_missing(self):
+        from okc.connect.interfaces import SyncEvent
+        from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+        from okc.context.package_adapter import extract_evidence_spans
+
+        acc = KnowledgeAccumulator()
+        acc.process(SyncEvent(
+            event_id="c1",
+            source="folder",
+            kind="create",
+            payload={"object_id": "doc1", "text": "restricted evidence"},
+            tenant_id="t",
+            silo_id="s",
+        ))
+
+        spans_default = extract_evidence_spans(acc.package)
+        assert len(spans_default) >= 1
+
+        spans_strict = extract_evidence_spans(acc.package, strict_permissions=True)
+        assert spans_strict == []
