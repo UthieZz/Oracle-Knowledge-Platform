@@ -66,7 +66,15 @@ class CompilerAdapter:
         if incremental and not self._has_delta_changes(compiled_package):
             logger.info("Incremental compilation mode: No delta changes detected. Skipping export.")
         else:
-            self.exporter.export(compiled_package, tenant_id=active_tenant, silo_id=active_silo)
+            # Align with local server and other delivery paths: honor OKP_STRICT_PERMISSIONS
+            # (pilot default False keeps missing-permission objects visible).
+            strict = os.environ.get("OKP_STRICT_PERMISSIONS", "").lower() in ("1", "true", "yes")
+            self.exporter.export(
+                compiled_package,
+                tenant_id=active_tenant,
+                silo_id=active_silo,
+                strict_permissions=strict,
+            )
 
         logger.info("OKC Pipeline execution successfully completed.")
         return compiled_package
