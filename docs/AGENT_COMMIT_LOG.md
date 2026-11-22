@@ -1,3 +1,11 @@
+## 2026-11-22 — operator scripts honor OKP_STRICT_PERMISSIONS (P1 boundary closed)
+
+- Problem: run_export.py (Firestore) and scripts/run_compiler.py (HybridRAG index + SQLite) called export/index without the strict_permissions flag. Under OKP_STRICT_PERMISSIONS=true these operator paths could still emit or index missing-permission objects, diverging from the local server, CompilerAdapter, ExportService, and core exporters.
+- Change: Both scripts now read the same env flag (truthy check matching server/adapter) and pass strict_permissions to the relevant calls. Default remains False (pilot). No other behavior change.
+- Verification: Code inspection + pattern match to verified paths; no new unit tests (scripts are entrypoints). CAR suite remains 38 passed. Related permission suites unchanged.
+- Knowledge Core IR and Connect contracts unchanged.
+- Closes remaining operator-facing delivery boundaries on documented pilot scripts. No deviation from permission model or locked contracts.
+
 ## 2026-11-22 — MultiSourceExporter honors strict_permissions (P1 boundary closed)
 
 - Problem: src/exporters/multi_source_exporter.py already contained _is_forbidden(strict_permissions) but export() and all call sites never passed the flag. Strict mode was inert; missing-permission conversations with source identity could still be emitted under OKP_STRICT_PERMISSIONS, diverging from Firestore, SQLite, HybridRAG, CAR, ProvenanceLedger, RelationshipIndex, and CompilerAdapter.
