@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-23
 
-**Basis:** Current main. SyncWorker now prefers incremental_sync when a durable connector snapshot exists (even if engine cursor is None), closing the interruption window that could miss deletions after snapshot persist but before cursor advance. Local-folder suite 15 passed. Prior mixed concurrent + persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
+**Basis:** Current main. Partial queue drain followed by source mutation (update+delete+create) converges package on restart via incremental_sync with no loss or duplicates. Local-folder suite 16 passed. Prior interruption-after-snapshot, mixed concurrent, persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
