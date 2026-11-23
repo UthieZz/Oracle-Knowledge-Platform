@@ -1,3 +1,11 @@
+## 2026-11-23 — Restore local-folder suite + lock partial drain then source mutation
+
+- Problem: tests/test_local_folder_connector.py was a placeholder on main after incomplete pushes, breaking the Connect reliability regression suite. No locked regression for partial queue drain (cursor advanced) followed by mixed source mutation while stopped.
+- Change: Restored full suite from 465f620d (15 passed baseline including interruption-after-snapshot). Added test_partial_drain_then_source_mutation_converges_package. No production code change; existing incremental_sync + snapshot + cursor logic already correct.
+- Verification: pytest tests/test_local_folder_connector.py → 16 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No deviation from permission model or locked contracts.
+
 ## 2026-11-23 — SyncWorker prefers durable snapshot over missing cursor (Connect reliability)
 
 - Problem: After a successful LocalFolderConnector snapshot persist and event enqueue, a crash before any successful process_next leaves the engine cursor None. On restart the worker called initial_sync again, which overwrites the snapshot and emits only creates, silently missing any deletions that occurred while stopped.

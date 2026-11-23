@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-23
 
-**Basis:** Current main. Partial queue drain followed by source mutation (update+delete+create) converges package on restart via incremental_sync with no loss or duplicates. Local-folder suite 16 passed. Prior interruption-after-snapshot, mixed concurrent, persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
+**Basis:** Current main. Local-folder test suite restored from last intact content (465f) and extended with partial-queue-drain then source-mutation regression. After partial processing (cursor advanced) and further create/update/delete while stopped, restart + incremental_sync converges the package with no loss or duplicates. Local-folder suite 16 passed. Prior interruption-after-snapshot, mixed concurrent, persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
