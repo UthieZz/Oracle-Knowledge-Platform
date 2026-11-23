@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-22
+# OKP Stage — 2026-11-23
 
-**Basis:** Current main. Operator scripts (run_export.py, scripts/run_compiler.py) now honor OKP_STRICT_PERMISSIONS for Firestore / HybridRAG / SQLite paths (aligns with local server, CompilerAdapter, ExportService). ExportService, MultiSourceExporter, CompilerAdapter, and CAR paths already honor the flag. Context-Aware Reasoning deterministic suite: 38 passed (verified 2026-11-22). Prior Connect, local server, and ownership status carried forward. Implementation, tests, and documented operator visibility distinguished from planned work.
+**Basis:** Current main. LocalFolderConnector: new regression confirms prior valid snapshot survives simulated atomic-replace failure (no data loss of last successful persist). Local-folder suite 12 passed. Prior permission alignment, CAR suite (38 passed), and Connect status carried forward.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.

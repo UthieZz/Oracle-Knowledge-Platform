@@ -1,3 +1,12 @@
+## 2026-11-23 — LocalFolderConnector persist-failure regression (Connect reliability)
+
+- Problem: No explicit regression that a failed atomic replace after .tmp write leaves the previous valid snapshot intact and loadable.
+- Change: Added test_local_folder_persist_failure_preserves_prior_snapshot. No production code change; existing _persist_snapshot already cleans .tmp and raises on failure.
+- Verification: pytest tests/test_local_folder_connector.py::test_local_folder_persist_failure_preserves_prior_snapshot → passed; full local-folder suite 12 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No deviation from permission model or locked contracts.
+
+
 ## 2026-11-22 — operator scripts honor OKP_STRICT_PERMISSIONS (P1 boundary closed)
 
 - Problem: run_export.py (Firestore) and scripts/run_compiler.py (HybridRAG index + SQLite) called export/index without the strict_permissions flag. Under OKP_STRICT_PERMISSIONS=true these operator paths could still emit or index missing-permission objects, diverging from the local server, CompilerAdapter, ExportService, and core exporters.

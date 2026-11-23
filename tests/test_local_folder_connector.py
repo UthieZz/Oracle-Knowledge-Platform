@@ -401,3 +401,45 @@ def test_run_connect_worker_accepts_config_file(tmp_path):
     assert Path(pkg).exists() or proc.returncode is not None
     # Stronger: package should exist after brief run if connector works
     assert Path(pkg).exists()
+
+
+def test_local_folder_persist_failure_preserves_prior_snapshot(tmp_path, monkeypatch):
+    """If atomic persist raises after writing .tmp, the previous valid snapshot remains intact and usable on next init."""
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "keep.txt").write_text("prior content", encoding="utf-8")
+    snap = tmp_path / "snapshot.json"
+    # Seed a valid prior snapshot
+    prior = {"version": 1, "seq": 5, "snapshot": {"keep.txt": "abc123"}}
+    snap.write_text(json.dumps(prior), encoding="utf-8")
+
+    conn = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn.authenticate({})
+    assert conn._seq == 5
+    assert "keep.txt" in conn._last_snapshot
+
+    # Force next persist to fail after tmp write by making replace raise
+    original_replace = Path.replace
+    def failing_replace(self, target):
+        raise OSError("simulated replace failure")
+    monkeypatch.setattr(Path, "replace", failing_replace)
+
+    # Trigger a change that would persist
+    (root / "new.txt").write_text("new", encoding="utf-8")
+    try:
+        conn.incremental_sync("0", "t", "s")
+    except OSError:
+        pass  # expected
+
+    # Prior snapshot file must still be valid and unchanged
+    loaded = json.loads(snap.read_text(encoding="utf-8"))
+    assert loaded["version"] == 1
+    assert loaded["seq"] == 5
+    assert "keep.txt" in loaded["snapshot"]
+    assert "new.txt" not in loaded["snapshot"]
+
+    # Next init loads the intact prior snapshot
+    conn2 = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn2._seq == 5
+    assert "keep.txt" in conn2._last_snapshot
+    assert "new.txt" not in conn2._last_snapshot

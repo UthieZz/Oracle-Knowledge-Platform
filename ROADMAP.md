@@ -1,9 +1,13 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-22  
-**Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.  
-Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.  
+**Updated:** 2026-11-23
+**Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.
+Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
+
+## Recent verified advances (2026-11-23)
+- LocalFolderConnector persist failure: regression locks that a simulated atomic-replace failure after .tmp write leaves the prior valid snapshot intact and loadable on next init. No data loss of the last successful snapshot. Test added; local-folder suite 12 passed. Strengthens Connect reliability under interruption. No IR or permission contract change.
+
 
 ## Mission
 
