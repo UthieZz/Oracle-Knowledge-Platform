@@ -498,3 +498,70 @@ def test_local_folder_mixed_concurrent_changes_while_stopped(tmp_path):
     assert any("new.txt" in m for m in markers)
     assert not any("gone.txt" in m for m in markers)
     assert len(acc.package.objects) == 3
+
+
+def test_local_folder_mixed_changes_persist_failure_then_retry_converges(tmp_path, monkeypatch):
+    """Mixed create+update+delete during a failing persist rolls back; retry after recovery converges package with no loss/duplicates."""
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "keep.txt").write_text("original keep", encoding="utf-8")
+    (root / "update.txt").write_text("original update", encoding="utf-8")
+    (root / "gone.txt").write_text("will be deleted", encoding="utf-8")
+
+    snap_path = str(tmp_path / "snapshot.json")
+    conn = LocalFolderConnector(str(root), snapshot_path=snap_path)
+    assert conn.authenticate({})
+    events1 = conn.initial_sync("t1", "s1")
+    assert len(events1) == 3
+    baseline_seq = conn._seq
+    baseline_snap = dict(conn._last_snapshot)
+    assert set(baseline_snap) == {"keep.txt", "update.txt", "gone.txt"}
+
+    # Apply mixed changes on disk
+    (root / "update.txt").write_text("updated content", encoding="utf-8")
+    (root / "gone.txt").unlink()
+    (root / "new.txt").write_text("brand new", encoding="utf-8")
+
+    # Force persist to fail
+    def boom(*args, **kwargs):
+        raise OSError("simulated persist failure")
+
+    monkeypatch.setattr(conn, "_persist_snapshot", boom)
+
+    with pytest.raises(OSError, match="simulated persist failure"):
+        conn.incremental_sync("0", "t1", "s1")
+
+    # Must have rolled back in-memory and on-disk
+    assert conn._seq == baseline_seq
+    assert conn._last_snapshot == baseline_snap
+    saved = json.loads(Path(snap_path).read_text(encoding="utf-8"))
+    assert saved.get("seq") == baseline_seq
+    assert set(saved.get("snapshot", {})) == {"keep.txt", "update.txt", "gone.txt"}
+
+    # Recover and retry
+    monkeypatch.undo()
+    events2 = conn.incremental_sync("0", "t1", "s1")
+
+    kinds = {e.payload["object_id"]: e.kind for e in events2}
+    assert kinds.get("update.txt") == "update"
+    assert kinds.get("gone.txt") == "delete"
+    assert kinds.get("new.txt") == "create"
+    assert "keep.txt" not in kinds
+
+    assert set(conn._last_snapshot) == {"keep.txt", "update.txt", "new.txt"}
+    assert conn._seq > baseline_seq
+
+    # Package converges
+    from okc.connect.knowledge_accumulator import KnowledgeAccumulator
+    acc = KnowledgeAccumulator()
+    for e in events1 + events2:
+        acc.process(e)
+    markers = []
+    for o in acc.package.objects:
+        for rid in o.provenance.source_record_ids:
+            markers.append(rid)
+    assert any("keep.txt" in m for m in markers)
+    assert any("update.txt" in m for m in markers)
+    assert any("new.txt" in m for m in markers)
+    assert not any("gone.txt" in m for m in markers)
+    assert len(acc.package.objects) == 3

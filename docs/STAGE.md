@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-23
 
-**Basis:** Current main. LocalFolderConnector: mixed concurrent source changes (create+update+delete) while stopped are detected on restart; package converges to final source with no loss or duplicate objects. Local-folder suite 13 passed. Prior persist-failure regression, permission alignment, CAR suite (38 passed), and Connect status carried forward.
+**Basis:** Current main. LocalFolderConnector: mixed concurrent source changes (create+update+delete) under simulated persist failure roll back cleanly; retry converges package to final source with no loss or duplicate objects. Local-folder suite 14 passed. Prior while-stopped mixed changes, persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.

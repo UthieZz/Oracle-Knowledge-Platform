@@ -1,3 +1,11 @@
+## 2026-11-23 — mixed concurrent changes under persist failure then retry converges
+
+- Problem: No explicit regression that mixed create+update+delete applied during a failing persist rolls back the prior snapshot and that a subsequent retry converges the package without loss or duplicates.
+- Change: Added test_local_folder_mixed_changes_persist_failure_then_retry_converges. No production code change; existing rollback in incremental_sync and _persist_snapshot already correct.
+- Verification: pytest tests/test_local_folder_connector.py::test_local_folder_mixed_changes_persist_failure_then_retry_converges → passed; full local-folder suite 14 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No deviation from permission model or locked contracts.
+
 
 ## 2026-11-23 — Restore docs + lock mixed concurrent changes while stopped
 - Restored ROADMAP.md, AGENT_COMMIT_LOG.md, and tests/test_local_folder_connector.py from last good content (fc855d3f) after placeholder truncation.
