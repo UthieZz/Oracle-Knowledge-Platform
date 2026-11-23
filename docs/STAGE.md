@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-23
+# OKP Stage — 2026-11-24
 
-**Basis:** Current main. Local-folder test suite restored from last intact content (465f) and extended with partial-queue-drain then source-mutation regression. After partial processing (cursor advanced) and further create/update/delete while stopped, restart + incremental_sync converges the package with no loss or duplicates. Local-folder suite 16 passed. Prior interruption-after-snapshot, mixed concurrent, persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
+**Basis:** Current main. Local-folder suite extended with rename-while-stopped regression. KnowledgeAccumulator now removes objects by scoped source marker (src:source|tenant|silo|object_id) rather than content-hash object_id, so identical-content renames and parallel same-content files no longer cause incorrect object removal. Local-folder suite 17 passed. Prior partial-drain, interruption-after-snapshot, mixed concurrent, persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
