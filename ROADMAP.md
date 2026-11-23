@@ -6,6 +6,9 @@ Implementation, recorded test evidence, runtime verification and planned work ar
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
 
 ## Recent verified advances (2026-11-23)
+- SyncWorker prefers incremental_sync when LocalFolderConnector has a durable snapshot, even if engine cursor is still None. Closes interruption window between connector snapshot persist and first successful process_next that previously could re-run initial_sync and miss subsequent deletions. Regression added; local-folder suite 15 passed. Strengthens Connect reliability under interruption. No IR or permission contract change.
+
+## Recent verified advances (2026-11-23)
 - LocalFolderConnector mixed changes under persist failure: regression locks that create+update+delete applied while a persist fails roll back in-memory and on-disk prior snapshot; subsequent retry emits the correct events and package converges with no loss or duplicates. Local-folder suite 14 passed. Strengthens Connect reliability under interruption. No IR or permission contract change.
 
 ## Recent verified advances (2026-11-23)

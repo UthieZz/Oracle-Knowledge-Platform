@@ -53,6 +53,13 @@ class LocalFolderConnector(Connector):
                 self._last_snapshot = {}
                 self._seq = 0
 
+    def has_durable_snapshot(self) -> bool:
+        """True if a prior change-detection snapshot was loaded or written.
+        Used by SyncWorker to prefer incremental_sync after interruption
+        even when the engine cursor has not yet advanced.
+        """
+        return bool(self._last_snapshot)
+
     def _persist_snapshot(self) -> None:
         if not self.snapshot_path:
             return

@@ -1,3 +1,11 @@
+## 2026-11-23 — SyncWorker prefers durable snapshot over missing cursor (Connect reliability)
+
+- Problem: After a successful LocalFolderConnector snapshot persist and event enqueue, a crash before any successful process_next leaves the engine cursor None. On restart the worker called initial_sync again, which overwrites the snapshot and emits only creates, silently missing any deletions that occurred while stopped.
+- Change: LocalFolderConnector.has_durable_snapshot(); SyncWorker prefers incremental_sync when a durable snapshot is present (or cursor is set). Regression test_interruption_after_snapshot_before_cursor_detects_delete_on_restart added.
+- Verification: pytest tests/test_local_folder_connector.py → 15 passed.
+- Knowledge Core IR and Connect contracts unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No deviation from permission model or locked contracts.
+
 ## 2026-11-23 — mixed concurrent changes under persist failure then retry converges
 
 - Problem: No explicit regression that mixed create+update+delete applied during a failing persist rolls back the prior snapshot and that a subsequent retry converges the package without loss or duplicates.

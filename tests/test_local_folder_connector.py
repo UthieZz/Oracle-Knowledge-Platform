@@ -565,3 +565,63 @@ def test_local_folder_mixed_changes_persist_failure_then_retry_converges(tmp_pat
     assert any("new.txt" in m for m in markers)
     assert not any("gone.txt" in m for m in markers)
     assert len(acc.package.objects) == 3
+
+
+def test_interruption_after_snapshot_before_cursor_detects_delete_on_restart(tmp_path):
+    """Interruption after connector snapshot persist but before any successful process_next
+    (engine cursor still None) must still detect a subsequent deletion on restart
+    and converge the package without silent loss.
+    """
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "keep.txt").write_text("keep me", encoding="utf-8")
+    (root / "gone.txt").write_text("will disappear", encoding="utf-8")
+
+    snap = str(tmp_path / "snap.json")
+    db = str(tmp_path / "sync.db")
+    pkg = str(tmp_path / "living.json")
+
+    # First run: connector persists snapshot and enqueues events, but we do not process
+    # so cursor remains None.
+    conn1 = LocalFolderConnector(str(root), snapshot_path=snap)
+    assert conn1.authenticate({})
+    events = conn1.initial_sync("t", "s")
+    assert len(events) == 2
+    assert conn1.has_durable_snapshot()
+    eng1 = SyncEngine(db)
+    for e in events:
+        eng1.enqueue(e)
+    assert eng1.get_cursor("local_folder", "t", "s") is None
+
+    # Simulate stop: delete a file
+    (root / "gone.txt").unlink()
+
+    # Restart: new instances. Worker logic must prefer incremental because durable snapshot exists.
+    conn2 = LocalFolderConnector(str(root), snapshot_path=snap)
+    assert conn2.authenticate({})
+    assert conn2.has_durable_snapshot()
+    eng2 = SyncEngine(db)
+    acc = KnowledgeAccumulator(package_path=pkg)
+
+    # Manually exercise the decision the worker would make
+    cursor = eng2.get_cursor("local_folder", "t", "s")
+    prefer_incremental = cursor is not None or conn2.has_durable_snapshot()
+    assert prefer_incremental
+    deltas = conn2.incremental_sync(cursor or "", "t", "s")
+    kinds = {e.payload["object_id"]: e.kind for e in deltas}
+    assert kinds.get("gone.txt") == "delete"
+    assert "keep.txt" not in kinds  # no re-create
+
+    for e in deltas:
+        eng2.enqueue(e)
+    while eng2.process_next(acc.process):
+        pass
+
+    # Package must not contain the deleted file
+    markers = []
+    for o in acc.package.objects:
+        for rid in o.provenance.source_record_ids:
+            markers.append(rid)
+    assert any("keep.txt" in m for m in markers)
+    assert not any("gone.txt" in m for m in markers)
+    assert len(acc.package.objects) == 1

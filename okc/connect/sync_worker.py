@@ -79,10 +79,16 @@ class SyncWorker:
             # Best-effort; connectors may not expose the private flag
             pass
         cursor = self.engine.get_cursor(self.connector.name, self.tenant_id, self.silo_id)
-        if cursor is None:
-            events = self.connector.initial_sync(self.tenant_id, self.silo_id)
+        # Prefer connector durable snapshot when present so an interruption
+        # between snapshot persist and cursor advance still detects later
+        # deletions/changes instead of re-running a full initial_sync.
+        prefer_incremental = cursor is not None
+        if hasattr(self.connector, "has_durable_snapshot") and self.connector.has_durable_snapshot():
+            prefer_incremental = True
+        if prefer_incremental:
+            events = self.connector.incremental_sync(cursor or "", self.tenant_id, self.silo_id)
         else:
-            events = self.connector.incremental_sync(cursor, self.tenant_id, self.silo_id)
+            events = self.connector.initial_sync(self.tenant_id, self.silo_id)
         for ev in events:
             self.engine.enqueue(ev)
         # Drain queue
