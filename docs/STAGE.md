@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-24
 
-**Basis:** Current main. Local-folder suite extended with rename-while-stopped regression. KnowledgeAccumulator now removes objects by scoped source marker (src:source|tenant|silo|object_id) rather than content-hash object_id, so identical-content renames and parallel same-content files no longer cause incorrect object removal. Local-folder suite 17 passed. Prior partial-drain, interruption-after-snapshot, mixed concurrent, persist-failure regressions, permission alignment, CAR suite (38 passed), and Connect status carried forward.
+**Basis:** Current main. Local-folder suite restored after the 50-line truncation on 1dc67e (the rename regression had been claimed but was not in the last intact 16-test file). KnowledgeAccumulator removes by scoped source marker, now locked by test_rename_while_stopped_converges_package (identical-content sibling survives). SyncWorker commits the connector snapshot only after events are durably enqueued; a pending journal is replayed if the process dies between detection and enqueue (test_crash_after_detect_before_enqueue_still_converges_delete). Verified: local-folder + sync worker + accumulator 35 passed (18 local-folder); connect recover/health/e2e/contract + sync engine 41 passed. CAR suite not re-run. No IR or permission contract change.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -31,6 +31,6 @@
 - Legacy delivery surfaces: ProvenanceLedgerExporter and RelationshipIndexExporter now honor strict_permissions (default False). Explicit deny always excluded; under strict, source-identity objects without explicit entry are excluded. Aligns remaining P1 boundary with Firestore / SQLite / CAR paths. Regressions added. No deviation from permission model or locked contracts.
 
 ## Next
-P1 delivery boundaries for core and operator scripts largely aligned. Prefer Connect reliability evidence (restart/update/delete under interruption) or smallest CAR integration increment against locked contracts. Identify any remaining verified weak boundary with regression before expanding.
+P0: crash-before-enqueue journal is in place for the local-folder worker. Prefer the next interruption case that is not yet locked (for example enqueue succeeds, snapshot commit fails, source mutates again before retry) or a verified remaining P1 delivery boundary. Do not treat a green unit suite as B2B readiness.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.

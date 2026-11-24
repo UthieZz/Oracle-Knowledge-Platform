@@ -1,3 +1,11 @@
+## 2026-11-24 — Restore local-folder suite; lock rename; journal snapshot until enqueue
+
+- Problem: main@1dc67e left tests/test_local_folder_connector.py as the original 50-line test (prior commit was PLACEHOLDER_TEST). The last intact suite (df24c131, 16 tests) was gone. Commit messages claimed test_rename_while_stopped_converges_package and "17 passed", but that test was not in the surviving file. Separately, SyncWorker persisted the connector snapshot inside incremental/initial sync before enqueue, so a crash after persist and before enqueue dropped those events permanently (deletions never reached the package).
+- Change: Restored the 16-test suite. Added test_rename_while_stopped_converges_package (scoped-marker removal already on main). LocalFolderConnector now stages worker scans to `<snapshot>.pending` and SyncWorker calls commit_pending only after enqueue. Restart replays the journal without moving the committed snapshot early. Direct initial_sync/incremental_sync still persist immediately.
+- Verification: pytest tests/test_local_folder_connector.py tests/test_sync_worker.py tests/test_knowledge_accumulator.py → 35 passed. pytest tests/test_connect_recover.py tests/test_connect_health.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_sync_engine.py → 41 passed.
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No permission-model or locked-contract deviation.
+
 ## 2026-11-23 — Restore local-folder suite + lock partial drain then source mutation
 
 - Problem: tests/test_local_folder_connector.py was a placeholder on main after incomplete pushes, breaking the Connect reliability regression suite. No locked regression for partial queue drain (cursor advanced) followed by mixed source mutation while stopped.

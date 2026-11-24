@@ -8,6 +8,11 @@ legitimate delete/recreate of the same path and content to receive a new id.
 Optional snapshot_path makes the change-detection map and sequence durable so
 files deleted while the process is stopped are detected on the next incremental
 sync after restart.
+
+SyncWorker does not commit that snapshot until the resulting events are durably
+enqueued. A pending journal (``<snapshot>.pending``) holds the staged snapshot
+and events so a crash between detection and enqueue can be replayed. Direct
+``initial_sync`` / ``incremental_sync`` callers still persist immediately.
 """
 from __future__ import annotations
 
@@ -115,22 +120,134 @@ class LocalFolderConnector(Connector):
         h = (content_hash or "")[:12]
         return f"{base}-{h}-{rel}"
 
-    def initial_sync(self, tenant_id: str, silo_id: str) -> List[SyncEvent]:
-        if not self._authenticated:
-            raise RuntimeError("not authenticated")
+    def _require_no_pending(self) -> None:
+        if self.has_pending_journal():
+            raise RuntimeError("pending snapshot journal must be committed before a new sync")
+
+    def _pending_path(self) -> Optional[Path]:
+        if not self.snapshot_path:
+            return None
+        p = Path(self.snapshot_path)
+        return p.with_name(p.name + ".pending")
+
+    def has_pending_journal(self) -> bool:
+        path = self._pending_path()
+        return bool(path and path.is_file())
+
+    def _event_to_dict(self, ev: SyncEvent) -> Dict[str, Any]:
+        return {
+            "event_id": ev.event_id,
+            "source": ev.source,
+            "kind": ev.kind,
+            "cursor": ev.cursor,
+            "payload": ev.payload,
+            "occurred_at": ev.occurred_at,
+            "tenant_id": ev.tenant_id,
+            "silo_id": ev.silo_id,
+        }
+
+    def _event_from_dict(self, item: Dict[str, Any]) -> SyncEvent:
+        return SyncEvent(
+            event_id=item["event_id"],
+            source=item["source"],
+            kind=item["kind"],
+            cursor=item.get("cursor"),
+            payload=item.get("payload") or {},
+            occurred_at=item.get("occurred_at") or "",
+            tenant_id=item.get("tenant_id") or "",
+            silo_id=item.get("silo_id") or "",
+        )
+
+    def pending_events(self) -> List[SyncEvent]:
+        path = self._pending_path()
+        if path is None or not path.is_file():
+            return []
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            raise ValueError("corrupt pending snapshot journal")
+        return [self._event_from_dict(item) for item in (raw.get("events") or [])]
+
+    def _write_journal(self, events: List[SyncEvent]) -> None:
+        path = self._pending_path()
+        if path is None:
+            return
+        payload = {
+            "version": 1,
+            "seq": self._seq,
+            "snapshot": self._last_snapshot,
+            "events": [self._event_to_dict(ev) for ev in events],
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        try:
+            tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            tmp.replace(path)
+        except Exception:
+            if tmp.exists():
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
+            raise
+
+    def commit_pending(self) -> None:
+        """Promote a staged journal to the committed snapshot.
+
+        Called only after the staged events have been durably enqueued.
+        No journal is a no-op (direct sync methods already persist themselves).
+        """
+        path = self._pending_path()
+        if path is None or not path.is_file():
+            return
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict) or "snapshot" not in raw or "seq" not in raw:
+            raise ValueError("corrupt pending snapshot journal")
+        self._last_snapshot = raw.get("snapshot") or {}
+        self._seq = int(raw.get("seq") or 0)
+        self._persist_snapshot()
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+    def _collect_initial(self, tenant_id: str, silo_id: str) -> List[SyncEvent]:
         snap = self._scan()
         events: List[SyncEvent] = []
-        # Snapshot prior state for rollback if persist fails
-        old_seq = self._seq
-        old_snapshot = dict(self._last_snapshot)
-        try:
-            for rel, info in sorted(snap.items()):
-                event_id = self._make_event_id("create", rel, info["hash"])
+        for rel, info in sorted(snap.items()):
+            event_id = self._make_event_id("create", rel, info["hash"])
+            events.append(
+                SyncEvent(
+                    event_id=event_id,
+                    source=self.name,
+                    kind="create",
+                    cursor=str(info["mtime"]),
+                    payload={
+                        "text": info["text"],
+                        "object_id": rel,
+                        "source_file": info["abs"],
+                        "content_hash": info["hash"],
+                    },
+                    tenant_id=tenant_id,
+                    silo_id=silo_id,
+                )
+            )
+            self._seq += 1
+        self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+        return events
+
+    def _collect_incremental(self, tenant_id: str, silo_id: str) -> List[SyncEvent]:
+        snap = self._scan()
+        events: List[SyncEvent] = []
+        prev = self._last_snapshot
+        for rel, info in sorted(snap.items()):
+            if rel not in prev or prev[rel] != info["hash"]:
+                kind = "update" if rel in prev else "create"
+                event_id = self._make_event_id(kind, rel, info["hash"])
                 events.append(
                     SyncEvent(
                         event_id=event_id,
                         source=self.name,
-                        kind="create",
+                        kind=kind,
                         cursor=str(info["mtime"]),
                         payload={
                             "text": info["text"],
@@ -143,11 +260,34 @@ class LocalFolderConnector(Connector):
                     )
                 )
                 self._seq += 1
-            self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+        for rel in sorted(prev):
+            if rel not in snap:
+                event_id = self._make_event_id("delete", rel)
+                events.append(
+                    SyncEvent(
+                        event_id=event_id,
+                        source=self.name,
+                        kind="delete",
+                        payload={"object_id": rel},
+                        tenant_id=tenant_id,
+                        silo_id=silo_id,
+                    )
+                )
+                self._seq += 1
+        self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+        return events
+
+    def initial_sync(self, tenant_id: str, silo_id: str) -> List[SyncEvent]:
+        if not self._authenticated:
+            raise RuntimeError("not authenticated")
+        self._require_no_pending()
+        old_seq = self._seq
+        old_snapshot = dict(self._last_snapshot)
+        try:
+            events = self._collect_initial(tenant_id, silo_id)
             self._persist_snapshot()
             return events
         except Exception:
-            # Restore prior state so a subsequent call is consistent
             self._seq = old_seq
             self._last_snapshot = old_snapshot
             raise
@@ -155,55 +295,53 @@ class LocalFolderConnector(Connector):
     def incremental_sync(self, cursor: str, tenant_id: str, silo_id: str) -> List[SyncEvent]:
         if not self._authenticated:
             raise RuntimeError("not authenticated")
-        snap = self._scan()
-        events: List[SyncEvent] = []
-        prev = self._last_snapshot
-        # Snapshot prior state for rollback if persist fails
+        self._require_no_pending()
         old_seq = self._seq
         old_snapshot = dict(self._last_snapshot)
         try:
-            # Creates / updates
-            for rel, info in sorted(snap.items()):
-                if rel not in prev or prev[rel] != info["hash"]:
-                    kind = "update" if rel in prev else "create"
-                    event_id = self._make_event_id(kind, rel, info["hash"])
-                    events.append(
-                        SyncEvent(
-                            event_id=event_id,
-                            source=self.name,
-                            kind=kind,
-                            cursor=str(info["mtime"]),
-                            payload={
-                                "text": info["text"],
-                                "object_id": rel,
-                                "source_file": info["abs"],
-                                "content_hash": info["hash"],
-                            },
-                            tenant_id=tenant_id,
-                            silo_id=silo_id,
-                        )
-                    )
-                    self._seq += 1
-            # Deletes
-            for rel in sorted(prev):
-                if rel not in snap:
-                    event_id = self._make_event_id("delete", rel)
-                    events.append(
-                        SyncEvent(
-                            event_id=event_id,
-                            source=self.name,
-                            kind="delete",
-                            payload={"object_id": rel},
-                            tenant_id=tenant_id,
-                            silo_id=silo_id,
-                        )
-                    )
-                    self._seq += 1
-            self._last_snapshot = {rel: info["hash"] for rel, info in snap.items()}
+            events = self._collect_incremental(tenant_id, silo_id)
             self._persist_snapshot()
             return events
         except Exception:
-            # Restore prior state so a subsequent call is consistent
+            self._seq = old_seq
+            self._last_snapshot = old_snapshot
+            raise
+
+    def stage_initial_sync(self, tenant_id: str, silo_id: str) -> List[SyncEvent]:
+        """Stage an initial sync without advancing the committed snapshot.
+
+        Events and the resulting snapshot are written to a pending journal.
+        The committed snapshot is updated only by commit_pending(), after the
+        caller has durably enqueued those events.
+        """
+        if not self._authenticated:
+            raise RuntimeError("not authenticated")
+        self._require_no_pending()
+        old_seq = self._seq
+        old_snapshot = dict(self._last_snapshot)
+        try:
+            events = self._collect_initial(tenant_id, silo_id)
+            if events:
+                self._write_journal(events)
+            return events
+        except Exception:
+            self._seq = old_seq
+            self._last_snapshot = old_snapshot
+            raise
+
+    def stage_incremental_sync(self, cursor: str, tenant_id: str, silo_id: str) -> List[SyncEvent]:
+        """Stage an incremental sync without advancing the committed snapshot."""
+        if not self._authenticated:
+            raise RuntimeError("not authenticated")
+        self._require_no_pending()
+        old_seq = self._seq
+        old_snapshot = dict(self._last_snapshot)
+        try:
+            events = self._collect_incremental(tenant_id, silo_id)
+            if events:
+                self._write_journal(events)
+            return events
+        except Exception:
             self._seq = old_seq
             self._last_snapshot = old_snapshot
             raise
@@ -216,6 +354,7 @@ class LocalFolderConnector(Connector):
         re-detect the deletion. On persist failure the in-memory state is restored.
         Caller is still expected to enqueue and process the returned event.
         """
+        self._require_no_pending()
         old_seq = self._seq
         old_snapshot = dict(self._last_snapshot)
         try:
