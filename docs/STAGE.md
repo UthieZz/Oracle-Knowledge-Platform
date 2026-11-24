@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-24
 
-**Basis:** Current main. Local-folder suite restored after the 50-line truncation on 1dc67e (the rename regression had been claimed but was not in the last intact 16-test file). KnowledgeAccumulator removes by scoped source marker, now locked by test_rename_while_stopped_converges_package (identical-content sibling survives). SyncWorker commits the connector snapshot only after events are durably enqueued; a pending journal is replayed if the process dies between detection and enqueue (test_crash_after_detect_before_enqueue_still_converges_delete). Verified: local-folder + sync worker + accumulator 35 passed (18 local-folder); connect recover/health/e2e/contract + sync engine 41 passed. CAR suite not re-run. No IR or permission contract change.
+**Basis:** Current main. Local-folder journal: SyncWorker promotes the snapshot only after enqueue. Two further interruption cases are now locked. (1) Enqueue succeeds, snapshot commit fails, source mutates again before retry — restart replays the journal, then the next poll converges the package (no loss, no duplicates, no extra events). (2) Snapshot promotion succeeds but journal unlink fails — a journal that already matches the committed snapshot does not block later scans. Verified: local-folder + sync worker + accumulator + connect recover/health/e2e/contract + sync engine 78 passed (20 local-folder). CAR suite not re-run. No IR or permission contract change.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -31,6 +31,6 @@
 - Legacy delivery surfaces: ProvenanceLedgerExporter and RelationshipIndexExporter now honor strict_permissions (default False). Explicit deny always excluded; under strict, source-identity objects without explicit entry are excluded. Aligns remaining P1 boundary with Firestore / SQLite / CAR paths. Regressions added. No deviation from permission model or locked contracts.
 
 ## Next
-P0: crash-before-enqueue journal is in place for the local-folder worker. Prefer the next interruption case that is not yet locked (for example enqueue succeeds, snapshot commit fails, source mutates again before retry) or a verified remaining P1 delivery boundary. Do not treat a green unit suite as B2B readiness.
+P0: journal commit-failure and unlink-stall are locked. Prefer the next interruption that is not yet locked (corrupt pending journal currently raises and the worker retries it forever — quarantine and rescan from the last committed snapshot without dropping already-queued events) or a verified remaining P1 delivery boundary. Do not treat a green unit suite as B2B readiness.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.

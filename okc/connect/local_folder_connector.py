@@ -13,6 +13,10 @@ SyncWorker does not commit that snapshot until the resulting events are durably
 enqueued. A pending journal (``<snapshot>.pending``) holds the staged snapshot
 and events so a crash between detection and enqueue can be replayed. Direct
 ``initial_sync`` / ``incremental_sync`` callers still persist immediately.
+
+A journal that already matches the committed snapshot is not a barrier. If
+promoting the snapshot succeeds and deleting the journal fails, later scans
+must still observe new source changes.
 """
 from __future__ import annotations
 
@@ -130,9 +134,44 @@ class LocalFolderConnector(Connector):
         p = Path(self.snapshot_path)
         return p.with_name(p.name + ".pending")
 
+    def _read_json(self, path: Path) -> Optional[Dict[str, Any]]:
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
+            return None
+        return raw if isinstance(raw, dict) else None
+
+    def _journal_matches_committed(self, journal: Dict[str, Any]) -> bool:
+        """True when the durable snapshot already contains this journal.
+
+        In-memory state is not consulted: stage_* advances memory before the
+        snapshot file is promoted, and that must not look like a commit.
+        """
+        if not self.snapshot_path:
+            return False
+        committed = self._read_json(Path(self.snapshot_path))
+        if not committed or "snapshot" not in committed or "seq" not in committed:
+            return False
+        try:
+            same_seq = int(committed.get("seq") or 0) == int(journal.get("seq") or 0)
+        except (TypeError, ValueError):
+            return False
+        return same_seq and committed.get("snapshot") == journal.get("snapshot")
+
     def has_pending_journal(self) -> bool:
         path = self._pending_path()
-        return bool(path and path.is_file())
+        if not path or not path.is_file():
+            return False
+        journal = self._read_json(path)
+        if journal is not None and self._journal_matches_committed(journal):
+            # Snapshot promotion already happened. A failed unlink must not
+            # freeze change detection on this stale journal.
+            try:
+                path.unlink()
+            except OSError:
+                pass
+            return False
+        return True
 
     def _event_to_dict(self, ev: SyncEvent) -> Dict[str, Any]:
         return {

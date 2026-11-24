@@ -809,3 +809,162 @@ def test_crash_after_detect_before_enqueue_still_converges_delete(tmp_path):
     assert any("keep.txt" in m for m in markers)
     assert not any("gone.txt" in m for m in markers)
     assert len(acc2.package.objects) == 1
+
+
+def _markers(package):
+    markers = []
+    for obj in package.objects:
+        for rid in obj.provenance.source_record_ids:
+            markers.append(rid)
+    return markers
+
+
+def test_enqueue_ok_commit_fails_then_source_mutates_before_retry(tmp_path):
+    """Enqueue can succeed while snapshot promotion fails.
+
+    A later source mutation must not be dropped: retry commits the journal,
+    applies the queued events, then the next poll converges to the final source.
+    Restart (not the dirty in-memory connector) is the crash case.
+    """
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "keep.txt").write_text("keep v1", encoding="utf-8")
+    (root / "gone.txt").write_text("will disappear", encoding="utf-8")
+
+    snap = tmp_path / "snap.json"
+    db = str(tmp_path / "sync.db")
+    pkg = str(tmp_path / "living.json")
+
+    conn1 = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn1.authenticate({})
+    eng1 = SyncEngine(db)
+    acc1 = KnowledgeAccumulator(package_path=pkg)
+    worker1 = SyncWorker(eng1, conn1, "t", "s", acc1.process, poll_interval=30)
+
+    real_persist = conn1._persist_snapshot
+    fail = {"on": False}
+
+    def flaky_persist():
+        if fail["on"]:
+            raise OSError("snapshot commit failed")
+        real_persist()
+
+    conn1._persist_snapshot = flaky_persist
+    worker1._poll_and_drain()
+    assert len(acc1.package.objects) == 2
+    assert not conn1.has_pending_journal()
+
+    (root / "gone.txt").unlink()
+    fail["on"] = True
+    with pytest.raises(OSError, match="snapshot commit failed"):
+        worker1._poll_and_drain()
+
+    committed = json.loads(snap.read_text(encoding="utf-8"))
+    assert set(committed["snapshot"]) == {"keep.txt", "gone.txt"}
+    assert conn1.has_pending_journal()
+    assert eng1.health()["queued"] == 1
+    assert eng1.health()["processed"] == 2
+    assert len(acc1.package.objects) == 2
+
+    # Source moves again before the failed commit is retried.
+    (root / "keep.txt").write_text("keep v2", encoding="utf-8")
+    (root / "new.txt").write_text("brand new", encoding="utf-8")
+
+    conn2 = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn2.authenticate({})
+    assert conn2.has_pending_journal()
+    assert "gone.txt" in conn2._last_snapshot
+    eng2 = SyncEngine(db)
+    acc2 = KnowledgeAccumulator(package_path=pkg)
+    worker2 = SyncWorker(eng2, conn2, "t", "s", acc2.process, poll_interval=30)
+    # First recovery poll promotes the journal and applies the queued delete.
+    # The following poll must observe the mutation that happened during the gap.
+    worker2._poll_and_drain()
+    worker2._poll_and_drain()
+
+    assert not conn2.has_pending_journal()
+    saved = json.loads(snap.read_text(encoding="utf-8"))
+    assert set(saved["snapshot"]) == {"keep.txt", "new.txt"}
+    markers = _markers(acc2.package)
+    assert any("keep.txt" in m for m in markers)
+    assert any("new.txt" in m for m in markers)
+    assert not any("gone.txt" in m for m in markers)
+    assert len(acc2.package.objects) == 2
+    contents = {}
+    for obj in acc2.package.objects:
+        for rid in obj.provenance.source_record_ids:
+            if rid.endswith("|keep.txt"):
+                contents["keep"] = obj.content
+            if rid.endswith("|new.txt"):
+                contents["new"] = obj.content
+    assert contents["keep"] == "keep v2"
+    assert contents["new"] == "brand new"
+    health = eng2.health()
+    assert health["queued"] == 0
+    assert health["failed"] == 0
+    # 2 creates + 1 delete + 1 update + 1 create. A duplicate replay would exceed this.
+    assert health["processed"] == 5
+
+
+def test_journal_unlink_failure_does_not_stall_later_changes(tmp_path, monkeypatch):
+    """If snapshot promotion succeeds but the journal file cannot be removed,
+    later source changes must still reach the package.
+    """
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "keep.txt").write_text("keep v1", encoding="utf-8")
+    (root / "gone.txt").write_text("will disappear", encoding="utf-8")
+
+    snap = tmp_path / "snap.json"
+    db = str(tmp_path / "sync.db")
+    pkg = str(tmp_path / "living.json")
+    pending = snap.parent / (snap.name + ".pending")
+
+    conn = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn.authenticate({})
+    eng = SyncEngine(db)
+    acc = KnowledgeAccumulator(package_path=pkg)
+    worker = SyncWorker(eng, conn, "t", "s", acc.process, poll_interval=30)
+    worker._poll_and_drain()
+    assert len(acc.package.objects) == 2
+    assert not pending.exists()
+
+    real_unlink = Path.unlink
+
+    def flaky_unlink(self, *args, **kwargs):
+        if self.name.endswith(".pending"):
+            raise OSError("cannot unlink journal")
+        return real_unlink(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", flaky_unlink)
+
+    (root / "gone.txt").unlink()
+    worker._poll_and_drain()
+    committed = json.loads(snap.read_text(encoding="utf-8"))
+    assert "gone.txt" not in committed["snapshot"]
+    assert pending.is_file()
+    # Journal remains on disk, but it already matches the commit so it must not block.
+    assert conn.has_pending_journal() is False
+    assert not any("gone.txt" in m for m in _markers(acc.package))
+
+    (root / "keep.txt").write_text("keep v2", encoding="utf-8")
+    (root / "new.txt").write_text("brand new", encoding="utf-8")
+    worker._poll_and_drain()
+
+    saved = json.loads(snap.read_text(encoding="utf-8"))
+    assert set(saved["snapshot"]) == {"keep.txt", "new.txt"}
+    markers = _markers(acc.package)
+    assert any("keep.txt" in m for m in markers)
+    assert any("new.txt" in m for m in markers)
+    assert not any("gone.txt" in m for m in markers)
+    assert len(acc.package.objects) == 2
+    for obj in acc.package.objects:
+        if any(rid.endswith("|keep.txt") for rid in obj.provenance.source_record_ids):
+            assert obj.content == "keep v2"
+        if any(rid.endswith("|new.txt") for rid in obj.provenance.source_record_ids):
+            assert obj.content == "brand new"
+    health = eng.health()
+    assert health["queued"] == 0
+    assert health["failed"] == 0
+    assert health["processed"] == 5
+

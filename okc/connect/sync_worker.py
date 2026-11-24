@@ -7,6 +7,8 @@ survives process restart because it lives in SQLite.
 When the connector can stage a snapshot journal (LocalFolderConnector),
 the committed snapshot is promoted only after enqueue succeeds. A crash
 between detection and enqueue is recovered by replaying the journal.
+A journal already reflected in the committed snapshot is not a barrier,
+so a failed journal cleanup cannot stall later scans.
 
 Does not write KnowledgePackage. Processor is expected to feed the
 existing importer/compiler path.

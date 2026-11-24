@@ -1,3 +1,11 @@
+## 2026-11-24 — Journal commit failure and unlink stall (Connect reliability)
+
+- Problem: After the snapshot journal landed, two interruption cases were open. (1) No regression that enqueue succeeds, snapshot commit fails, and the source mutates again before retry. (2) `commit_pending` swallowed a failed journal unlink. The file stayed pending, so every later poll replayed that journal and never scanned again. Source changes after a successful promotion were stuck until the file disappeared.
+- Change: `has_pending_journal` ignores a journal whose seq and snapshot already match the committed snapshot file (in-memory stage state is not treated as a commit) and still tries to delete it. Added `test_enqueue_ok_commit_fails_then_source_mutates_before_retry` and `test_journal_unlink_failure_does_not_stall_later_changes`.
+- Verification: pytest tests/test_local_folder_connector.py tests/test_sync_worker.py tests/test_knowledge_accumulator.py tests/test_connect_recover.py tests/test_connect_health.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_sync_engine.py → 78 passed.
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No permission-model or locked-contract deviation.
+
 ## 2026-11-24 — Restore local-folder suite; lock rename; journal snapshot until enqueue
 
 - Problem: main@1dc67e left tests/test_local_folder_connector.py as the original 50-line test (prior commit was PLACEHOLDER_TEST). The last intact suite (df24c131, 16 tests) was gone. Commit messages claimed test_rename_while_stopped_converges_package and "17 passed", but that test was not in the surviving file. Separately, SyncWorker persisted the connector snapshot inside incremental/initial sync before enqueue, so a crash after persist and before enqueue dropped those events permanently (deletions never reached the package).

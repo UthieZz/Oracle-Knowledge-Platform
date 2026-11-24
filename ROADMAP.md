@@ -6,6 +6,9 @@ Implementation, recorded test evidence, runtime verification and planned work ar
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
 
 ## Recent verified advances (2026-11-24)
+- Local-folder journal interruption: enqueue can succeed while snapshot promotion fails; a further source mutation before retry still converges the package on restart (journal replay, then the next poll). A journal that already matches the committed snapshot no longer blocks later scans when unlink fails. Verified: local-folder + worker + accumulator + connect recover/health/e2e/contract + sync engine 78 passed (20 local-folder). No IR or permission contract change.
+
+## Recent verified advances (2026-11-24)
 - Local-folder suite restored (it had been truncated to the original 50-line test on main). Rename-while-stopped of identical content is now actually locked: a same-bytes sibling survives because KnowledgeAccumulator removes by scoped source marker. SyncWorker commits the folder snapshot only after events are durably enqueued; a pending journal is replayed if the process dies before enqueue. Verified: local-folder + worker + accumulator 35 passed (18 local-folder); connect recover/health/e2e/contract + sync engine 41 passed. No IR or permission contract change.
 
 ## Recent verified advances (2026-11-23)
