@@ -17,15 +17,19 @@ and events so a crash between detection and enqueue can be replayed. Direct
 A journal that already matches the committed snapshot is not a barrier. If
 promoting the snapshot succeeds and deleting the journal fails, later scans
 must still observe new source changes.
+
+A corrupt or incomplete pending journal is quarantined (renamed to .quarantined) so the worker falls back to scanning from the last committed snapshot. Already-enqueued events are unaffected.
 """
 from __future__ import annotations
 
 import hashlib
+import logging
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from okc.connect.interfaces import Connector, HealthStatus, SyncEvent
+logger = logging.getLogger(__name__)
 
 
 class LocalFolderConnector(Connector):
@@ -158,12 +162,32 @@ class LocalFolderConnector(Connector):
             return False
         return same_seq and committed.get("snapshot") == journal.get("snapshot")
 
+    def _quarantine_journal(self, path: Path) -> None:
+        """Move a corrupt or incomplete pending journal aside so the worker can rescan."""
+        quarantine = path.with_name(path.name + ".quarantined")
+        try:
+            path.replace(quarantine)
+            logger.warning(
+                "Quarantined corrupt pending snapshot journal %s -> %s",
+                path, quarantine,
+            )
+        except OSError:
+            try:
+                path.unlink()
+                logger.warning("Removed unreadable pending snapshot journal %s", path)
+            except OSError:
+                logger.warning("Failed to quarantine pending snapshot journal %s", path)
+
     def has_pending_journal(self) -> bool:
         path = self._pending_path()
         if not path or not path.is_file():
             return False
         journal = self._read_json(path)
-        if journal is not None and self._journal_matches_committed(journal):
+        if journal is None or "snapshot" not in journal or "seq" not in journal:
+            # Corrupt or incomplete journal must not stall the worker forever.
+            self._quarantine_journal(path)
+            return False
+        if self._journal_matches_committed(journal):
             # Snapshot promotion already happened. A failed unlink must not
             # freeze change detection on this stale journal.
             try:
@@ -234,13 +258,15 @@ class LocalFolderConnector(Connector):
 
         Called only after the staged events have been durably enqueued.
         No journal is a no-op (direct sync methods already persist themselves).
+        A corrupt journal is quarantined instead of raised so the worker can rescan.
         """
         path = self._pending_path()
         if path is None or not path.is_file():
             return
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(raw, dict) or "snapshot" not in raw or "seq" not in raw:
-            raise ValueError("corrupt pending snapshot journal")
+        raw = self._read_json(path)
+        if raw is None or "snapshot" not in raw or "seq" not in raw:
+            self._quarantine_journal(path)
+            return
         self._last_snapshot = raw.get("snapshot") or {}
         self._seq = int(raw.get("seq") or 0)
         self._persist_snapshot()

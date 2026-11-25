@@ -1,9 +1,12 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-24
+**Updated:** 2026-11-25
 **Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.
 Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
+
+## Recent verified advances (2026-11-25)
+- Local-folder corrupt pending journal: a truncated or incomplete ``.pending`` journal is quarantined (renamed to ``.quarantined``). The worker falls back to incremental scan from the last committed snapshot; already-enqueued events remain in the durable queue. Package converges on the next poll with no loss or duplicates. Verified: local-folder + worker + accumulator + connect recover/health/e2e/contract + sync engine 65 passed (21 local-folder). No IR or permission contract change.
 
 ## Recent verified advances (2026-11-24)
 - Local-folder journal interruption: enqueue can succeed while snapshot promotion fails; a further source mutation before retry still converges the package on restart (journal replay, then the next poll). A journal that already matches the committed snapshot no longer blocks later scans when unlink fails. Verified: local-folder + worker + accumulator + connect recover/health/e2e/contract + sync engine 78 passed (20 local-folder). No IR or permission contract change.

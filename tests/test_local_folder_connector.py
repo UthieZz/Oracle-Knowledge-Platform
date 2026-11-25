@@ -968,3 +968,64 @@ def test_journal_unlink_failure_does_not_stall_later_changes(tmp_path, monkeypat
     assert health["failed"] == 0
     assert health["processed"] == 5
 
+
+
+def test_corrupt_pending_journal_quarantined_and_rescan_converges(tmp_path):
+    """Corrupt pending journal is quarantined; worker rescans from committed snapshot.
+
+    Already-enqueued events stay in the durable queue. A later source change is
+    still detected and the package converges without loss or duplicates.
+    """
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "keep.txt").write_text("keep me", encoding="utf-8")
+    (root / "gone.txt").write_text("will disappear", encoding="utf-8")
+
+    snap = tmp_path / "snap.json"
+    db = str(tmp_path / "sync.db")
+    pkg = str(tmp_path / "living.json")
+
+    conn1 = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn1.authenticate({})
+    eng1 = SyncEngine(db)
+    acc1 = KnowledgeAccumulator(package_path=pkg)
+    worker1 = SyncWorker(eng1, conn1, "t", "s", acc1.process, poll_interval=30)
+    worker1._poll_and_drain()
+    assert len(acc1.package.objects) == 2
+    assert not conn1.has_pending_journal()
+
+    # Simulate a crash after journal write but before enqueue by writing garbage.
+    (root / "gone.txt").unlink()
+    pending = Path(str(snap) + ".pending")
+    pending.write_text("{not valid json", encoding="utf-8")
+    assert pending.is_file()
+
+    # Restart: corrupt journal must be quarantined, then incremental detects the deletion.
+    conn2 = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert conn2.authenticate({})
+    assert not conn2.has_pending_journal()
+    quarantined = Path(str(snap) + ".pending.quarantined")
+    assert quarantined.is_file()
+    assert not pending.is_file()
+    # Committed snapshot still has the old state.
+    assert "gone.txt" in conn2._last_snapshot
+
+    eng2 = SyncEngine(db)
+    acc2 = KnowledgeAccumulator(package_path=pkg)
+    worker2 = SyncWorker(eng2, conn2, "t", "s", acc2.process, poll_interval=30)
+    worker2._poll_and_drain()
+
+    assert not conn2.has_pending_journal()
+    saved = json.loads(snap.read_text(encoding="utf-8"))
+    assert "gone.txt" not in saved["snapshot"]
+    assert "keep.txt" in saved["snapshot"]
+    markers = []
+    for obj in acc2.package.objects:
+        for rid in obj.provenance.source_record_ids:
+            markers.append(rid)
+    assert any("keep.txt" in m for m in markers)
+    assert not any("gone.txt" in m for m in markers)
+    assert len(acc2.package.objects) == 1
+    health = eng2.health()
+    assert health["queued"] == 0
+    assert health["failed"] == 0

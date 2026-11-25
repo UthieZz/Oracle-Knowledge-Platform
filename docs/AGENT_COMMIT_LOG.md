@@ -1,3 +1,11 @@
+## 2026-11-25 — Quarantine corrupt pending journal (Connect reliability)
+
+- Problem: A truncated or incomplete ``.pending`` journal caused ``pending_events`` / ``commit_pending`` to raise ValueError. SyncWorker caught the exception and retried the same poll forever, stalling change detection. Already-enqueued events were safe, but new source mutations were never observed.
+- Change: ``has_pending_journal`` and ``commit_pending`` now quarantine a corrupt/incomplete journal (rename to ``.quarantined``). Worker falls back to incremental scan from the last committed snapshot. Dedup on event_id prevents duplicate processing of any previously enqueued events. Regression ``test_corrupt_pending_journal_quarantined_and_rescan_converges`` added.
+- Verification: pytest tests/test_local_folder_connector.py tests/test_sync_worker.py tests/test_sync_engine.py tests/test_connect_health.py tests/test_connect_recover.py tests/test_connect_e2e.py tests/test_connect_contract.py → 65 passed (21 local-folder).
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No permission-model or locked-contract deviation.
+
 ## 2026-11-24 — Journal commit failure and unlink stall (Connect reliability)
 
 - Problem: After the snapshot journal landed, two interruption cases were open. (1) No regression that enqueue succeeds, snapshot commit fails, and the source mutates again before retry. (2) `commit_pending` swallowed a failed journal unlink. The file stayed pending, so every later poll replayed that journal and never scanned again. Source changes after a successful promotion were stuck until the file disappeared.
