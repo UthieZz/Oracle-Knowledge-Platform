@@ -1,3 +1,11 @@
+## 2026-11-26 — Concurrent source mutation during quarantine recovery (Connect reliability)
+
+- Problem: No locked regression that a concurrent source mutation (create + update + delete) occurs while a corrupt pending journal is present, before the worker restarts and quarantines it. Recovery must still observe those mutations from the last committed snapshot and converge the package without loss or duplicates.
+- Change: Added test_concurrent_source_mutation_during_quarantine_recovery_converges. No production code change; existing quarantine + incremental_sync path already correct.
+- Verification: pytest tests/test_local_folder_connector.py tests/test_sync_worker.py tests/test_knowledge_accumulator.py tests/test_sync_engine.py tests/test_connect_health.py tests/test_connect_recover.py tests/test_connect_e2e.py tests/test_connect_contract.py → 80 passed. CAR suite 38 passed.
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens Connect local-folder pilot reliability under interruption. No permission-model or locked-contract deviation.
+
 ## 2026-11-25 — Quarantine corrupt pending journal (Connect reliability)
 
 - Problem: A truncated or incomplete ``.pending`` journal caused ``pending_events`` / ``commit_pending`` to raise ValueError. SyncWorker caught the exception and retried the same poll forever, stalling change detection. Already-enqueued events were safe, but new source mutations were never observed.

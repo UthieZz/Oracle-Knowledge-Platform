@@ -1,6 +1,15 @@
 # OKP Roadmap — Knowledge Infrastructure, Connect Reliability, and B2B Pilot
 
-**Updated:** 2026-11-25
+**Updated:** 2026-11-26
+**Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.
+Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.
+**Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
+
+## Recent verified advances (2026-11-26)
+- Local-folder concurrent source mutation during quarantine recovery: a corrupt pending journal is quarantined on restart. Create/update/delete that occurred while the corrupt journal was present are observed by the subsequent incremental scan from the last committed snapshot. Package converges with no loss or duplicates. Verified: local-folder + worker + accumulator + connect recover/health/e2e/contract + sync engine 80 passed. No IR or permission contract change.
+
+## Recent verified advances (2026-11-25)
+
 **Basis:** Current-main source, STAGE.md, AGENT_COMMIT_LOG.md, and targeted Connect suite evidence.
 Implementation, recorded test evidence, runtime verification and planned work are intentionally distinguished.
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md

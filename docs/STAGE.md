@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-25
+# OKP Stage — 2026-11-26
 
-**Basis:** Current main. Local-folder journal: SyncWorker promotes the snapshot only after enqueue. Corrupt or incomplete pending journals are now quarantined (renamed to .quarantined) so the worker falls back to scanning from the last committed snapshot instead of retrying forever. Already-enqueued events are unaffected. Prior interruption cases remain locked. Verified: local-folder + sync worker + accumulator + connect recover/health/e2e/contract + sync engine 65 passed (21 local-folder). CAR suite not re-run. No IR or permission contract change.
+**Basis:** Current main. Local-folder journal: SyncWorker promotes the snapshot only after enqueue. Corrupt or incomplete pending journals are quarantined (renamed to .quarantined). Concurrent source mutation (create/update/delete) that occurs while a corrupt journal is present is observed on the recovery rescan from the last committed snapshot; package converges with no loss or duplicates. Prior interruption cases remain locked. Verified: local-folder + sync worker + accumulator + connect recover/health/e2e/contract + sync engine 80 passed. CAR suite 38 passed. No IR or permission contract change.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -31,6 +31,6 @@
 - Legacy delivery surfaces: ProvenanceLedgerExporter and RelationshipIndexExporter now honor strict_permissions (default False). Explicit deny always excluded; under strict, source-identity objects without explicit entry are excluded. Aligns remaining P1 boundary with Firestore / SQLite / CAR paths. Regressions added. No deviation from permission model or locked contracts.
 
 ## Next
-P0: corrupt/incomplete pending journals are now quarantined. Prefer the next interruption that is not yet locked (e.g. journal write failure mid-stage, or concurrent source mutation during quarantine recovery) or a verified remaining P1 delivery boundary. Do not treat a green unit suite as B2B readiness.
+P0: concurrent source mutation during quarantine recovery is now locked. Prefer the next interruption that is not yet locked (e.g. journal write failure mid-stage before atomic replace, or a verified remaining P1 delivery boundary). Do not treat a green unit suite as B2B readiness.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.
