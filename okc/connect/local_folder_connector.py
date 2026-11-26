@@ -44,14 +44,19 @@ class LocalFolderConnector(Connector):
         self._authenticated = False
         self._last_snapshot: Dict[str, str] = {}
         self._seq: int = 0
-        # Clean any leftover temp from prior interrupted persist
+        # Clean any leftover temp from prior interrupted persist or journal write
         if snapshot_path:
-            tmp = Path(snapshot_path).with_suffix(Path(snapshot_path).suffix + ".tmp")
-            if tmp.exists():
-                try:
-                    tmp.unlink()
-                except OSError:
-                    pass
+            snap = Path(snapshot_path)
+            for candidate in (
+                snap.with_suffix(snap.suffix + ".tmp"),
+                # Journal temp used by _write_journal: <snapshot>.pending.tmp
+                snap.with_name(snap.name + ".pending.tmp"),
+            ):
+                if candidate.exists():
+                    try:
+                        candidate.unlink()
+                    except OSError:
+                        pass
         if snapshot_path and Path(snapshot_path).exists():
             try:
                 raw = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))

@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-26
 
-**Basis:** Current main. Local-folder journal: SyncWorker promotes the snapshot only after enqueue. Corrupt or incomplete pending journals are quarantined (renamed to .quarantined). Concurrent source mutation (create/update/delete) that occurs while a corrupt journal is present is observed on the recovery rescan from the last committed snapshot; package converges with no loss or duplicates. Prior interruption cases remain locked. Verified: local-folder + sync worker + accumulator + connect recover/health/e2e/contract + sync engine 80 passed. CAR suite 38 passed. No IR or permission contract change.
+**Basis:** Current main. Local-folder journal: SyncWorker promotes the snapshot only after enqueue. Corrupt or incomplete pending journals are quarantined (renamed to .quarantined). Concurrent source mutation (create/update/delete) that occurs while a corrupt journal is present is observed on the recovery rescan from the last committed snapshot; package converges with no loss or duplicates. Leftover journal temp files (`.pending.tmp`) from an interrupted write are cleaned on connector init so they cannot stall later staging. Prior interruption cases remain locked. Verified: local-folder + sync worker + accumulator + connect recover/health/e2e/contract + sync engine 81 passed. CAR suite 38 passed. No IR or permission contract change.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.

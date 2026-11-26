@@ -6,6 +6,7 @@ Implementation, recorded test evidence, runtime verification and planned work ar
 **Companion analysis:** docs/BUILD_FIRST_TECHNICAL_ANALYSIS_2026-10-22.md
 
 ## Recent verified advances (2026-11-26)
+- Local-folder leftover journal temp cleanup: a `.pending.tmp` left by an interrupted journal write is removed on connector init. Committed snapshot is used; subsequent staging is not blocked. Verified: local-folder + worker + accumulator + connect recover/health/e2e/contract + sync engine 81 passed. No IR or permission contract change.
 - Local-folder concurrent source mutation during quarantine recovery: a corrupt pending journal is quarantined on restart. Create/update/delete that occurred while the corrupt journal was present are observed by the subsequent incremental scan from the last committed snapshot. Package converges with no loss or duplicates. Verified: local-folder + worker + accumulator + connect recover/health/e2e/contract + sync engine 80 passed. No IR or permission contract change.
 
 ## Recent verified advances (2026-11-25)

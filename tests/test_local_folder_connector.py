@@ -201,6 +201,30 @@ def test_local_folder_cleans_stale_tmp_on_init(tmp_path):
     assert "a.txt" in conn._last_snapshot
 
 
+def test_local_folder_cleans_stale_pending_journal_tmp_on_init(tmp_path):
+    """Leftover .pending.tmp from an interrupted journal write is removed on next connector init.
+
+    The committed snapshot is used; subsequent staging is not blocked by the leftover temp.
+    """
+    root = tmp_path / "docs"
+    root.mkdir()
+    (root / "a.txt").write_text("content", encoding="utf-8")
+    snap = tmp_path / "snapshot.json"
+    snap.write_text('{"version": 1, "seq": 3, "snapshot": {"a.txt": "abc"}}', encoding="utf-8")
+    journal_tmp = snap.with_name(snap.name + ".pending.tmp")
+    journal_tmp.write_text('partial garbage', encoding="utf-8")
+    assert journal_tmp.exists()
+    conn = LocalFolderConnector(str(root), snapshot_path=str(snap))
+    assert not journal_tmp.exists()  # cleaned
+    assert conn._seq == 3
+    assert "a.txt" in conn._last_snapshot
+    assert conn.authenticate({})
+    # Staging must still succeed and detect the new file
+    (root / "b.txt").write_text("new", encoding="utf-8")
+    events = conn.stage_incremental_sync("", "t", "s")
+    assert any(e.kind == "create" and e.payload.get("object_id") == "b.txt" for e in events)
+
+
 def test_local_folder_delete_recreate_same_content_new_event_id(tmp_path):
     """Delete then recreate identical content receives a new event_id via sequence advance."""
     root = tmp_path / "docs"

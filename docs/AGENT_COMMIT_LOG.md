@@ -1,3 +1,11 @@
+## 2026-11-26 — Clean leftover pending journal temp on LocalFolderConnector init
+
+- Problem: An interrupted `_write_journal` (after writing the temp but before atomic replace) can leave `<snapshot>.pending.tmp`. Init already cleaned the main snapshot `.tmp` but not the journal temp, so a leftover file could remain after crash.
+- Change: `__init__` now also unlinks `<snapshot>.pending.tmp` if present. Added `test_local_folder_cleans_stale_pending_journal_tmp_on_init` which asserts cleanup and that subsequent `stage_incremental_sync` still detects new files.
+- Verification: pytest tests/test_local_folder_connector.py tests/test_sync_worker.py tests/test_knowledge_accumulator.py tests/test_connect_recover.py tests/test_connect_health.py tests/test_connect_e2e.py tests/test_connect_contract.py tests/test_sync_engine.py → 81 passed.
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens Connect local-folder pilot reliability under journal-write interruption. No permission-model or locked-contract deviation.
+
 ## 2026-11-26 — Concurrent source mutation during quarantine recovery (Connect reliability)
 
 - Problem: No locked regression that a concurrent source mutation (create + update + delete) occurs while a corrupt pending journal is present, before the worker restarts and quarantines it. Recovery must still observe those mutations from the last committed snapshot and converge the package without loss or duplicates.
