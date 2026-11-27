@@ -1,3 +1,11 @@
+## 2026-11-28 — Define P2 architecture reconciliation and full-workflow verification
+
+- Problem: Current ownership notes documented the intentional `src/` and `okc/` split, but P2 lacked a single execution contract and a detailed runtime/consumer map. The roadmap's P2 acceptance criteria were too narrow to establish end-to-end provenance, authorization, tenant/silo isolation or Studio integration.
+- Change: Added `docs/agent/P2_EXECUTION.md` with locked architecture decisions, current evidence baseline, sequenced work, explicit unknowns, acceptance criteria and autonomous execution/checkpoint protocol. Added `docs/P2_RUNTIME_ENTRYPOINTS.md` to map known entry points, owners, runtimes and contracts while marking unverified retrieval/auth/runtime details as unknown. Updated the P2 roadmap status and next evidence.
+- Verification: Documentation reconciled against current-main `README.md`, `docs/IMPLEMENTATION_OWNERSHIP.md`, `okc/server/app.py`, `studio/src/services/apiService.ts`, `src/studio/api_server.py`, `tests/test_local_folder_connector.py`, current roadmap and commit log. No runtime code or test behavior changed; no test suite claimed as run.
+- Status: P2 remains IN PROGRESS. The local pilot verification does not establish full Studio/AuthGate/ContextGateway security or deployed multi-tenant isolation.
+- Next: complete source-backed runtime call graph, then trace persistence-to-retrieval and implement the missing integration assertions.
+
 ## 2026-11-27 — Extend local pilot verification with restart+update convergence
 
 - Problem: scripts/verify_local_pilot.py locked restart + source-deletion but did not exercise source-update under the same restart window. Runtime evidence for update convergence was unit-test only.
