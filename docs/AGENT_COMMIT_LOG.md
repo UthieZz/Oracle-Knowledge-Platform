@@ -53,3 +53,11 @@
 - Verification: pytest tests/test_local_folder_connector.py tests/test_sync_worker.py tests/test_knowledge_accumulator.py tests/test_sync_engine.py tests/test_connect_health.py tests/test_connect_recover.py tests/test_connect_e2e.py tests/test_connect_contract.py → 80 passed. CAR suite 38 passed.
 - Knowledge Core IR and Connect event contract unchanged.
 - Strengthens Connect local-folder pilot reliability under interruption. No permission-model or locked-contract deviation.
+
+## 2026-11-27 — Lock deprecation warning on legacy compiler entry (surface alignment)
+
+- Problem: The deprecation warning added to `run.py compiler` (directing operators to okc/ surfaces) was not covered by a regression. A future edit could silently drop the surface-alignment signal.
+- Change: Added `tests/test_entry_point_deprecation.py`. It invokes `python run.py compiler` and asserts the warning text plus the three preferred okc/ entry points and ownership doc reference appear in output. No production code change.
+- Verification: pytest tests/test_entry_point_deprecation.py → 1 passed. Local pilot verification (scripts/verify_local_pilot.py) still exits 0.
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens surface reconciliation by making the entry-point ownership signal testable. No permission-model or locked-contract deviation.

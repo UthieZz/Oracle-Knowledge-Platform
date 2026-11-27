@@ -29,6 +29,6 @@
 - Deterministic suite green. 38 passed. No deviation from locked contracts.
 
 ## Next
-P0: journal reliability locked. Prefer surface alignment of entry points or remaining P1 delivery boundary. Do not treat a green unit suite or this verification script as B2B readiness.
+P0: journal reliability locked. Surface alignment of entry points advanced: legacy compiler mode now has a locked regression that the deprecation warning is emitted. Prefer remaining P1 delivery boundary. Do not treat a green unit suite or this verification script as B2B readiness.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.
