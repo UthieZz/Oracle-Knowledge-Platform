@@ -1,6 +1,6 @@
-# OKP Stage — 2026-11-27
+# OKP Stage — 2026-11-28
 
-**Basis:** Current main. Local pilot end-to-end verification script (scripts/verify_local_pilot.py) now exercises Import (LocalFolderConnector stage/enqueue) → Accumulate → KnowledgePackage → SQLiteExporter → lexical LIKE search plus restart + source-update then source-deletion convergence in a temp dir. No cloud deps. Connect reliability journal windows remain locked from prior runs. No IR or permission contract change.
+**Basis:** Current main. Block 2: Studio local read path unified with SQLiteExporter. `SQLiteKnowledgeReader` + `/api/dashboard`, `/api/knowledge-objects`, `/api/search` on okc server; Studio `knowledgeStore` defaults to local API (`VITE_OKP_DATA_MODE=local`). AuthGate skips Firebase in local mode. ImportPage accepts `.json,.txt,.md`. Reader empty-DB + tenant isolation locked by tests (Flask HTTP tests skip when flask absent). Connect reliability and IR unchanged.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -16,8 +16,10 @@
 
 ## Local OKC server (okc/server/app.py)
 - Upload/compile path honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export.
-- /api/health reports readiness details.
-- Entry point wired: `python run.py server` launches the server expected by studio/src/services/apiService.ts (default 127.0.0.1:5000). Studio Vite remains separate (`python run.py studio`).
+- Read path: SQLiteKnowledgeReader serves dashboard, knowledge-objects, search (tenant/silo scoped).
+- /api/health reports readiness details including sqlite_readable.
+- Entry point wired: `python run.py server` launches the server expected by studio (default 127.0.0.1:5000). Studio Vite remains separate (`python run.py studio`).
+- Studio: KnowledgeStore routes Dashboard / KO browser / Search / Chat retrieval to local API by default; FirestoreService preserved for VITE_OKP_DATA_MODE=firestore.
 
 ## Dual surfaces
 - Connect owns okc/ + Pydantic KnowledgePackage.
@@ -29,6 +31,6 @@
 - Deterministic suite green. 38 passed. No deviation from locked contracts.
 
 ## Next
-P0: journal reliability locked. Surface alignment of entry points advanced: legacy compiler mode now has a locked regression that the deprecation warning is emitted. Prefer remaining P1 delivery boundary. Do not treat a green unit suite or this verification script as B2B readiness.
+P0: journal reliability locked. Block 2 local Studio read path landed. Prefer remaining P1 delivery boundary or full flask-backed HTTP verification of the new routes. Do not treat unit suite green as B2B readiness.
 
 **Not claimed:** production-grade multi-tenant authorization, full fail-closed default, B2B readiness, or runtime-verified Studio/Firestore deployment.
