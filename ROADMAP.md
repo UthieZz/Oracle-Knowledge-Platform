@@ -123,10 +123,11 @@ Snapshot recovery, deletion detection after restarts, source identity, event lif
 **Next:** identify and close one verified weak boundary with regression.  
 **Acceptance:** no cross-tenant/silo leakage; revocation survives updates; missing permission denied under strict mode across all delivery paths; provenance complete on permission decisions.
 
-### P2 — Architecture consistency
-**Status:** Ownership map recorded. Dual src/okc surfaces intentional for now.  
-**Next:** keep mapping current; avoid unnecessary migrations.  
-**Acceptance:** documented active/obsolete paths; no competing IRs.
+### P2 — Architecture reconciliation & full-workflow verification
+**Status:** IN PROGRESS. Current-main ownership decisions are documented and the runtime entry-point matrix has been seeded. The local-folder Connect vertical slice is independently verified through package accumulation, SQLite export and lexical search; this is not yet proof of the complete Studio/AuthGate/ContextGateway workflow.
+**Completed documentation (2026-11-28):** `docs/agent/P2_EXECUTION.md` defines scope, invariants, execution protocol and closure criteria. `docs/P2_RUNTIME_ENTRYPOINTS.md` records known entry points, owners, contracts and explicit unknowns.
+**Next:** resolve the remaining runtime call graph; trace actual persistence → retrieval/ContextGateway; verify provenance/timestamps, tenant/silo isolation and permission behavior at real boundaries; align Studio/API/AuthGate/Firebase; add only the missing integration tests; run and record regression, full Python and Studio build verification.
+**Acceptance:** all criteria in `docs/agent/P2_EXECUTION.md` are reproducibly evidenced. P2 must not be marked 100% from documentation or local-pilot tests alone.
 
 ### P3 — Local pilot operability
 **Status:** Strong progress. Config files, recovery CLI, health recovery_hints, cursor/snapshot visibility, operator guide, Docker packaging example. Local server now supports strict mode via env and reports it in job status.  
