@@ -26,3 +26,9 @@ No automatic promotion or dual-write exists. Connectors never mutate KnowledgePa
 Do not merge `src/` and `okc/` without evidence of overlapping active use, a migration plan, and verification that both the Connect pilot and any remaining legacy compiler consumers continue to function. Prefer explicit ownership over speculative consolidation.
 
 This document records the current state so future sessions do not rediscover the dual surfaces.
+
+## P2 verification companion
+
+This file records the durable ownership decision. The expanded runtime/consumer/contract matrix and unresolved verification items are maintained in `docs/P2_RUNTIME_ENTRYPOINTS.md`; the sequenced execution plan and closure criteria are in `docs/agent/P2_EXECUTION.md`.
+
+Ownership documentation is not equivalent to end-to-end verification. In particular, Studio route alignment does not prove authenticated tenant/silo isolation, and the local pilot verification does not prove the full ContextGateway/Firebase authorization path.
