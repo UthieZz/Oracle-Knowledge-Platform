@@ -1,3 +1,11 @@
+## 2026-11-27 — Deprecate legacy compiler entry point
+
+- Problem: `python run.py compiler` still silently launched the legacy `src/` path (`scripts/compile_data.py`). Operators could accidentally use the non-canonical surface instead of the verified okc/ local pilot.
+- Change: `run_compiler()` now prints an explicit deprecation warning that points to `python run.py server`, `scripts/verify_local_pilot.py`, and `scripts/run_connect_worker.py`. Ownership and STAGE docs updated. Empty junk file `requirements.txt~` removed. No functional change to the legacy path, IR, or permissions.
+- Verification: Existing Connect + CAR suite 119 passed. Local pilot verification script still exits 0. No new tests required (warning-only).
+- Knowledge Core IR and Connect event contract unchanged.
+- Reduces surface fragmentation at the entry-point boundary. Operators are directed to the verified okc/ path.
+
 ## 2026-11-27 — Align README with current entry points
 
 - Problem: README described a non-existent `workbench` mode and omitted the documented local OKC server (`python run.py server`), Studio, Connect worker, and single-command verification script. Created operator confusion about active surfaces.
