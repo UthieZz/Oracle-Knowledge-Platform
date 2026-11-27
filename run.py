@@ -4,7 +4,13 @@ import subprocess
 import argparse
 
 def run_compiler():
-    print("Running Compiler...")
+    print("WARNING: 'compiler' mode is the legacy src/ path (scripts/compile_data.py).")
+    print("Preferred local pilot path is the okc/ surface:")
+    print("  - python run.py server          # local OKC API for Studio")
+    print("  - python scripts/verify_local_pilot.py  # single-command end-to-end verification")
+    print("  - python scripts/run_connect_worker.py  # Connect worker")
+    print("See docs/IMPLEMENTATION_OWNERSHIP.md and README.md.")
+    print("Running legacy compiler...")
     env = os.environ.copy()
     env["PYTHONPATH"] = os.getcwd()
     subprocess.run(["python3", "scripts/compile_data.py"], env=env)
