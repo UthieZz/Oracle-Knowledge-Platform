@@ -1,6 +1,6 @@
 # OKP Stage — 2026-11-27
 
-**Basis:** Current main. Local pilot end-to-end verification script (scripts/verify_local_pilot.py) now exercises Import (LocalFolderConnector stage/enqueue) → Accumulate → KnowledgePackage → SQLiteExporter → lexical LIKE search plus restart + source-deletion convergence in a temp dir. No cloud deps. Connect reliability journal windows remain locked from prior runs. No IR or permission contract change.
+**Basis:** Current main. Local pilot end-to-end verification script (scripts/verify_local_pilot.py) now exercises Import (LocalFolderConnector stage/enqueue) → Accumulate → KnowledgePackage → SQLiteExporter → lexical LIKE search plus restart + source-update then source-deletion convergence in a temp dir. No cloud deps. Connect reliability journal windows remain locked from prior runs. No IR or permission contract change.
 
 ## Knowledge Core
 - Canonical KnowledgePackage (okc/models) is the sole IR.
@@ -12,7 +12,7 @@
 - LocalFolderConnector + persistent snapshot, SQLite SyncEngine, KnowledgeAccumulator implemented and targeted-tested.
 - Health CLI and recovery CLI present.
 - Operator guide and Docker packaging example exist.
-- scripts/verify_local_pilot.py provides single-command runtime verification of the clean local path (import → accumulate → export → search) plus restart+deletion convergence.
+- scripts/verify_local_pilot.py provides single-command runtime verification of the clean local path (import → accumulate → export → search) plus restart+update+deletion convergence.
 
 ## Local OKC server (okc/server/app.py)
 - Upload/compile path honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export.

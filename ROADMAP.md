@@ -7,6 +7,7 @@ Implementation, recorded test evidence, runtime verification and planned work ar
 
 
 ## Recent verified advances (2026-11-27)
+- Local pilot verification: scripts/verify_local_pilot.py now also locks restart + source-update convergence (content mutation observed on next incremental after re-instantiation) before the existing deletion phase. Script exits 0. No production code change. Strengthens single-command runtime evidence for crash consistency. No IR or permission contract change.
 - Surface alignment: deprecation warning on legacy `run.py compiler` entry is now locked by regression (tests/test_entry_point_deprecation.py). Operators are directed to okc/ server, verify_local_pilot, and connect worker. 1 passed. No IR or permission contract change.
 
 ## Recent verified advances (2026-11-26)

@@ -1,3 +1,11 @@
+## 2026-11-27 — Extend local pilot verification with restart+update convergence
+
+- Problem: scripts/verify_local_pilot.py locked restart + source-deletion but did not exercise source-update under the same restart window. Runtime evidence for update convergence was unit-test only.
+- Change: Inserted an update phase (modify file content while stopped, re-instantiate connector, stage incremental, process, assert new marker present and old absent) before the existing deletion phase. No production code change.
+- Verification: Script exits 0; reports update reflected and marker removed. Existing Connect suite remains green (prior runs). No IR or permission contract change.
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens single-command runtime evidence for crash consistency (update + deletion) on the local pilot path.
+
 ## 2026-11-27 — Deprecate legacy compiler entry point
 
 - Problem: `python run.py compiler` still silently launched the legacy `src/` path (`scripts/compile_data.py`). Operators could accidentally use the non-canonical surface instead of the verified okc/ local pilot.

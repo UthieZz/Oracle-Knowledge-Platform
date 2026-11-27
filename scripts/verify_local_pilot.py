@@ -5,7 +5,7 @@ Import (LocalFolderConnector) → Accumulate (KnowledgeAccumulator) → Knowledg
 → SQLite export → lexical search. Uses only local filesystem and SQLite.
 No cloud dependencies.
 
-Also exercises a restart + deletion convergence path to lock crash consistency
+Also exercises a restart + update then deletion convergence path to lock crash consistency
 in the runtime verification.
 
 Usage:
@@ -83,7 +83,42 @@ def main() -> int:
             print("FAIL: initial package missing marker", file=sys.stderr)
             return 1
 
-        # --- Phase 2: simulate crash/restart with source deletion ---
+        # --- Phase 2: simulate crash/restart with source update ---
+        updated_marker = "OKP_LOCAL_PILOT_UPDATED_MARKER_99"
+        pilot_file.write_text(
+            f"# Local pilot updated\n\nThis file now contains the unique marker {updated_marker}.\n",
+            encoding="utf-8",
+        )
+
+        connector_upd = LocalFolderConnector(str(source_dir), snapshot_path=snapshot_path)
+        if not connector_upd.authenticate({}):
+            print("FAIL: update-restart connector auth", file=sys.stderr)
+            return 1
+
+        events_upd = connector_upd.stage_incremental_sync("", tenant, silo)
+        if not any(e.kind == "update" for e in events_upd):
+            print("FAIL: no update event after source mutation on restart", file=sys.stderr)
+            return 1
+
+        for ev in events_upd:
+            engine.enqueue(ev)
+        if connector_upd.has_pending_journal():
+            connector_upd.commit_pending()
+
+        processed_upd = 0
+        while True:
+            eid = engine.process_next(accumulator.process)
+            if eid is None:
+                break
+            processed_upd += 1
+
+        pkg_upd = KnowledgePackage.from_json(Path(package_path).read_text(encoding="utf-8"))
+        contents_upd = " ".join(o.content for o in pkg_upd.objects) if pkg_upd.objects else ""
+        if updated_marker not in contents_upd or marker in contents_upd:
+            print("FAIL: package did not reflect update after restart", file=sys.stderr)
+            return 1
+
+        # --- Phase 3: simulate crash/restart with source deletion ---
         pilot_file.unlink()  # delete while "stopped"
 
         # New connector instance (restart) from same snapshot
@@ -117,7 +152,7 @@ def main() -> int:
             print("FAIL: marker still present after deletion + restart processing", file=sys.stderr)
             return 1
 
-        # --- Phase 3: export + search on final package ---
+        # --- Phase 4: export + search on final package ---
         exporter = SQLiteExporter(export_db)
         exporter.export(pkg2, tenant, silo)
 
@@ -133,10 +168,11 @@ def main() -> int:
             print("FAIL: lexical search still found marker after deletion", file=sys.stderr)
             return 1
 
-        print("OK: local pilot path verified (including restart+deletion convergence)")
+        print("OK: local pilot path verified (including restart+update+deletion convergence)")
         print(f"  initial objects: 1")
         print(f"  final objects: {len(pkg2.objects)}")
-        print(f"  processed events (phase1+phase2): {processed + processed2}")
+        print(f"  processed events (phase1+update+phase2): {processed + processed_upd + processed2}")
+        print(f"  update reflected: True")
         print(f"  marker removed: True")
         return 0
 
