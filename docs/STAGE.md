@@ -22,6 +22,7 @@
 ## Dual surfaces
 - Connect owns okc/ + Pydantic KnowledgePackage.
 - src/ remains for legacy compiler/UI and Gemini importer.
+- `python run.py compiler` now emits a deprecation warning directing operators to the okc/ surfaces (server, verify_local_pilot, connect worker). No functional change to the legacy path.
 - No merge without further evidence. See docs/IMPLEMENTATION_OWNERSHIP.md.
 
 ## Context-Aware Reasoning (locked design)
