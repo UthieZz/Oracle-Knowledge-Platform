@@ -10,7 +10,7 @@
 | `python run.py server` | `okc/server/app.py` | Local API matching studio/src/services/apiService.ts endpoints. |
 | `okc/connect/knowledge_accumulator.py` | `okc/` | Processor that applies SyncEvents to living KnowledgePackage. |
 | `main.py` (Qt UI) | `src/` | Legacy desktop entry. Uses `src.controllers`, `src.ui`. |
-| `run.py compiler` → `scripts/compile_data.py` | `src/` | Legacy compilation path. |
+| `run.py compiler` → `scripts/compile_data.py` | `src/` | Legacy compilation path. Emits a deprecation warning pointing to the okc/ local pilot surfaces. |
 | Gemini importer | `src/importers/gemini_importer.py` | Functional (31 unit tests pass). Maps to `src.models`. |
 | Studio (Vite) | `studio/` | React/PWA. Consumes published knowledge. |
 
