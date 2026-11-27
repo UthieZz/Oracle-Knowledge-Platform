@@ -1,3 +1,11 @@
+## 2026-11-27 — Extend local pilot verification with restart+deletion convergence
+
+- Problem: scripts/verify_local_pilot.py verified the happy-path import→accumulate→export→search but did not exercise the restart + source-mutation (deletion) window that the unit suite locks.
+- Change: Extended the script to perform an initial sync, then delete the source file, re-instantiate the connector from the same snapshot, stage incremental sync, process the delete event, and assert the marker is removed from the package and from lexical search. No production code change.
+- Verification: Script exits 0; reports final objects=0 and marker removed. Existing Connect suite remains 81 passed; CAR 38 passed.
+- Knowledge Core IR and Connect event contract unchanged.
+- Strengthens single-command runtime evidence for crash consistency on the local pilot path.
+
 ## 2026-11-27 — Wire local OKC server entry point in run.py
 
 - Problem: Studio ImportPage / apiService.ts expects POST /api/import/upload, /api/compile, GET /api/pipeline/status on localhost:5000. okc/server/app.py implements the matching local API, but no documented entry point launched it. run.py only offered compiler/studio.
