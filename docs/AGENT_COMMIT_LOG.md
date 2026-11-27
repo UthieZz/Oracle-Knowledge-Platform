@@ -1,3 +1,11 @@
+## 2026-11-27 — Align README with current entry points
+
+- Problem: README described a non-existent `workbench` mode and omitted the documented local OKC server (`python run.py server`), Studio, Connect worker, and single-command verification script. Created operator confusion about active surfaces.
+- Change: Replaced Quick Start with a table of current entry points matching `run.py` and the local-folder pilot. Added ownership summary and constraint note. No production code, IR, or permission change.
+- Verification: Commit pushed; remote README content matches the staged file. No tests affected.
+- Knowledge Core IR and Connect event contract unchanged.
+- Reduces surface fragmentation at the documentation boundary. Operators now see the actual local pilot path without source inspection.
+
 ## 2026-11-27 — Extend local pilot verification with restart+deletion convergence
 
 - Problem: scripts/verify_local_pilot.py verified the happy-path import→accumulate→export→search but did not exercise the restart + source-mutation (deletion) window that the unit suite locks.
