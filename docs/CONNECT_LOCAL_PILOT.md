@@ -29,6 +29,14 @@ Create `pilot.json`:
 
 CLI arguments override any value from the file.
 
+## Single-command runtime verification
+
+```bash
+python scripts/verify_local_pilot.py
+```
+
+Exercises the clean local path (LocalFolderConnector initial sync → accumulator → KnowledgePackage → SQLiteExporter → lexical search) plus a restart + source-deletion convergence check. Exit 0 on success. No cloud dependencies.
+
 ## Start the background worker
 
 ```bash
