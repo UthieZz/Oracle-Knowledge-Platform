@@ -1,48 +1,33 @@
 # Oracle Knowledge Platform
-# OKC — Oracle Knowledge Compiler & Studio
 
-## Vision
+Local-first knowledge infrastructure that turns fragmented sources into a governed, searchable KnowledgePackage.
 
-The Oracle Knowledge Platform is an AI-agnostic knowledge compilation and management ecosystem.
+## Current entry points (as of 2026-11-27)
 
-It imports conversations and documents from multiple AI systems and other sources, normalizes them into a universal internal format, extracts structured knowledge, builds relationships between concepts, and provides a powerful Workbench for exploring and interacting with your knowledge.
+| Command | What it does |
+|---------|--------------|
+| `python run.py server` | Starts the local OKC API (`okc.server.app`) on 127.0.0.1:5000. Matches the endpoints expected by Studio ImportPage. Honors `OKP_STRICT_PERMISSIONS`. |
+| `python run.py studio` | Starts the Studio Vite frontend (separate process). Reminds you to also start the server. |
+| `python run.py compiler` | Legacy compiler path (`scripts/compile_data.py` / `src/`). |
+| `python scripts/verify_local_pilot.py` | Single-command runtime verification of the clean local-folder Connect path: Import → Accumulate → KnowledgePackage → SQLite export → lexical search, plus restart + source-deletion convergence. Exit 0 on success. No cloud deps. |
+| `python scripts/run_connect_worker.py` | Background Connect worker for a local folder source. |
 
-## Quick Start
+## Local pilot verification
 
-### Running the Compiler
-To process sources and generate a knowledge package:
 ```bash
-python run.py compiler
+python scripts/verify_local_pilot.py
 ```
 
-### Running the Workbench
-To explore the compiled knowledge:
-```bash
-python run.py workbench
-```
+See `docs/CONNECT_LOCAL_PILOT.md` for the full operator guide, config, Docker example, health, and recovery.
 
-*Note: If no desktop GUI is available (e.g., in Google Cloud Shell), the Workbench will automatically start a web server on port 8080. Use the **Web Preview** feature in Cloud Shell to access it.*
+## Ownership
 
-## Supported Inputs
+- Connect / local pilot / local server: `okc/` + Pydantic KnowledgePackage (canonical IR).
+- Legacy compiler / desktop UI / Gemini importer: `src/`.
+- Studio: `studio/`.
 
-- ChatGPT
-- Gemini
-- Claude
-- Grok
-- Copilot
-- Perplexity
-- Markdown
-- PDF
-- HTML
-- Plain Text
+No automatic merge. See `docs/IMPLEMENTATION_OWNERSHIP.md` and `docs/STAGE.md`.
 
-## Feature Set
+## Constraints
 
-✅ **Multi-Source Importers:** Normalizes data from diverse platforms.
-✅ **Knowledge Engine:** Extracts entities, builds indices, and generates summaries.
-✅ **Knowledge Workbench:** A NotebookLM-inspired interface for knowledge exploration.
-✅ **Web Fallback:** Full support for Cloud Shell and remote environments.
-
-## Current Version
-
-1.1.0
+KnowledgePackage is the sole canonical IR. Preserve provenance, tenant/silo isolation, and the pipeline order. Do not treat unit tests or the verification script as B2B readiness.
