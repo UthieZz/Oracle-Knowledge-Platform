@@ -1,4 +1,4 @@
-# Implementation Ownership — Current Evidence (2026-11-08)
+# Implementation Ownership — Current Evidence (2026-11-27)
 
 **Status:** Recorded from current main. Not a migration plan.
 
@@ -7,6 +7,7 @@
 | Runtime entry | Authoritative surface | Notes |
 |---------------|-----------------------|-------|
 | `scripts/run_connect_worker.py`, `scripts/connect_health.py`, `scripts/connect_recover.py` | `okc/` | Connect local-folder pilot. Uses `okc.connect.*`, `okc.models.knowledge_package.KnowledgePackage` (Pydantic). |
+| `python run.py server` | `okc/server/app.py` | Local API matching studio/src/services/apiService.ts endpoints. |
 | `okc/connect/knowledge_accumulator.py` | `okc/` | Processor that applies SyncEvents to living KnowledgePackage. |
 | `main.py` (Qt UI) | `src/` | Legacy desktop entry. Uses `src.controllers`, `src.ui`. |
 | `run.py compiler` → `scripts/compile_data.py` | `src/` | Legacy compilation path. |

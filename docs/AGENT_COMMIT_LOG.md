@@ -1,3 +1,11 @@
+## 2026-11-27 — Wire local OKC server entry point in run.py
+
+- Problem: Studio ImportPage / apiService.ts expects POST /api/import/upload, /api/compile, GET /api/pipeline/status on localhost:5000. okc/server/app.py implements the matching local API, but no documented entry point launched it. run.py only offered compiler/studio.
+- Change: Added `python run.py server` which launches `python -m okc.server.app` (honors OKC_API_HOST/PORT, OKP_STRICT_PERMISSIONS). Studio mode now prints the reminder. No change to server code, IR, or permissions.
+- Verification: Server starts, GET /api/health returns {"ok":true, "service":"okc-local-api", ...} with registry_ready. Pilot verification script still passes. CAR suite 38 passed (unchanged).
+- Knowledge Core IR and Connect event contract unchanged.
+- Closes one surface-wiring gap between okc/ local server and Studio import path. No permission-model or locked-contract deviation.
+
 ## 2026-11-27 — Local pilot single-command verification script
 
 - Problem: Clean local path (LocalFolderConnector → KnowledgeAccumulator → KnowledgePackage → SQLite export → lexical search) lacked a single-command runtime verification that does not rely on unit-test harness or cloud services.

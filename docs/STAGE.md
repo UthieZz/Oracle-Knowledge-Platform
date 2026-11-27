@@ -17,6 +17,7 @@
 ## Local OKC server (okc/server/app.py)
 - Upload/compile path honors OKP_STRICT_PERMISSIONS for HybridRAG index and SQLite export.
 - /api/health reports readiness details.
+- Entry point wired: `python run.py server` launches the server expected by studio/src/services/apiService.ts (default 127.0.0.1:5000). Studio Vite remains separate (`python run.py studio`).
 
 ## Dual surfaces
 - Connect owns okc/ + Pydantic KnowledgePackage.
